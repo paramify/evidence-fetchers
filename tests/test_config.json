@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "account_info",
+    "s3_buckets",
+    "rds_instances",
+    "iam_users",
+    "iam_roles",
+    "cloudtrail_trails",
+    "config_recorders",
+    "kms_keys"
+  ]
+}

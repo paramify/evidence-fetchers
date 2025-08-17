@@ -1,0 +1,11 @@
+.env
+.DS_Store
+*.pyc
+old_example_process/*
+evidence/*
+
+# Test evidence files
+tests/test_evidence/
+tests/debug_evidence/
+tests/demo_evidence/
+tests/demo_summary.json

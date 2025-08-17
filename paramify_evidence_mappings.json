@@ -1,0 +1,74 @@
+{
+  "scriptMappings": {
+    "aws_config_conformance_packs.sh": {
+      "referenceId": "EVD-CONFIG-PACKS",
+      "name": "AWS Config Conformance Packs",
+      "description": "Evidence for AWS Config conformance pack compliance and rule evaluations",
+      "instructions": "Script: aws_config_conformance_packs.sh. Commands executed: 1) List conformance packs: `aws configservice describe-conformance-packs --query \"ConformancePackNames[]\"` 2) Get status: `aws configservice describe-conformance-pack-status --conformance-pack-names \"$pack\"` 3) Get compliance summary: `aws configservice get-conformance-pack-compliance-summary --conformance-pack-names \"$pack\"` 4) Get detailed compliance: `aws configservice get-conformance-pack-compliance-details --conformance-pack-name \"$pack\"`",
+      "automated": true
+    },
+    "eks_least_privilege.sh": {
+      "referenceId": "EVD-EKS-PRIV",
+      "name": "EKS Least Privilege",
+      "description": "Evidence for EKS cluster least privilege access controls and RBAC configurations",
+      "instructions": "Script: eks_least_privilege.sh. Commands executed: 1) Check cluster logging: `aws eks describe-cluster --name [cluster-name] --query \"cluster.logging\"` 2) Review pod IAM roles: `aws eks list-pod-identity-associations --cluster-name [cluster-name]` 3) Check EKS add-ons: `aws eks list-addons --cluster-name [cluster-name]`",
+      "automated": true
+    },
+    "eks_microservice_segmentation.sh": {
+      "referenceId": "EVD-EKS-SEG",
+      "name": "EKS Microservice Segmentation",
+      "description": "Evidence for EKS microservice network segmentation and isolation",
+      "instructions": "Script: eks_microservice_segmentation.sh. Commands executed: 1) Check network policies: `kubectl get networkpolicies -A -o jsonpath='{range .items[*]}{.metadata.namespace}{\"\\t\"}{.metadata.name}{\"\\t\"}{.spec.policyTypes}{\"\\n\"}{end}'` 2) Verify VPC CNI: `kubectl describe daemonset aws-node -n kube-system | grep ENABLE_NETWORK_POLICY` 3) Check security group policies: `kubectl get securitygrouppolicies.vpcresources.k8s.aws -A -o yaml` 4) Get worker node security groups: `aws ec2 describe-instances --filters \"Name=tag:kubernetes.io/cluster/<CLUSTER_NAME>,Values=owned\"` 5) Check pod resource limits: `kubectl get pods --all-namespaces -o jsonpath='{range .items[*]}{.metadata.namespace}{\"\\t\"}{.metadata.name}{\"\\t\"}{.spec.containers[*].resources}{\"\\n\"}{end}'`",
+      "automated": true
+    },
+    "kubectl_security.sh": {
+      "referenceId": "EVD-KUBECTL-SEC",
+      "name": "Kubectl Security Configuration",
+      "description": "Evidence for kubectl security configurations and cluster access controls",
+      "instructions": "Script: kubectl_security.sh. Commands executed: 1) Examine pod security contexts: `kubectl get pods -A -o jsonpath=...` 2) Check validation configurations: `kubectl get validatingwebhookconfigurations -A -o yaml` 3) Check pod security policies: `kubectl get psp -o yaml` 4) Check network policies: `kubectl get networkpolicies -A -o yaml`",
+      "automated": true
+    },
+    "aws_component_ssl_enforcement_status.sh": {
+      "referenceId": "EVD-SSL-ENFORCE",
+      "name": "SSL/TLS Enforcement Status",
+      "description": "Evidence for SSL/TLS enforcement across AWS services and components",
+      "instructions": "Script: aws_component_ssl_enforcement_status.sh. Commands executed: 1) List S3 buckets: `aws s3api list-buckets` 2) Check S3 bucket policies for HTTPS enforcement: `aws s3api get-bucket-policy --bucket <bucket-name>` 3) Check RDS instances: `aws rds describe-db-instances` 4) Check RDS parameter groups for SSL: `aws rds describe-db-parameters --db-parameter-group-name <pg-name>`",
+      "automated": true
+    },
+    "block_storage_encryption_status.sh": {
+      "referenceId": "EVD-BLOCK-ENC",
+      "name": "Block Storage Encryption",
+      "description": "Evidence for EBS volume encryption status and configurations",
+      "instructions": "Script: block_storage_encryption_status.sh. Commands executed: 1) Check EBS encryption defaults: `aws ec2 get-ebs-encryption-by-default` 2) Get default KMS key: `aws ec2 get-ebs-default-kms-key-id` 3) List EBS volumes: `aws ec2 describe-volumes --query \"Volumes[*].VolumeId\"` 4) Check volume encryption: `aws ec2 describe-volumes --volume-ids [volume-id]` 5) List EFS systems: `aws efs describe-file-systems --query \"FileSystems[*].FileSystemId\"` 6) Check EFS encryption: `aws efs describe-file-systems --file-system-id [fs-id]`",
+      "automated": true
+    },
+    "kms_key_rotation.sh": {
+      "referenceId": "EVD-KMS-ROT",
+      "name": "KMS Key Rotation",
+      "description": "Evidence for KMS key rotation policies and status",
+      "instructions": "Script: kms_key_rotation.sh. Commands executed: 1) Check Config rule: `aws configservice describe-compliance-by-config-rule --config-rule-name \"cmk-backing-key-rotation-enabled-conformance-pack-j3wepwlkw\"` 2) List KMS keys: `aws kms list-keys` 3) For each key - Get details: `aws kms describe-key` 4) Check rotation status: `aws kms get-key-rotation-status` 5) Get key policy: `aws kms get-key-policy`",
+      "automated": true
+    },
+    "load_balancer_encryption_status.sh": {
+      "referenceId": "EVD-LB-ENC",
+      "name": "Load Balancer Encryption",
+      "description": "Evidence for load balancer SSL/TLS encryption configurations",
+      "instructions": "Script: load_balancer_encryption_status.sh. Commands executed: 1) Describe load balancers: `aws elbv2 describe-load-balancers` 2) Check listeners: `aws elbv2 describe-listeners --load-balancer-arn <arn> --query \"Listeners[*].{Port:Port,Protocol:Protocol,SslPolicy:SslPolicy}\"`",
+      "automated": true
+    },
+    "rds_encryption_status.sh": {
+      "referenceId": "EVD-RDS-ENC",
+      "name": "RDS Encryption",
+      "description": "Evidence for RDS database encryption at rest and in transit",
+      "instructions": "Script: rds_encryption_status.sh. Commands executed: 1) List RDS instances: `aws rds describe-db-instances --query \"DBInstances[*].DBInstanceIdentifier\"` 2) Check instance encryption: `aws rds describe-db-instances --db-instance-identifier [instance-name]` 3) List Aurora clusters: `aws rds describe-db-clusters --query \"DBClusters[*].DBClusterIdentifier\"` 4) Check cluster encryption: `aws rds describe-db-clusters --db-cluster-identifier [cluster-name]`",
+      "automated": true
+    },
+    "s3_encryption_status.sh": {
+      "referenceId": "EVD-S3-ENC",
+      "name": "S3 Encryption",
+      "description": "Evidence for S3 bucket encryption configurations and policies",
+      "instructions": "Script: s3_encryption_status.sh. Commands executed: 1) List S3 buckets: `aws s3api list-buckets --query \"Buckets[*].Name\"` 2) For each bucket, check encryption: `aws s3api get-bucket-encryption --bucket [bucket-name]`",
+      "automated": true
+    }
+  }
+}
