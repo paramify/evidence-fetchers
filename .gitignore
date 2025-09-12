@@ -10,3 +10,5 @@ tests/test_evidence/
 tests/debug_evidence/
 tests/demo_evidence/
 tests/demo_summary.json
+customer_config.json
+tmp.json
