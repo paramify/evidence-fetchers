@@ -1,34 +1,34 @@
-# Evidence-KSI Mapping Tools
+# 6) Evidence Requirement Mapping
 
-This directory contains tools to extract evidence-KSI (Key Security Indicator) associations from Paramify machine readable YAML files and update evidence sets with the corresponding requirements.
+This directory contains tools for mapping evidence to requirements from Paramify YAML files and updating evidence sets with KSI (Key Security Indicator) requirements.
 
 ## Files
 
-- `extract_evidence_ksi_mappings.py` - Main script to extract mappings from YAML and update evidence sets
+- `map_requirements.py` - Basic mapping script (simple version)
+- `extract_evidence_ksi_mappings.py` - Advanced KSI mapping extraction script
 - `mapping_summary.py` - Analysis script to summarize the mappings
+- `paramify_evidence_mappings.json` - Existing evidence mappings
 - `evidence_sets_with_requirements.json` - Updated evidence sets with KSI requirements
 - `README.md` - This documentation file
 
-## Directory Structure
+## What This Does
 
-```
-evidence_ksi_mapping/
-├── extract_evidence_ksi_mappings.py
-├── mapping_summary.py
-├── evidence_sets_with_requirements.json
-└── README.md
-```
+The requirement mapping system:
 
-The scripts expect to find the source files in the parent directory:
-- `../8_29_25_paramify_coalfire_20x_machine_readable.yaml` - Machine readable YAML file
-- `../evidence_sets.json` - Original evidence sets file
+1. **Reads YAML Files**: Loads Paramify machine readable YAML files
+2. **Extracts KSI Mappings**: Finds evidence-KSI associations from YAML
+3. **Updates Evidence Sets**: Adds requirements to evidence sets JSON
+4. **Creates Output**: Generates updated evidence sets file with requirements
+5. **Analyzes Results**: Provides summary and analysis of mappings
 
 ## Usage
 
-### Extract Evidence-KSI Mappings
+### Basic Mapping (Simple)
+```bash
+python map_requirements.py
+```
 
-The main script can be used in several ways:
-
+### Advanced KSI Mapping (Recommended)
 ```bash
 # Use default files
 python extract_evidence_ksi_mappings.py
@@ -41,28 +41,22 @@ python extract_evidence_ksi_mappings.py my_assessment.yaml my_evidence_sets.json
 
 # Enable verbose output
 python extract_evidence_ksi_mappings.py --verbose
-
-# Show help
-python extract_evidence_ksi_mappings.py --help
 ```
 
-**Default Files:**
-- YAML file: `../8_29_25_paramify_coalfire_20x_machine_readable.yaml`
-- Evidence sets: `../evidence_sets.json`
-- Output: `evidence_sets_with_requirements.json`
-
 ### Analyze Mappings
-
 ```bash
 # Use default file
 python mapping_summary.py
 
 # Specify custom file
 python mapping_summary.py my_evidence_sets_with_requirements.json
-
-# Show help
-python mapping_summary.py --help
 ```
+
+## Default Files
+
+- YAML file: `../8_29_25_paramify_coalfire_20x_machine_readable.yaml`
+- Evidence sets: `../evidence_sets.json`
+- Output: `evidence_sets_with_requirements.json`
 
 ## How It Works
 
@@ -91,8 +85,13 @@ The updated evidence sets include a new `requirements` field:
       "description": "Evidence for security group configurations and rules",
       "service": "AWS",
       "instructions": "Script: security_groups.sh...",
-      "validation_rules": [],
-      "expected_outcome": "JSON contains security group rules and configurations",
+      "validationRules": [
+        {
+          "id": 1,
+          "regex": "regex_pattern_here",
+          "logic": "IF match.group(1) == expected_value THEN PASS"
+        }
+      ],
       "requirements": [
         "CED-01",
         "CNA-01", 
@@ -131,34 +130,9 @@ The script recognizes these KSI categories:
 - Python 3.6+
 - PyYAML library (`pip install pyyaml`)
 
-## Examples
+## Next Steps
 
-### Basic Usage
-```bash
-# Extract mappings with default files
-python extract_evidence_ksi_mappings.py
+After mapping requirements:
 
-# Analyze the results
-python mapping_summary.py
-```
-
-### Custom Files
-```bash
-# Process a different assessment
-python extract_evidence_ksi_mappings.py new_assessment.yaml custom_evidence_sets.json new_output.json
-
-# Analyze custom output
-python mapping_summary.py new_output.json
-```
-
-### Verbose Output
-```bash
-# See detailed processing information
-python extract_evidence_ksi_mappings.py --verbose
-```
-
-## Troubleshooting
-
-- **File not found errors**: Ensure the YAML and evidence sets files exist
-- **No mappings found**: Check that the YAML file contains evidence entries with proper structure
-- **Missing requirements**: Some evidence sets may not have direct mappings in the YAML file
+1. **Create Evidence Sets in Paramify** (option 2): Upload with requirements
+2. **Run Fetchers** (option 3): Execute evidence collection

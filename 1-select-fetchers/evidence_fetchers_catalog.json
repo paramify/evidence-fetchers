@@ -19,10 +19,15 @@
             "description": "Evidence for Auto Scaling group high availability configurations",
             "id": "EVD-AUTO-SCALING-HA",
             "instructions": "Script: auto_scaling_high_availability.sh. Commands executed: aws autoscaling describe-auto-scaling-groups, aws autoscaling describe-launch-configurations",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains Auto Scaling group configurations and availability zone distributions",
-            "dependencies": ["aws-cli"],
-            "tags": ["high-availability", "autoscaling", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "high-availability",
+              "autoscaling",
+              "aws"
+            ],
+            "validationRules": []
           },
           "aws_component_ssl_enforcement": {
             "script_file": "fetchers/aws/aws_component_ssl_enforcement_status.sh",
@@ -30,10 +35,19 @@
             "description": "Evidence for SSL/TLS enforcement across AWS components including S3 buckets and RDS instances",
             "id": "EVD-AWS-SSL-ENFORCEMENT",
             "instructions": "Script: aws_component_ssl_enforcement_status.sh. Commands executed: aws s3api list-buckets, aws s3api get-bucket-policy, aws rds describe-db-instances, aws rds describe-db-parameters",
-            "validation_rules": ["\"ssl_enforced\":\\s*true"],
-            "expected_outcome": "JSON contains SSL enforcement status for S3 buckets and RDS instances",
-            "dependencies": ["aws-cli"],
-            "tags": ["ssl", "encryption", "s3", "rds", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "ssl",
+              "encryption",
+              "s3",
+              "rds",
+              "aws"
+            ],
+            "validationRules": [
+              "\"ssl_enforced\":\\s*true"
+            ]
           },
           "aws_config_conformance_packs": {
             "script_file": "fetchers/aws/aws_config_conformance_packs.sh",
@@ -41,10 +55,15 @@
             "description": "Evidence for AWS Config conformance pack compliance and rule evaluations",
             "id": "EVD-CONFIG-PACKS",
             "instructions": "Script: aws_config_conformance_packs.sh. Commands executed: aws configservice describe-conformance-packs, aws configservice describe-conformance-pack-status, aws configservice get-conformance-pack-compliance-summary, aws configservice get-conformance-pack-compliance-details",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains conformance pack details and compliance status",
-            "dependencies": ["aws-cli"],
-            "tags": ["config", "compliance", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "config",
+              "compliance",
+              "aws"
+            ],
+            "validationRules": []
           },
           "aws_config_monitoring": {
             "script_file": "fetchers/aws/aws_config_monitoring.sh",
@@ -52,10 +71,15 @@
             "description": "Evidence for AWS Config service monitoring and recording status",
             "id": "EVD-CONFIG-MONITORING",
             "instructions": "Script: aws_config_monitoring.sh. Commands executed: aws configservice describe-configuration-recorders, aws configservice describe-configuration-recorder-status, aws configservice describe-delivery-channels",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains configuration recorder status and delivery channel configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["config", "monitoring", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "config",
+              "monitoring",
+              "aws"
+            ],
+            "validationRules": []
           },
           "backup_recovery_high_availability": {
             "script_file": "fetchers/aws/backup_recovery_high_availability.sh",
@@ -63,10 +87,15 @@
             "description": "Evidence for backup and recovery high availability configurations",
             "id": "EVD-BACKUP-RECOVERY-HA",
             "instructions": "Script: backup_recovery_high_availability.sh. Commands executed: aws backup list-backup-vaults, aws backup list-backup-plans",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains backup vault and plan configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["backup", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "backup",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "backup_validation": {
             "script_file": "fetchers/aws/backup_validation.sh",
@@ -74,10 +103,15 @@
             "description": "Evidence for backup validation and compliance",
             "id": "EVD-BACKUP-VALIDATION",
             "instructions": "Script: backup_validation.sh. Commands executed: aws backup list-backup-jobs, aws backup list-recovery-points",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains backup job status and recovery point details",
-            "dependencies": ["aws-cli"],
-            "tags": ["backup", "validation", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "backup",
+              "validation",
+              "aws"
+            ],
+            "validationRules": []
           },
           "block_storage_encryption_status": {
             "script_file": "fetchers/aws/block_storage_encryption_status.sh",
@@ -85,10 +119,19 @@
             "description": "Evidence for EBS volume encryption status and configurations",
             "id": "EVD-BLOCK-ENC",
             "instructions": "Script: block_storage_encryption_status.sh. Commands executed: aws ec2 get-ebs-encryption-by-default, aws ec2 get-ebs-default-kms-key-id, aws ec2 describe-volumes, aws efs describe-file-systems",
-            "validation_rules": ["\"Encrypted\":\\s*true"],
-            "expected_outcome": "JSON contains EBS and EFS encryption configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["encryption", "storage", "ebs", "efs", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "encryption",
+              "storage",
+              "ebs",
+              "efs",
+              "aws"
+            ],
+            "validationRules": [
+              "\"Encrypted\":\\s*true"
+            ]
           },
           "cloudwatch_high_availability": {
             "script_file": "fetchers/aws/cloudwatch_high_availability.sh",
@@ -96,10 +139,16 @@
             "description": "Evidence for CloudWatch monitoring high availability",
             "id": "EVD-CLOUDWATCH-HA",
             "instructions": "Script: cloudwatch_high_availability.sh. Commands executed: aws cloudwatch describe-alarms, aws logs describe-log-groups",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains CloudWatch alarms and log group configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["monitoring", "cloudwatch", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "monitoring",
+              "cloudwatch",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "database_high_availability": {
             "script_file": "fetchers/aws/database_high_availability.sh",
@@ -107,10 +156,17 @@
             "description": "Evidence for database high availability configurations",
             "id": "EVD-DATABASE-HA",
             "instructions": "Script: database_high_availability.sh. Commands executed: aws rds describe-db-instances, aws rds describe-db-clusters",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains RDS instance and Aurora cluster configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["database", "rds", "aurora", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "database",
+              "rds",
+              "aurora",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "detect_new_aws_resource": {
             "script_file": "fetchers/aws/detect_new_aws_resource.sh",
@@ -118,10 +174,17 @@
             "description": "Evidence for AWS Config and EventBridge setup for new resource detection and monitoring",
             "id": "EVD-DETECT-NEW-RESOURCE",
             "instructions": "Script: detect_new_aws_resource.sh. Commands executed: aws configservice describe-configuration-recorders, aws events list-rules, aws sns list-topics",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains AWS Config, EventBridge, and SNS configurations for resource monitoring",
-            "dependencies": ["aws-cli"],
-            "tags": ["monitoring", "config", "eventbridge", "sns", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "monitoring",
+              "config",
+              "eventbridge",
+              "sns",
+              "aws"
+            ],
+            "validationRules": []
           },
           "efs_high_availability": {
             "script_file": "fetchers/aws/efs_high_availability.sh",
@@ -129,10 +192,16 @@
             "description": "Evidence for EFS high availability configurations",
             "id": "EVD-EFS-HA",
             "instructions": "Script: efs_high_availability.sh. Commands executed: aws efs describe-file-systems, aws efs describe-mount-targets",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains EFS file system and mount target configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["efs", "storage", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "efs",
+              "storage",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "eks_high_availability": {
             "script_file": "fetchers/aws/eks_high_availability.sh",
@@ -140,10 +209,16 @@
             "description": "Evidence for EKS cluster high availability configurations",
             "id": "EVD-EKS-HA",
             "instructions": "Script: eks_high_availability.sh. Commands executed: aws eks list-clusters, aws eks describe-cluster, aws eks list-nodegroups, aws eks describe-nodegroup",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains EKS cluster and node group configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["eks", "kubernetes", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "eks",
+              "kubernetes",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "eks_least_privilege": {
             "script_file": "fetchers/aws/eks_least_privilege.sh",
@@ -151,10 +226,17 @@
             "description": "Evidence for EKS cluster least privilege access controls and RBAC configurations",
             "id": "EVD-EKS-PRIV",
             "instructions": "Script: eks_least_privilege.sh. Commands executed: aws eks describe-cluster, aws eks list-pod-identity-associations, aws eks list-addons",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains EKS cluster logging and add-on configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["eks", "kubernetes", "security", "rbac", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "eks",
+              "kubernetes",
+              "security",
+              "rbac",
+              "aws"
+            ],
+            "validationRules": []
           },
           "guard_duty": {
             "script_file": "fetchers/aws/guard_duty.sh",
@@ -162,10 +244,16 @@
             "description": "Evidence for GuardDuty threat detection configuration",
             "id": "EVD-GUARD-DUTY",
             "instructions": "Script: guard_duty.sh. Commands executed: aws guardduty list-detectors, aws guardduty get-detector, aws guardduty get-findings",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains GuardDuty detector configurations and findings",
-            "dependencies": ["aws-cli"],
-            "tags": ["security", "threat-detection", "guardduty", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "security",
+              "threat-detection",
+              "guardduty",
+              "aws"
+            ],
+            "validationRules": []
           },
           "iam_identity_center": {
             "script_file": "fetchers/aws/iam_identity_center.sh",
@@ -173,10 +261,16 @@
             "description": "Evidence for IAM Identity Center configurations",
             "id": "EVD-IAM-IDENTITY-CENTER",
             "instructions": "Script: iam_identity_center.sh. Commands executed: aws sso-admin list-instances, aws sso-admin list-permission-sets",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains IAM Identity Center instance and permission set configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["iam", "identity", "sso", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "iam",
+              "identity",
+              "sso",
+              "aws"
+            ],
+            "validationRules": []
           },
           "iam_policies": {
             "script_file": "fetchers/aws/iam_policies.sh",
@@ -184,10 +278,16 @@
             "description": "Evidence for IAM policy configurations and compliance",
             "id": "EVD-IAM-POLICIES",
             "instructions": "Script: iam_policies.sh. Commands executed: aws iam list-policies, aws iam get-policy, aws iam get-policy-version",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains IAM policy details and versions",
-            "dependencies": ["aws-cli"],
-            "tags": ["iam", "policies", "security", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "iam",
+              "policies",
+              "security",
+              "aws"
+            ],
+            "validationRules": []
           },
           "iam_roles": {
             "script_file": "fetchers/aws/iam_roles.sh",
@@ -195,10 +295,16 @@
             "description": "Evidence for IAM role configurations including trust policies, attached policies, and instance profiles",
             "id": "EVD-IAM-ROLES",
             "instructions": "Script: iam_roles.sh. Commands executed: aws iam list-roles, aws iam get-role, aws iam list-attached-role-policies, aws iam list-instance-profiles-for-role, aws iam get-account-password-policy",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains comprehensive IAM role details and account password policy",
-            "dependencies": ["aws-cli"],
-            "tags": ["iam", "roles", "security", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "iam",
+              "roles",
+              "security",
+              "aws"
+            ],
+            "validationRules": []
           },
           "iam_users_groups": {
             "script_file": "fetchers/aws/iam_users_groups.sh",
@@ -206,10 +312,17 @@
             "description": "Evidence for IAM user and group configurations",
             "id": "EVD-IAM-USERS-GROUPS",
             "instructions": "Script: iam_users_groups.sh. Commands executed: aws iam list-users, aws iam list-groups, aws iam get-user, aws iam get-group",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains IAM user and group details",
-            "dependencies": ["aws-cli"],
-            "tags": ["iam", "users", "groups", "security", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "iam",
+              "users",
+              "groups",
+              "security",
+              "aws"
+            ],
+            "validationRules": []
           },
           "kms_key_rotation": {
             "script_file": "fetchers/aws/kms_key_rotation.sh",
@@ -217,10 +330,16 @@
             "description": "Evidence for KMS key rotation policies and status",
             "id": "EVD-KMS-ROT",
             "instructions": "Script: kms_key_rotation.sh. Commands executed: aws kms list-keys, aws kms describe-key, aws kms get-key-rotation-status",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains KMS key details and rotation status",
-            "dependencies": ["aws-cli"],
-            "tags": ["kms", "encryption", "key-rotation", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "kms",
+              "encryption",
+              "key-rotation",
+              "aws"
+            ],
+            "validationRules": []
           },
           "load_balancer_encryption_status": {
             "script_file": "fetchers/aws/load_balancer_encryption_status.sh",
@@ -228,10 +347,18 @@
             "description": "Evidence for load balancer encryption configurations and SSL policies",
             "id": "EVD-LB-ENC-STATUS",
             "instructions": "Script: load_balancer_encryption_status.sh. Commands executed: aws elbv2 describe-load-balancers, aws elbv2 describe-listeners",
-            "validation_rules": ["\"encrypted\":\\s*true"],
-            "expected_outcome": "JSON contains load balancer encryption status for ALB and NLB",
-            "dependencies": ["aws-cli"],
-            "tags": ["load-balancer", "encryption", "ssl", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "load-balancer",
+              "encryption",
+              "ssl",
+              "aws"
+            ],
+            "validationRules": [
+              "\"encrypted\":\\s*true"
+            ]
           },
           "load_balancer_high_availability": {
             "script_file": "fetchers/aws/load_balancer_high_availability.sh",
@@ -239,10 +366,15 @@
             "description": "Evidence for load balancer high availability configurations",
             "id": "EVD-LB-HA",
             "instructions": "Script: load_balancer_high_availability.sh. Commands executed: aws elbv2 describe-load-balancers, aws elbv2 describe-target-groups, aws elbv2 describe-load-balancer-attributes",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains load balancer configurations and attributes",
-            "dependencies": ["aws-cli"],
-            "tags": ["load-balancer", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "load-balancer",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "network_resilience_high_availability": {
             "script_file": "fetchers/aws/network_resilience_high_availability.sh",
@@ -250,10 +382,16 @@
             "description": "Evidence for network resilience and high availability configurations",
             "id": "EVD-NETWORK-RESILIENCE-HA",
             "instructions": "Script: network_resilience_high_availability.sh. Commands executed: aws ec2 describe-vpcs, aws ec2 describe-subnets, aws ec2 describe-route-tables",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains VPC, subnet, and routing configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["network", "vpc", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "network",
+              "vpc",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "rds_encryption_status": {
             "script_file": "fetchers/aws/rds_encryption_status.sh",
@@ -261,10 +399,18 @@
             "description": "Evidence for RDS database encryption at rest and in transit",
             "id": "EVD-RDS-ENC",
             "instructions": "Script: rds_encryption_status.sh. Commands executed: aws rds describe-db-instances, aws rds describe-db-clusters",
-            "validation_rules": ["\"StorageEncrypted\":\\s*true"],
-            "expected_outcome": "JSON contains RDS encryption configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["rds", "encryption", "database", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "rds",
+              "encryption",
+              "database",
+              "aws"
+            ],
+            "validationRules": [
+              "\"StorageEncrypted\":\\s*true"
+            ]
           },
           "route53_high_availability": {
             "script_file": "fetchers/aws/route53_high_availability.sh",
@@ -272,10 +418,16 @@
             "description": "Evidence for Route 53 high availability configurations",
             "id": "EVD-ROUTE53-HA",
             "instructions": "Script: route53_high_availability.sh. Commands executed: aws route53 list-health-checks, aws route53 get-health-check-status",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains Route 53 health check configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["route53", "dns", "high-availability", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "route53",
+              "dns",
+              "high-availability",
+              "aws"
+            ],
+            "validationRules": []
           },
           "s3_encryption_status": {
             "script_file": "fetchers/aws/s3_encryption_status.sh",
@@ -283,10 +435,19 @@
             "description": "Evidence for S3 bucket encryption configurations and policies",
             "id": "EVD-S3-ENC",
             "instructions": "Script: s3_encryption_status.sh. Commands executed: aws s3api list-buckets, aws s3api get-bucket-encryption",
-            "validation_rules": ["\"ServerSideEncryptionConfiguration\"", "\"ApplyServerSideEncryptionByDefault\""],
-            "expected_outcome": "JSON contains S3 bucket encryption configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["s3", "encryption", "storage", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "s3",
+              "encryption",
+              "storage",
+              "aws"
+            ],
+            "validationRules": [
+              "\"ServerSideEncryptionConfiguration\"",
+              "\"ApplyServerSideEncryptionByDefault\""
+            ]
           },
           "s3_mfa_delete": {
             "script_file": "fetchers/aws/s3_mfa_delete.py",
@@ -294,10 +455,20 @@
             "description": "Evidence for S3 bucket MFA delete configuration, particularly for CloudTrail buckets",
             "id": "EVD-S3-MFA-DELETE",
             "instructions": "Script: s3_mfa_delete.py. Commands executed: aws s3api get-bucket-versioning",
-            "validation_rules": ["\"MFADelete\":\\s*\"Enabled\"", "\"Status\":\\s*\"Enabled\""],
-            "expected_outcome": "JSON contains S3 bucket versioning and MFA delete status",
-            "dependencies": ["aws-cli", "python3"],
-            "tags": ["s3", "mfa", "cloudtrail", "aws"]
+            "dependencies": [
+              "aws-cli",
+              "python3"
+            ],
+            "tags": [
+              "s3",
+              "mfa",
+              "cloudtrail",
+              "aws"
+            ],
+            "validationRules": [
+              "\"MFADelete\":\\s*\"Enabled\"",
+              "\"Status\":\\s*\"Enabled\""
+            ]
           },
           "security_groups": {
             "script_file": "fetchers/aws/security_groups.sh",
@@ -305,10 +476,16 @@
             "description": "Evidence for security group configurations and rules",
             "id": "EVD-SECURITY-GROUPS",
             "instructions": "Script: security_groups.sh. Commands executed: aws ec2 describe-security-groups",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains security group rules and configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["security-groups", "network", "security", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "security-groups",
+              "network",
+              "security",
+              "aws"
+            ],
+            "validationRules": []
           },
           "waf_all_rules": {
             "script_file": "fetchers/aws/waf_all_rules.sh",
@@ -316,10 +493,16 @@
             "description": "Evidence for all WAF rules and configurations",
             "id": "EVD-WAF-ALL-RULES",
             "instructions": "Script: waf_all_rules.sh. Commands executed: aws wafv2 list-web-acls, aws wafv2 get-web-acl, aws wafv2 list-rule-groups",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains comprehensive WAF rule configurations",
-            "dependencies": ["aws-cli"],
-            "tags": ["waf", "security", "web-application-firewall", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "waf",
+              "security",
+              "web-application-firewall",
+              "aws"
+            ],
+            "validationRules": []
           },
           "waf_dos_rules": {
             "script_file": "fetchers/aws/waf_DoS_rules.sh",
@@ -327,10 +510,16 @@
             "description": "Evidence for WAF DoS protection rules and configurations",
             "id": "EVD-WAF-DOS-RULES",
             "instructions": "Script: waf_DoS_rules.sh. Commands executed: aws wafv2 list-web-acls, aws wafv2 get-web-acl",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains WAF web ACL configurations and rules",
-            "dependencies": ["aws-cli"],
-            "tags": ["waf", "dos", "security", "aws"]
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "waf",
+              "dos",
+              "security",
+              "aws"
+            ],
+            "validationRules": []
           }
         }
       },
@@ -344,10 +533,18 @@
             "description": "Evidence for EKS microservice segmentation including network policies, security groups, and resource limits",
             "id": "EVD-EKS-MICROSERVICE-SEG",
             "instructions": "Script: eks_microservice_segmentation.sh. Commands executed: kubectl get networkpolicies, kubectl describe daemonset aws-node, aws ec2 describe-instances",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains EKS cluster segmentation configurations and security policies",
-            "dependencies": ["kubectl", "aws-cli"],
-            "tags": ["eks", "kubernetes", "microservices", "segmentation", "network-policies"]
+            "dependencies": [
+              "kubectl",
+              "aws-cli"
+            ],
+            "tags": [
+              "eks",
+              "kubernetes",
+              "microservices",
+              "segmentation",
+              "network-policies"
+            ],
+            "validationRules": []
           },
           "eks_pod_inventory": {
             "script_file": "fetchers/k8s/eks_pod_inventory.sh",
@@ -355,10 +552,17 @@
             "description": "Evidence for EKS pod inventory and security analysis",
             "id": "EVD-EKS-POD-INVENTORY",
             "instructions": "Script: eks_pod_inventory.sh. Commands executed: kubectl get pods, kubectl describe pods",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains EKS pod inventory and security configurations",
-            "dependencies": ["kubectl"],
-            "tags": ["eks", "kubernetes", "pods", "inventory", "security"]
+            "dependencies": [
+              "kubectl"
+            ],
+            "tags": [
+              "eks",
+              "kubernetes",
+              "pods",
+              "inventory",
+              "security"
+            ],
+            "validationRules": []
           },
           "kubectl_security": {
             "script_file": "fetchers/k8s/kubectl_security.sh",
@@ -366,10 +570,17 @@
             "description": "Evidence for Kubernetes security configuration validation",
             "id": "EVD-KUBECTL-SECURITY",
             "instructions": "Script: kubectl_security.sh. Commands executed: kubectl get clusterroles, kubectl get clusterrolebindings, kubectl get networkpolicies",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains Kubernetes security configurations and policies",
-            "dependencies": ["kubectl"],
-            "tags": ["kubernetes", "security", "rbac", "clusterroles", "network-policies"]
+            "dependencies": [
+              "kubectl"
+            ],
+            "tags": [
+              "kubernetes",
+              "security",
+              "rbac",
+              "clusterroles",
+              "network-policies"
+            ],
+            "validationRules": []
           }
         }
       },
@@ -383,10 +594,17 @@
             "description": "Evidence for role-specific training compliance and completion status",
             "id": "EVD-ROLE-SPECIFIC-TRAINING",
             "instructions": "Script: role_specific_training.sh. Commands executed: KnowBe4 API calls for role-specific training data",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains role-specific training completion and compliance data",
-            "dependencies": ["curl", "jq"],
-            "tags": ["training", "compliance", "role-based", "knowbe4"]
+            "dependencies": [
+              "curl",
+              "jq"
+            ],
+            "tags": [
+              "training",
+              "compliance",
+              "role-based",
+              "knowbe4"
+            ],
+            "validationRules": []
           },
           "security_awareness_training": {
             "script_file": "fetchers/knowbe4/security_awareness_training.sh",
@@ -394,10 +612,17 @@
             "description": "Evidence for security awareness training compliance and user completion status",
             "id": "EVD-SECURITY-AWARENESS-TRAINING",
             "instructions": "Script: security_awareness_training.sh. Commands executed: KnowBe4 API calls for user training data and enrollments",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains security awareness training completion rates and user status",
-            "dependencies": ["curl", "jq"],
-            "tags": ["training", "security-awareness", "compliance", "knowbe4"]
+            "dependencies": [
+              "curl",
+              "jq"
+            ],
+            "tags": [
+              "training",
+              "security-awareness",
+              "compliance",
+              "knowbe4"
+            ],
+            "validationRules": []
           }
         }
       },
@@ -411,10 +636,18 @@
             "description": "Evidence for Okta authenticator configuration and phishing-resistant MFA validation",
             "id": "EVD-OKTA-AUTHENTICATORS",
             "instructions": "Script: okta_authenticators.sh. Commands executed: Okta API calls for authenticator configuration, enrollment policies, and policy simulation",
-            "validation_rules": [],
-            "expected_outcome": "JSON contains Okta authenticator configurations and MFA policy analysis",
-            "dependencies": ["curl", "jq"],
-            "tags": ["okta", "mfa", "authenticators", "phishing-resistant", "identity"]
+            "dependencies": [
+              "curl",
+              "jq"
+            ],
+            "tags": [
+              "okta",
+              "mfa",
+              "authenticators",
+              "phishing-resistant",
+              "identity"
+            ],
+            "validationRules": []
           }
         }
       }

@@ -5,12 +5,20 @@ Evidence Sets Generator
 This script generates a custom evidence_sets.json file based on customer selections
 from the customer_config.json file and the master catalog in evidence_fetchers_catalog.json.
 
+The script automatically escapes regex patterns in validation rules for safe JSON storage.
+
 Usage:
     python generate_evidence_sets.py [customer_config.json] [output_file.json]
 
 If no arguments are provided, it will use:
     - customer_config.json (default customer config)
     - evidence_sets.json (default output file)
+
+Features:
+    - Generates evidence sets from customer configuration
+    - Automatically escapes regex patterns for JSON storage
+    - Processes validation rules with proper JSON escaping
+    - Provides detailed logging of regex processing
 """
 
 import json
@@ -31,6 +39,58 @@ def load_json_file(file_path: str) -> Dict[str, Any]:
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON in '{file_path}': {e}")
         sys.exit(1)
+
+
+def escape_regex_for_json(regex_pattern: str) -> str:
+    """
+    Escape a regex pattern for safe storage in JSON.
+    
+    Args:
+        regex_pattern (str): The raw regex pattern to escape
+        
+    Returns:
+        str: The escaped regex pattern safe for JSON storage
+    """
+    return json.dumps(regex_pattern)
+
+
+def process_validation_rules(validation_rules: List[Any]) -> List[Dict[str, Any]]:
+    """
+    Process validation rules and escape regex patterns for JSON storage.
+    
+    Handles both string format (from catalog) and object format (from existing evidence sets).
+    
+    Args:
+        validation_rules (List[Any]): List of validation rules (strings or objects)
+        
+    Returns:
+        List[Dict[str, Any]]: Processed validation rules with escaped regex patterns
+    """
+    if not validation_rules:
+        return []
+    
+    processed_rules = []
+    for i, rule in enumerate(validation_rules):
+        if isinstance(rule, str):
+            # Handle string format from catalog - convert to object format
+            processed_rule = {
+                "id": i + 1,
+                "regex": escape_regex_for_json(rule),
+                "logic": "IF match.group(1) == expected_value THEN PASS"
+            }
+        elif isinstance(rule, dict):
+            # Handle object format - escape the regex if it exists
+            processed_rule = rule.copy()
+            if 'regex' in rule and rule['regex']:
+                processed_rule['regex'] = escape_regex_for_json(rule['regex'])
+        else:
+            # Skip invalid rule formats
+            print(f"    Warning: Skipping invalid validation rule format: {type(rule)}")
+            continue
+        
+        processed_rules.append(processed_rule)
+    
+    return processed_rules
 
 
 def validate_customer_config(config: Dict[str, Any]) -> bool:
@@ -80,6 +140,9 @@ def generate_evidence_sets(catalog: Dict[str, Any], customer_config: Dict[str, A
             
             script_info = category_scripts[script_name]
             
+            # Process validation rules and escape regex patterns
+            processed_validation_rules = process_validation_rules(script_info.get("validationRules", []))
+            
             # Create evidence set entry
             evidence_set_entry = {
                 "id": script_info["id"],
@@ -87,12 +150,20 @@ def generate_evidence_sets(catalog: Dict[str, Any], customer_config: Dict[str, A
                 "description": script_info["description"],
                 "service": category_name.upper(),
                 "instructions": script_info["instructions"],
-                "validation_rules": script_info["validation_rules"],
-                "expected_outcome": script_info["expected_outcome"]
+                "validationRules": processed_validation_rules,
+                # "expected_outcome" field removed
             }
             
             evidence_sets["evidence_sets"][script_name] = evidence_set_entry
-            print(f"  Added: {script_name}")
+            
+            # Log validation rules processing
+            if processed_validation_rules:
+                print(f"  Added: {script_name} (with {len(processed_validation_rules)} validation rules)")
+                for rule in processed_validation_rules:
+                    if 'regex' in rule:
+                        print(f"    - Rule {rule.get('id', 'N/A')}: Regex pattern escaped for JSON")
+            else:
+                print(f"  Added: {script_name}")
     
     return evidence_sets
 

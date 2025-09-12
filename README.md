@@ -1,335 +1,277 @@
 # Evidence Fetchers
 
-A system for collecting compliance evidence from AWS and other services and uploading it to Paramify.
+A comprehensive system for collecting, managing, and uploading evidence for compliance and security assessments.
 
-## Overview
+## Quick Start
 
-This system consists of:
+Run the main script to access all functionality:
 
-1. **Fetchers** - Individual Python modules and bash scripts that collect evidence from AWS services
-2. **Evidence Sets** - JSON configuration defining evidence sets in Paramify
-3. **Main Fetcher** - Main orchestrator that runs bash scripts for different providers (AWS, KnowBe4, etc.)
-4. **Paramify Pusher** - Uploads evidence to Paramify via API with automatic Evidence Object creation
-
-## Architecture
-
-### Fetcher Structure
-
-The system supports both Python modules and bash scripts:
-
-**Bash Scripts (Primary):**
-- Located in `fetchers/{provider}/` directories (e.g., `fetchers/aws/`, `fetchers/knowbe4/`)
-- Each script outputs a single JSON file with evidence
-- Scripts are executed by the main fetcher with provider-specific parameters
-
-**Python Modules (Legacy):**
-- Located in `fetchers/` directory
-- Follow the template structure below
-
-**Python Fetcher Template:**
-```python
-"""
-Fetcher: S3 MFA Delete for CloudTrail bucket
-
-AWS CLI Command:
-    aws s3api get-bucket-versioning --bucket DOC-EXAMPLE-BUCKET1 --output json
-
-AWS API Call:
-    boto3.client("s3").get_bucket_versioning(Bucket="DOC-EXAMPLE-BUCKET1")
-
-Validator Rules:
-    "Status":\s*"Enabled"
-    "MFADelete":\s*"Enabled"
-
-Expected Outcome:
-    JSON contains both Status=Enabled and MFADelete=Enabled
-"""
-
-def run(target_resource, evidence_dir):
-    # 1. Call AWS CLI or Boto3 to get raw data
-    # 2. Save JSON exactly as returned to evidence_dir
-    # 3. Apply validator regex rules to check compliance
-    # 4. Return (status, evidence_file_path)
-    pass
+```bash
+python main.py
 ```
 
-### Evidence Storage
+## Main Options
 
-**Folder layout:**
+**0) Prerequisites** - Set up environment variables and check dependencies  
+*Files: `0-prerequisites/`*
+
+**1) Select Fetchers** - Choose which evidence fetcher scripts to use and generate evidence_sets.json  
+*Files: `1-select-fetchers/`*
+
+**2) Create Evidence Sets in Paramify** - Upload evidence sets to Paramify via API  
+*Files: `2-create-evidence-sets/`*
+
+**3) Run Fetchers** - Execute evidence fetcher scripts and store evidence files  
+*Files: `3-run-fetchers/`*
+
+**4) Tests** - Run validation and test scripts  
+*Files: `4-tests/`*
+
+**5) Add New Fetcher Script** - Add a new fetcher to the library with GitHub contribution instructions  
+*Files: `5-add-new-fetcher/`*
+
+**6) Evidence Requirement Mapping** - Map evidence to requirements from Paramify YAML files  
+*Files: `6-evidence-requirement-mapping/`*
+
+---
+
+## Detailed Documentation
+
+### 0) Prerequisites
+
+**Purpose**: Set up the environment and check dependencies before using the system.
+
+**What it does**:
+- Checks for required environment variables (.env file)
+- Validates that all dependencies are installed
+- Provides setup instructions for Paramify, AWS, and Kubernetes
+
+**Files**:
+- `0-prerequisites/prerequisites.py` - Main prerequisites script
+- `0-prerequisites/README.md` - Detailed setup instructions
+
+**Usage**:
+```bash
+python 0-prerequisites/prerequisites.py
 ```
-evidence/
-  2025_08_15_151101/
-    auto_scaling_high_availability.json
-    aws_config_conformance_packs.json
-    block_storage_encryption_status.json
-    summary.json
+
+### 1) Select Fetchers
+
+**Purpose**: Choose which evidence fetcher scripts you want to use and generate a custom evidence_sets.json file.
+
+**What it does**:
+- Shows available evidence fetcher scripts by category
+- Allows interactive selection of scripts
+- Generates evidence_sets.json for Paramify upload
+- Creates customer_config.json for your selections
+
+**Files**:
+- `1-select-fetchers/select_fetchers.py` - Main selection script
+- `1-select-fetchers/generate_evidence_sets.py` - Evidence sets generator
+- `1-select-fetchers/customer_config_template.json` - Template for customer configuration
+- `1-select-fetchers/evidence_fetchers_catalog.json` - Complete catalog of all available scripts
+- `1-select-fetchers/README.md` - Detailed selection guide
+
+**Usage**:
+```bash
+python 1-select-fetchers/select_fetchers.py
 ```
 
-**File naming rule:** `<script-name>.json`
+### 2) Create Evidence Sets in Paramify
 
-**Contents:** Exactly the JSON returned by AWS CLI or scripts (no extra metadata)
+**Purpose**: Upload evidence sets to Paramify via API and optionally upload fetcher scripts as evidence artifacts.
 
-## Installation
+**What it does**:
+- Reads evidence_sets.json generated in step 1
+- Creates evidence sets in Paramify via API
+- Optionally uploads fetcher scripts as evidence artifacts
+- Records upload results in upload_log.json
 
-1. **Install dependencies:**
+**Files**:
+- `2-create-evidence-sets/create_evidence_sets.py` - Main upload script
+- `2-create-evidence-sets/paramify_pusher.py` - Paramify API integration
+- `2-create-evidence-sets/README.md` - Detailed upload instructions
+
+**Usage**:
+```bash
+python 2-create-evidence-sets/create_evidence_sets.py
+```
+
+### 3) Run Fetchers
+
+**Purpose**: Execute the selected evidence fetcher scripts and store evidence in timestamped directories.
+
+**What it does**:
+- Reads evidence_sets.json to determine which scripts to run
+- Executes each fetcher script with appropriate parameters
+- Stores evidence files in timestamped directories under /evidence
+- Optionally uploads evidence files to Paramify via API
+- Creates execution summary and CSV reports
+
+**Files**:
+- `3-run-fetchers/run_fetchers.py` - Main execution script
+- `3-run-fetchers/main_fetcher.py` - Legacy fetcher execution script
+- `3-run-fetchers/README.md` - Detailed execution guide
+
+**Usage**:
+```bash
+python 3-run-fetchers/run_fetchers.py
+```
+
+### 4) Tests
+
+**Purpose**: Run validation and test scripts to ensure the system is working correctly.
+
+**What it does**:
+- Checks for required files and directories
+- Runs catalog validation
+- Executes evidence fetcher tests
+- Runs demo functionality tests
+- Provides comprehensive test summary
+
+**Files**:
+- `4-tests/run_tests.py` - Main test runner
+- `4-tests/simple_test.py` - Simple functionality test
+- `4-tests/test_system.py` - System integration test
+- `4-tests/debug_s3.py` - S3 debugging test
+- `4-tests/demo.py` - Demo functionality
+- `4-tests/README.md` - Test documentation
+
+**Usage**:
+```bash
+python 4-tests/run_tests.py
+```
+
+### 5) Add New Fetcher Script
+
+**Purpose**: Add a new evidence fetcher script to the library with proper integration and GitHub contribution instructions.
+
+**What it does**:
+- Provides interactive and command-line modes for adding scripts
+- Automatically extracts metadata from script files
+- Updates the evidence fetchers catalog
+- Validates catalog integrity
+- Provides GitHub contribution instructions
+
+**Files**:
+- `5-add-new-fetcher/add_new_fetcher.py` - Main addition script
+- `5-add-new-fetcher/add_evidence_fetcher.py` - Core addition functionality
+- `5-add-new-fetcher/validate_catalog.py` - Catalog validation
+- `5-add-new-fetcher/new_script_template.sh` - Bash script template
+- `5-add-new-fetcher/new_script_template.py` - Python script template
+- `5-add-new-fetcher/DEVELOPER_GUIDE.md` - Comprehensive developer guide
+- `5-add-new-fetcher/README.md` - Quick start guide
+
+**Usage**:
+```bash
+python 5-add-new-fetcher/add_new_fetcher.py
+```
+
+### 6) Evidence Requirement Mapping
+
+**Purpose**: Map evidence to requirements from Paramify machine readable YAML files and add requirement mappings to evidence sets.
+
+**What it does**:
+- Reads Paramify YAML files containing evidence-requirement mappings
+- Extracts evidence mappings from YAML data
+- Adds requirement mappings to evidence sets JSON
+- Creates updated evidence sets file with requirements
+
+**Files**:
+- `6-evidence-requirement-mapping/map_requirements.py` - Main mapping script
+- `6-evidence-requirement-mapping/paramify_evidence_mappings.json` - Existing evidence mappings
+- `6-evidence-requirement-mapping/README.md` - Mapping documentation
+
+**Usage**:
+```bash
+python 6-evidence-requirement-mapping/map_requirements.py
+```
+
+## Directory Structure
+
+```
+evidence-fetchers/
+├── main.py                          # Main menu system
+├── README.md                        # This file
+├── requirements.txt                 # Python dependencies
+├── .env                            # Environment variables (create this)
+├── evidence/                       # Evidence storage directory
+├── fetchers/                       # Evidence fetcher scripts
+│   ├── aws/                        # AWS-specific scripts
+│   ├── k8s/                        # Kubernetes scripts
+│   ├── knowbe4/                    # KnowBe4 scripts
+│   └── okta/                       # Okta scripts
+├── 0-prerequisites/                # Prerequisites setup
+├── 1-select-fetchers/              # Fetcher selection
+├── 2-create-evidence-sets/         # Paramify upload
+├── 3-run-fetchers/                 # Script execution
+├── 4-tests/                        # Testing and validation
+├── 5-add-new-fetcher/              # Adding new scripts
+└── 6-evidence-requirement-mapping/ # Requirement mapping
+```
+
+## Getting Started
+
+1. **Clone the repository**:
    ```bash
-   pip install -r requirements.txt
+   git clone <repository-url>
+   cd evidence-fetchers
    ```
 
-2. **Configure environment variables:**
+2. **Set up prerequisites**:
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   python main.py
+   # Choose option 0
    ```
 
-3. **Set up AWS credentials:**
+3. **Select your fetchers**:
    ```bash
-   aws configure
-   # or set AWS_PROFILE in .env file
+   python main.py
+   # Choose option 1
    ```
 
-## Usage
+4. **Create evidence sets in Paramify**:
+   ```bash
+   python main.py
+   # Choose option 2
+   ```
 
-### Running the Main Fetcher
+5. **Run the fetchers**:
+   ```bash
+   python main.py
+   # Choose option 3
+   ```
 
-**Show help and available options:**
-```bash
-python main_fetcher.py --help
-```
+## Environment Variables
 
-**Basic usage (runs all AWS scripts):**
-```bash
-python main_fetcher.py
-```
-
-**With specific AWS profile:**
-```bash
-python main_fetcher.py --profile my-aws-profile
-```
-
-**With specific provider:**
-```bash
-python main_fetcher.py --provider aws
-python main_fetcher.py --provider knowbe4
-```
-
-**With timeout (prevents hanging scripts):**
-```bash
-python main_fetcher.py --timeout 300
-```
-
-**List available providers and scripts:**
-```bash
-python main_fetcher.py --list
-```
-
-### Uploading to Paramify
-
-**Upload evidence from a run:**
-```bash
-python paramify_pusher.py evidence/2025_08_15_151101/summary.json
-```
-
-**With custom API token:**
-```bash
-python paramify_pusher.py evidence/2025_08_15_151101/summary.json --api-token your-token
-```
-
-**With custom base URL:**
-```bash
-python paramify_pusher.py evidence/2025_08_15_151101/summary.json --base-url https://stage.paramify.com/api/v0
-```
-
-## Configuration
-
-### Environment Variables (`.env`)
+Create a `.env` file with the following variables:
 
 ```bash
-# Paramify Configuration
-PARAMIFY_UPLOAD_API_TOKEN=your-api-token
-PARAMIFY_API_BASE_URL=https://stage.paramify.com/api/v0
+# Paramify API Configuration
+PARAMIFY_API_TOKEN=your_api_token_here
+PARAMIFY_API_BASE_URL=https://app.paramify.com/api/v0
 
-# AWS Configuration
-AWS_PROFILE=your-aws-profile
-AWS_REGION=us-east-1
-
-# KnowBe4 Configuration
-KNOWBE4_API_KEY=your-knowbe4-api-key
+# Optional: KnowBe4 Configuration
+KNOWBE4_API_KEY=your_knowbe4_api_key
 KNOWBE4_REGION=us
 
-# Default Provider
-DEFAULT_PROVIDER=aws
+# Optional: Okta Configuration
+OKTA_API_TOKEN=your_okta_api_token
+OKTA_ORG_URL=https://your-org.okta.com
 ```
 
-### Evidence Sets (`evidence_sets.json`)
+## Dependencies
 
-Defines evidence sets in Paramify with:
-- `id`: Paramify evidence set ID (e.g., "EVD-AUTO-SCALING-HA")
-- `name`: Human-readable name
-- `description`: Description of the evidence
-- `service`: Service provider (e.g., "AWS")
-- `instructions`: CLI/API commands used
-- `validation_rules`: Regex patterns to validate compliance
-- `expected_outcome`: Description of expected result
+- Python 3.x
+- AWS CLI
+- jq (JSON processor)
+- curl (HTTP client)
+- kubectl (for Kubernetes scripts)
 
-Example:
-```json
-{
-  "evidence_sets": {
-    "auto_scaling_high_availability": {
-      "id": "EVD-AUTO-SCALING-HA",
-      "name": "Auto Scaling High Availability",
-      "description": "Evidence for Auto Scaling group high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: auto_scaling_high_availability.sh. Commands executed: aws autoscaling describe-auto-scaling-groups",
-      "validation_rules": [],
-      "expected_outcome": "JSON contains Auto Scaling group configurations"
-    }
-  }
-}
-```
+## Support
 
-## Output Format
+For detailed instructions on each component, see the README.md files in each numbered directory.
 
-### Summary JSON
+For developer information, see `5-add-new-fetcher/DEVELOPER_GUIDE.md`.
 
-```json
-{
-  "timestamp": "2025-08-15T15:18:02.227871Z",
-  "provider": "aws",
-  "evidence_directory": "evidence/2025_08_15_151101",
-  "results": [
-    {
-      "script": "auto_scaling_high_availability",
-      "provider": "aws",
-      "status": "PASS",
-      "evidence_file": "evidence/2025_08_15_151101/auto_scaling_high_availability.json"
-    }
-  ]
-}
-```
-
-### Upload Log
-
-```json
-{
-  "upload_timestamp": "2025-08-15T22:07:00Z",
-  "results": [
-    {
-      "check": "auto_scaling_high_availability",
-      "resource": "unknown",
-      "status": "PASS",
-      "evidence_file": "evidence/2025_08_15_151101/auto_scaling_high_availability.json",
-      "evidence_object_id": "662817ec-093e-4515-b511-76df1fa9519c",
-      "upload_success": true,
-      "timestamp": "2025-08-15T22:07:00Z"
-    }
-  ]
-}
-```
-
-## Supported Providers
-
-### AWS
-- **Location:** `fetchers/aws/`
-- **Scripts:** 25+ compliance scripts covering:
-  - High Availability (Auto Scaling, RDS, EKS, etc.)
-  - Security (IAM, Security Groups, WAF, etc.)
-  - Encryption (S3, RDS, EBS, etc.)
-  - Monitoring (CloudWatch, Config, GuardDuty, etc.)
-- **Parameters:** `profile region output_dir output_csv`
-
-### KnowBe4
-- **Location:** `fetchers/knowbe4/`
-- **Scripts:** Security awareness training and role-specific training
-- **Parameters:** `output_dir`
-
-### Extending to New Providers
-1. Create `fetchers/{provider}/` directory
-2. Add bash scripts that output JSON files
-3. Update `main_fetcher.py` to handle provider-specific parameters
-4. Add evidence set mappings in `evidence_sets.json`
-
-## Paramify Integration
-
-The system automatically:
-
-1. **Creates Evidence Objects** in Paramify using reference IDs from `evidence_sets.json`
-2. **Checks for existing Evidence Objects** to avoid duplicates
-3. **Uploads evidence files** as artifacts with metadata
-4. **Handles errors gracefully** and logs all operations
-
-**API Endpoints Used:**
-- `GET /evidence` - Check for existing Evidence Objects
-- `POST /evidence` - Create new Evidence Objects
-- `POST /evidence/{id}/artifacts/upload` - Upload evidence files
-
-## Testing
-
-The system includes comprehensive tests in the `tests/` directory:
-
-### Run all tests:
-```bash
-python tests/run_tests.py
-```
-
-### Run individual tests:
-```bash
-python tests/test_system.py    # System validation
-python tests/demo.py           # Demo with mocked AWS
-python tests/simple_test.py    # Validation function test
-python tests/debug_s3.py       # S3 MFA Delete debug
-```
-
-### Test environment:
-Tests use mocked AWS responses and don't require real AWS credentials.
-
-## Troubleshooting
-
-### Common Issues
-
-1. **AWS credentials not configured:**
-   ```bash
-   aws configure
-   # or set AWS_PROFILE in .env file
-   ```
-
-2. **Paramify API token not set:**
-   ```bash
-   # Add to .env file:
-   PARAMIFY_UPLOAD_API_TOKEN=your-api-token
-   ```
-
-3. **Script execution errors:**
-   ```bash
-   # Make scripts executable:
-   chmod +x fetchers/aws/*.sh
-   ```
-
-4. **Timeout issues:**
-   ```bash
-   # Use timeout option:
-   python main_fetcher.py --timeout 600
-   ```
-
-5. **Upload failures:**
-   - Check API token permissions
-   - Verify staging vs production URLs
-   - Check network connectivity
-
-### Debug Mode
-
-Run individual scripts with verbose output:
-```bash
-# Test a specific script:
-./fetchers/aws/auto_scaling_high_availability.sh profile region output_dir /dev/null
-```
-
-## Contributing
-
-1. Follow the bash script template for new fetchers
-2. Include comprehensive documentation
-3. Test with real AWS resources
-4. Update evidence sets configuration
-5. Add to test configuration
-
+For customer setup, see `1-select-fetchers/CUSTOMER_SETUP_GUIDE.md`.

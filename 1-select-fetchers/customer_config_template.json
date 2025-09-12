@@ -1,0 +1,73 @@
+{
+  "customer_configuration": {
+    "metadata": {
+      "customer_name": "YOUR_COMPANY_NAME",
+      "configuration_version": "1.0.0",
+      "created_date": "2025-01-15",
+      "description": "Customer-specific evidence fetcher selection configuration"
+    },
+    "selected_evidence_fetchers": {
+      "aws": {
+        "enabled": true,
+        "selected_scripts": [
+          "auto_scaling_high_availability",
+          "aws_component_ssl_enforcement",
+          "aws_config_conformance_packs",
+          "aws_config_monitoring",
+          "backup_recovery_high_availability",
+          "backup_validation",
+          "block_storage_encryption_status",
+          "cloudwatch_high_availability",
+          "database_high_availability",
+          "detect_new_aws_resource",
+          "efs_high_availability",
+          "eks_high_availability",
+          "eks_least_privilege",
+          "guard_duty",
+          "iam_identity_center",
+          "iam_policies",
+          "iam_roles",
+          "iam_users_groups",
+          "kms_key_rotation",
+          "load_balancer_encryption_status",
+          "load_balancer_high_availability",
+          "network_resilience_high_availability",
+          "rds_encryption_status",
+          "route53_high_availability",
+          "s3_encryption_status",
+          "s3_mfa_delete",
+          "security_groups",
+          "waf_all_rules",
+          "waf_dos_rules"
+        ]
+      },
+      "k8s": {
+        "enabled": false,
+        "selected_scripts": [
+          "eks_microservice_segmentation",
+          "eks_pod_inventory",
+          "kubectl_security"
+        ]
+      },
+      "knowbe4": {
+        "enabled": false,
+        "selected_scripts": [
+          "role_specific_training",
+          "security_awareness_training"
+        ]
+      },
+      "okta": {
+        "enabled": false,
+        "selected_scripts": [
+          "okta_authenticators"
+        ]
+      }
+    },
+    "customization_notes": {
+      "aws": "Select only the AWS services you use. Remove scripts for services you don't use (e.g., if you don't use GuardDuty, remove 'guard_duty' from the list).",
+      "k8s": "Enable this if you use Kubernetes/EKS. Set enabled to true and select the scripts you need.",
+      "knowbe4": "Enable this if you use KnowBe4 for security awareness training. Requires KNOWBE4_API_KEY and KNOWBE4_REGION environment variables.",
+      "okta": "Enable this if you use Okta for identity management. Requires OKTA_API_TOKEN and OKTA_ORG_URL environment variables."
+    }
+  }
+}

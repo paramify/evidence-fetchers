@@ -6,6 +6,9 @@
       "description": "Evidence for Auto Scaling group high availability configurations",
       "service": "AWS",
       "instructions": "Script: auto_scaling_high_availability.sh. Commands executed: aws autoscaling describe-auto-scaling-groups, aws autoscaling describe-launch-configurations",
+      "requirements": [
+        "CNA-06"
+      ],
       "validationRules": []
     },
     "aws_config_conformance_packs": {
@@ -14,6 +17,10 @@
       "description": "Evidence for AWS Config conformance pack compliance and rule evaluations",
       "service": "AWS",
       "instructions": "Script: aws_config_conformance_packs.sh. Commands executed: aws configservice describe-conformance-packs, aws configservice describe-conformance-pack-status, aws configservice get-conformance-pack-compliance-summary, aws configservice get-conformance-pack-compliance-details",
+      "requirements": [
+        "CNA-07",
+        "SVC-01"
+      ],
       "validationRules": []
     },
     "aws_config_monitoring": {
@@ -22,22 +29,10 @@
       "description": "Evidence for AWS Config service monitoring and recording status",
       "service": "AWS",
       "instructions": "Script: aws_config_monitoring.sh. Commands executed: aws configservice describe-configuration-recorders, aws configservice describe-configuration-recorder-status, aws configservice describe-delivery-channels",
-      "validationRules": []
-    },
-    "backup_recovery_high_availability": {
-      "id": "EVD-BACKUP-RECOVERY-HA",
-      "name": "Backup Recovery High Availability",
-      "description": "Evidence for backup and recovery high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: backup_recovery_high_availability.sh. Commands executed: aws backup list-backup-vaults, aws backup list-backup-plans",
-      "validationRules": []
-    },
-    "backup_validation": {
-      "id": "EVD-BACKUP-VALIDATION",
-      "name": "Backup Validation",
-      "description": "Evidence for backup validation and compliance",
-      "service": "AWS",
-      "instructions": "Script: backup_validation.sh. Commands executed: aws backup list-backup-jobs, aws backup list-recovery-points",
+      "requirements": [
+        "PIY-01",
+        "SVC-04"
+      ],
       "validationRules": []
     },
     "block_storage_encryption_status": {
@@ -46,45 +41,16 @@
       "description": "Evidence for EBS volume encryption status and configurations",
       "service": "AWS",
       "instructions": "Script: block_storage_encryption_status.sh. Commands executed: aws ec2 get-ebs-encryption-by-default, aws ec2 get-ebs-default-kms-key-id, aws ec2 describe-volumes, aws efs describe-file-systems",
+      "requirements": [
+        "SVC-03"
+      ],
       "validationRules": [
         {
           "id": 1,
-          "regex": "\"Encrypted\":\\s*true",
-          "logic": "IF match.group(1) == expected_value THEN PASS"
+          "regex": "total_storage":\s*(\d+),\s*"encrypted_storage":\s*(\d+),
+          "logic": "IF match.group(1) == match.group(2) THEN PASS"
         }
       ]
-    },
-    "cloudwatch_high_availability": {
-      "id": "EVD-CLOUDWATCH-HA",
-      "name": "CloudWatch High Availability",
-      "description": "Evidence for CloudWatch monitoring high availability",
-      "service": "AWS",
-      "instructions": "Script: cloudwatch_high_availability.sh. Commands executed: aws cloudwatch describe-alarms, aws logs describe-log-groups",
-      "validationRules": []
-    },
-    "database_high_availability": {
-      "id": "EVD-DATABASE-HA",
-      "name": "Database High Availability",
-      "description": "Evidence for database high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: database_high_availability.sh. Commands executed: aws rds describe-db-instances, aws rds describe-db-clusters",
-      "validationRules": []
-    },
-    "efs_high_availability": {
-      "id": "EVD-EFS-HA",
-      "name": "EFS High Availability",
-      "description": "Evidence for EFS high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: efs_high_availability.sh. Commands executed: aws efs describe-file-systems, aws efs describe-mount-targets",
-      "validationRules": []
-    },
-    "eks_high_availability": {
-      "id": "EVD-EKS-HA",
-      "name": "EKS High Availability",
-      "description": "Evidence for EKS cluster high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: eks_high_availability.sh. Commands executed: aws eks list-clusters, aws eks describe-cluster, aws eks list-nodegroups, aws eks describe-nodegroup",
-      "validationRules": []
     },
     "eks_least_privilege": {
       "id": "EVD-EKS-PRIV",
@@ -92,6 +58,10 @@
       "description": "Evidence for EKS cluster least privilege access controls and RBAC configurations",
       "service": "AWS",
       "instructions": "Script: eks_least_privilege.sh. Commands executed: aws eks describe-cluster, aws eks list-pod-identity-associations, aws eks list-addons",
+      "requirements": [
+        "CNA-04",
+        "IAM-05"
+      ],
       "validationRules": []
     },
     "guard_duty": {
@@ -100,6 +70,12 @@
       "description": "Evidence for GuardDuty threat detection configuration",
       "service": "AWS",
       "instructions": "Script: guard_duty.sh. Commands executed: aws guardduty list-detectors, aws guardduty get-detector, aws guardduty get-findings",
+      "requirements": [
+        "CNA-02",
+        "INR-02",
+        "MLA-02",
+        "MLA-04"
+      ],
       "validationRules": []
     },
     "iam_identity_center": {
@@ -108,6 +84,10 @@
       "description": "Evidence for IAM Identity Center configurations",
       "service": "AWS",
       "instructions": "Script: iam_identity_center.sh. Commands executed: aws sso-admin list-instances, aws sso-admin list-permission-sets",
+      "requirements": [
+        "IAM-03",
+        "IAM-04"
+      ],
       "validationRules": []
     },
     "iam_policies": {
@@ -116,6 +96,10 @@
       "description": "Evidence for IAM policy configurations and compliance",
       "service": "AWS",
       "instructions": "Script: iam_policies.sh. Commands executed: aws iam list-policies, aws iam get-policy, aws iam get-policy-version",
+      "requirements": [
+        "IAM-03",
+        "IAM-04"
+      ],
       "validationRules": []
     },
     "iam_users_groups": {
@@ -124,6 +108,9 @@
       "description": "Evidence for IAM user and group configurations",
       "service": "AWS",
       "instructions": "Script: iam_users_groups.sh. Commands executed: aws iam list-users, aws iam list-groups, aws iam get-user, aws iam get-group",
+      "requirements": [
+        "IAM-04"
+      ],
       "validationRules": []
     },
     "kms_key_rotation": {
@@ -132,22 +119,9 @@
       "description": "Evidence for KMS key rotation policies and status",
       "service": "AWS",
       "instructions": "Script: kms_key_rotation.sh. Commands executed: aws kms list-keys, aws kms describe-key, aws kms get-key-rotation-status",
-      "validationRules": []
-    },
-    "load_balancer_high_availability": {
-      "id": "EVD-LB-HA",
-      "name": "Load Balancer High Availability",
-      "description": "Evidence for load balancer high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: load_balancer_high_availability.sh. Commands executed: aws elbv2 describe-load-balancers, aws elbv2 describe-target-groups, aws elbv2 describe-load-balancer-attributes",
-      "validationRules": []
-    },
-    "network_resilience_high_availability": {
-      "id": "EVD-NETWORK-RESILIENCE-HA",
-      "name": "Network Resilience High Availability",
-      "description": "Evidence for network resilience and high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: network_resilience_high_availability.sh. Commands executed: aws ec2 describe-vpcs, aws ec2 describe-subnets, aws ec2 describe-route-tables",
+      "requirements": [
+        "SVC-06"
+      ],
       "validationRules": []
     },
     "rds_encryption_status": {
@@ -156,6 +130,9 @@
       "description": "Evidence for RDS database encryption at rest and in transit",
       "service": "AWS",
       "instructions": "Script: rds_encryption_status.sh. Commands executed: aws rds describe-db-instances, aws rds describe-db-clusters",
+      "requirements": [
+        "SVC-03"
+      ],
       "validationRules": [
         {
           "id": 1,
@@ -164,20 +141,15 @@
         }
       ]
     },
-    "route53_high_availability": {
-      "id": "EVD-ROUTE53-HA",
-      "name": "Route 53 High Availability",
-      "description": "Evidence for Route 53 high availability configurations",
-      "service": "AWS",
-      "instructions": "Script: route53_high_availability.sh. Commands executed: aws route53 list-health-checks, aws route53 get-health-check-status",
-      "validationRules": []
-    },
     "s3_encryption_status": {
       "id": "EVD-S3-ENC",
       "name": "S3 Encryption",
       "description": "Evidence for S3 bucket encryption configurations and policies",
       "service": "AWS",
       "instructions": "Script: s3_encryption_status.sh. Commands executed: aws s3api list-buckets, aws s3api get-bucket-encryption",
+      "requirements": [
+        "SVC-03"
+      ],
       "validationRules": [
         {
           "id": 1,
@@ -197,6 +169,11 @@
       "description": "Evidence for security group configurations and rules",
       "service": "AWS",
       "instructions": "Script: security_groups.sh. Commands executed: aws ec2 describe-security-groups",
+      "requirements": [
+        "CNA-01",
+        "CNA-03",
+        "SVC-01"
+      ],
       "validationRules": []
     },
     "waf_DoS_rules": {
@@ -205,14 +182,9 @@
       "description": "Evidence for WAF DoS protection rules and configurations",
       "service": "AWS",
       "instructions": "Script: waf_DoS_rules.sh. Commands executed: aws wafv2 list-web-acls, aws wafv2 get-web-acl",
-      "validationRules": []
-    },
-    "waf_all_rules": {
-      "id": "EVD-WAF-ALL-RULES",
-      "name": "WAF All Rules",
-      "description": "Evidence for all WAF rules and configurations",
-      "service": "AWS",
-      "instructions": "Script: waf_all_rules.sh. Commands executed: aws wafv2 list-web-acls, aws wafv2 get-web-acl, aws wafv2 list-rule-groups",
+      "requirements": [
+        "CNA-05"
+      ],
       "validationRules": []
     },
     "aws_component_ssl_enforcement_status": {
@@ -221,6 +193,9 @@
       "description": "Evidence for SSL/TLS enforcement across AWS components including S3 buckets and RDS instances",
       "service": "AWS",
       "instructions": "Script: aws_component_ssl_enforcement_status.sh. Commands executed: aws s3api list-buckets, aws s3api get-bucket-policy, aws rds describe-db-instances, aws rds describe-db-parameters",
+      "requirements": [
+        "SVC-02"
+      ],
       "validationRules": [
         {
           "id": 1,
@@ -235,6 +210,9 @@
       "description": "Evidence for AWS Config and EventBridge setup for new resource detection and monitoring",
       "service": "AWS",
       "instructions": "Script: detect_new_aws_resource.sh. Commands executed: aws configservice describe-configuration-recorders, aws events list-rules, aws sns list-topics",
+      "requirements": [
+        "CMT-01"
+      ],
       "validationRules": []
     },
     "iam_roles": {
@@ -243,6 +221,9 @@
       "description": "Evidence for IAM role configurations including trust policies, attached policies, and instance profiles",
       "service": "AWS",
       "instructions": "Script: iam_roles.sh. Commands executed: aws iam list-roles, aws iam get-role, aws iam list-attached-role-policies, aws iam list-instance-profiles-for-role, aws iam get-account-password-policy",
+      "requirements": [
+        "IAM-04"
+      ],
       "validationRules": []
     },
     "load_balancer_encryption_status": {
@@ -251,29 +232,15 @@
       "description": "Evidence for load balancer encryption configurations and SSL policies",
       "service": "AWS",
       "instructions": "Script: load_balancer_encryption_status.sh. Commands executed: aws elbv2 describe-load-balancers, aws elbv2 describe-listeners",
+      "requirements": [
+        "CNA-03",
+        "SVC-02",
+        "SVC-03"
+      ],
       "validationRules": [
         {
           "id": 1,
           "regex": "\"encrypted\":\\s*true",
-          "logic": "IF match.group(1) == expected_value THEN PASS"
-        }
-      ]
-    },
-    "s3_mfa_delete": {
-      "id": "EVD-S3-MFA-DELETE",
-      "name": "S3 MFA Delete",
-      "description": "Evidence for S3 bucket MFA delete configuration, particularly for CloudTrail buckets",
-      "service": "AWS",
-      "instructions": "Script: s3_mfa_delete.py. Commands executed: aws s3api get-bucket-versioning",
-      "validationRules": [
-        {
-          "id": 1,
-          "regex": "\"MFADelete\":\\s*\"Enabled\"",
-          "logic": "IF match.group(1) == expected_value THEN PASS"
-        },
-        {
-          "id": 2,
-          "regex": "\"Status\":\\s*\"Enabled\"",
           "logic": "IF match.group(1) == expected_value THEN PASS"
         }
       ]
@@ -284,6 +251,11 @@
       "description": "Evidence for EKS microservice segmentation including network policies, security groups, and resource limits",
       "service": "K8s",
       "instructions": "Script: eks_microservice_segmentation.sh. Commands executed: kubectl get networkpolicies, kubectl describe daemonset aws-node, aws ec2 describe-instances",
+      "requirements": [
+        "CNA-02",
+        "CNA-04",
+        "IAM-05"
+      ],
       "validationRules": []
     },
     "eks_pod_inventory": {
@@ -292,6 +264,10 @@
       "description": "Evidence for EKS pod inventory and security analysis",
       "service": "K8s",
       "instructions": "Script: eks_pod_inventory.sh. Commands executed: kubectl get pods, kubectl describe pods",
+      "requirements": [
+        "CMT-01",
+        "PIY-01"
+      ],
       "validationRules": []
     },
     "kubectl_security": {
@@ -300,6 +276,10 @@
       "description": "Evidence for Kubernetes security configuration validation",
       "service": "K8s",
       "instructions": "Script: kubectl_security.sh. Commands executed: kubectl get clusterroles, kubectl get clusterrolebindings, kubectl get networkpolicies",
+      "requirements": [
+        "CNA-04",
+        "IAM-05"
+      ],
       "validationRules": []
     },
     "role_specific_training": {
@@ -308,6 +288,9 @@
       "description": "Evidence for role-specific training compliance and completion status",
       "service": "KnowBe4",
       "instructions": "Script: role_specific_training.sh. Commands executed: KnowBe4 API calls for role-specific training data",
+      "requirements": [
+        "CED-02"
+      ],
       "validationRules": []
     },
     "security_awareness_training": {
@@ -316,6 +299,9 @@
       "description": "Evidence for security awareness training compliance and user completion status",
       "service": "KnowBe4",
       "instructions": "Script: security_awareness_training.sh. Commands executed: KnowBe4 API calls for user training data and enrollments",
+      "requirements": [
+        "CED-01"
+      ],
       "validationRules": []
     },
     "okta_authenticators": {
@@ -324,6 +310,10 @@
       "description": "Evidence for Okta authenticator configuration and phishing-resistant MFA validation",
       "service": "Okta",
       "instructions": "Script: okta_authenticators.sh. Commands executed: Okta API calls for authenticator configuration, enrollment policies, and policy simulation",
+      "requirements": [
+        "IAM-01",
+        "IAM-02"
+      ],
       "validationRules": []
     }
   }
