@@ -3,6 +3,7 @@
 *.pyc
 old_example_process/*
 evidence/*
+8_29_25_paramify_coalfire_20x_machine_readable.yaml
 
 # Test evidence files
 tests/test_evidence/

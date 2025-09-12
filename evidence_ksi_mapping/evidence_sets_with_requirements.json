@@ -1,0 +1,289 @@
+{
+  "evidence_sets": {
+    "auto_scaling_high_availability": {
+      "id": "EVD-AUTO-SCALING-HA",
+      "name": "Auto Scaling High Availability",
+      "description": "Evidence for Auto Scaling group high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: auto_scaling_high_availability.sh. Commands executed: aws autoscaling describe-auto-scaling-groups, aws autoscaling describe-launch-configurations",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains Auto Scaling group configurations and availability zone distributions",
+      "requirements": [
+        "CNA-06"
+      ]
+    },
+    "aws_config_conformance_packs": {
+      "id": "EVD-CONFIG-PACKS",
+      "name": "AWS Config Conformance Packs",
+      "description": "Evidence for AWS Config conformance pack compliance and rule evaluations",
+      "service": "AWS",
+      "instructions": "Script: aws_config_conformance_packs.sh. Commands executed: aws configservice describe-conformance-packs, aws configservice describe-conformance-pack-status, aws configservice get-conformance-pack-compliance-summary, aws configservice get-conformance-pack-compliance-details",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains conformance pack details and compliance status",
+      "requirements": [
+        "CNA-07",
+        "SVC-01"
+      ]
+    },
+    "aws_config_monitoring": {
+      "id": "EVD-CONFIG-MONITORING",
+      "name": "AWS Config Monitoring",
+      "description": "Evidence for AWS Config service monitoring and recording status",
+      "service": "AWS",
+      "instructions": "Script: aws_config_monitoring.sh. Commands executed: aws configservice describe-configuration-recorders, aws configservice describe-configuration-recorder-status, aws configservice describe-delivery-channels",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains configuration recorder status and delivery channel configurations",
+      "requirements": [
+        "PIY-01",
+        "SVC-04"
+      ]
+    },
+    "backup_recovery_high_availability": {
+      "id": "EVD-BACKUP-RECOVERY-HA",
+      "name": "Backup Recovery High Availability",
+      "description": "Evidence for backup and recovery high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: backup_recovery_high_availability.sh. Commands executed: aws backup list-backup-vaults, aws backup list-backup-plans",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains backup vault and plan configurations",
+      "requirements": []
+    },
+    "backup_validation": {
+      "id": "EVD-BACKUP-VALIDATION",
+      "name": "Backup Validation",
+      "description": "Evidence for backup validation and compliance",
+      "service": "AWS",
+      "instructions": "Script: backup_validation.sh. Commands executed: aws backup list-backup-jobs, aws backup list-recovery-points",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains backup job status and recovery point details",
+      "requirements": []
+    },
+    "block_storage_encryption_status": {
+      "id": "EVD-BLOCK-ENC",
+      "name": "Block Storage Encryption",
+      "description": "Evidence for EBS volume encryption status and configurations",
+      "service": "AWS",
+      "instructions": "Script: block_storage_encryption_status.sh. Commands executed: aws ec2 get-ebs-encryption-by-default, aws ec2 get-ebs-default-kms-key-id, aws ec2 describe-volumes, aws efs describe-file-systems",
+      "validation_rules": [
+        "\"Encrypted\":\\s*true"
+      ],
+      "expected_outcome": "JSON contains EBS and EFS encryption configurations",
+      "requirements": [
+        "SVC-03"
+      ]
+    },
+    "cloudwatch_high_availability": {
+      "id": "EVD-CLOUDWATCH-HA",
+      "name": "CloudWatch High Availability",
+      "description": "Evidence for CloudWatch monitoring high availability",
+      "service": "AWS",
+      "instructions": "Script: cloudwatch_high_availability.sh. Commands executed: aws cloudwatch describe-alarms, aws logs describe-log-groups",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains CloudWatch alarms and log group configurations",
+      "requirements": []
+    },
+    "database_high_availability": {
+      "id": "EVD-DATABASE-HA",
+      "name": "Database High Availability",
+      "description": "Evidence for database high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: database_high_availability.sh. Commands executed: aws rds describe-db-instances, aws rds describe-db-clusters",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains RDS instance and Aurora cluster configurations",
+      "requirements": []
+    },
+    "efs_high_availability": {
+      "id": "EVD-EFS-HA",
+      "name": "EFS High Availability",
+      "description": "Evidence for EFS high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: efs_high_availability.sh. Commands executed: aws efs describe-file-systems, aws efs describe-mount-targets",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains EFS file system and mount target configurations",
+      "requirements": []
+    },
+    "eks_high_availability": {
+      "id": "EVD-EKS-HA",
+      "name": "EKS High Availability",
+      "description": "Evidence for EKS cluster high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: eks_high_availability.sh. Commands executed: aws eks list-clusters, aws eks describe-cluster, aws eks list-nodegroups, aws eks describe-nodegroup",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains EKS cluster and node group configurations",
+      "requirements": []
+    },
+    "eks_least_privilege": {
+      "id": "EVD-EKS-PRIV",
+      "name": "EKS Least Privilege",
+      "description": "Evidence for EKS cluster least privilege access controls and RBAC configurations",
+      "service": "AWS",
+      "instructions": "Script: eks_least_privilege.sh. Commands executed: aws eks describe-cluster, aws eks list-pod-identity-associations, aws eks list-addons",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains EKS cluster logging and add-on configurations",
+      "requirements": [
+        "CNA-04",
+        "IAM-05"
+      ]
+    },
+    "guard_duty": {
+      "id": "EVD-GUARD-DUTY",
+      "name": "GuardDuty Configuration",
+      "description": "Evidence for GuardDuty threat detection configuration",
+      "service": "AWS",
+      "instructions": "Script: guard_duty.sh. Commands executed: aws guardduty list-detectors, aws guardduty get-detector, aws guardduty get-findings",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains GuardDuty detector configurations and findings",
+      "requirements": [
+        "CNA-02",
+        "INR-02",
+        "MLA-02",
+        "MLA-04"
+      ]
+    },
+    "iam_identity_center": {
+      "id": "EVD-IAM-IDENTITY-CENTER",
+      "name": "IAM Identity Center",
+      "description": "Evidence for IAM Identity Center configurations",
+      "service": "AWS",
+      "instructions": "Script: iam_identity_center.sh. Commands executed: aws sso-admin list-instances, aws sso-admin list-permission-sets",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains IAM Identity Center instance and permission set configurations",
+      "requirements": [
+        "IAM-03",
+        "IAM-04"
+      ]
+    },
+    "iam_policies": {
+      "id": "EVD-IAM-POLICIES",
+      "name": "IAM Policies",
+      "description": "Evidence for IAM policy configurations and compliance",
+      "service": "AWS",
+      "instructions": "Script: iam_policies.sh. Commands executed: aws iam list-policies, aws iam get-policy, aws iam get-policy-version",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains IAM policy details and versions",
+      "requirements": [
+        "IAM-03",
+        "IAM-04"
+      ]
+    },
+    "iam_users_groups": {
+      "id": "EVD-IAM-USERS-GROUPS",
+      "name": "IAM Users and Groups",
+      "description": "Evidence for IAM user and group configurations",
+      "service": "AWS",
+      "instructions": "Script: iam_users_groups.sh. Commands executed: aws iam list-users, aws iam list-groups, aws iam get-user, aws iam get-group",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains IAM user and group details",
+      "requirements": [
+        "IAM-04"
+      ]
+    },
+    "kms_key_rotation": {
+      "id": "EVD-KMS-ROT",
+      "name": "KMS Key Rotation",
+      "description": "Evidence for KMS key rotation policies and status",
+      "service": "AWS",
+      "instructions": "Script: kms_key_rotation.sh. Commands executed: aws kms list-keys, aws kms describe-key, aws kms get-key-rotation-status",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains KMS key details and rotation status",
+      "requirements": [
+        "SVC-06"
+      ]
+    },
+    "load_balancer_high_availability": {
+      "id": "EVD-LB-HA",
+      "name": "Load Balancer High Availability",
+      "description": "Evidence for load balancer high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: load_balancer_high_availability.sh. Commands executed: aws elbv2 describe-load-balancers, aws elbv2 describe-target-groups, aws elbv2 describe-load-balancer-attributes",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains load balancer configurations and attributes",
+      "requirements": []
+    },
+    "network_resilience_high_availability": {
+      "id": "EVD-NETWORK-RESILIENCE-HA",
+      "name": "Network Resilience High Availability",
+      "description": "Evidence for network resilience and high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: network_resilience_high_availability.sh. Commands executed: aws ec2 describe-vpcs, aws ec2 describe-subnets, aws ec2 describe-route-tables",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains VPC, subnet, and routing configurations",
+      "requirements": []
+    },
+    "rds_encryption_status": {
+      "id": "EVD-RDS-ENC",
+      "name": "RDS Encryption",
+      "description": "Evidence for RDS database encryption at rest and in transit",
+      "service": "AWS",
+      "instructions": "Script: rds_encryption_status.sh. Commands executed: aws rds describe-db-instances, aws rds describe-db-clusters",
+      "validation_rules": [
+        "\"StorageEncrypted\":\\s*true"
+      ],
+      "expected_outcome": "JSON contains RDS encryption configurations",
+      "requirements": [
+        "SVC-03"
+      ]
+    },
+    "route53_high_availability": {
+      "id": "EVD-ROUTE53-HA",
+      "name": "Route 53 High Availability",
+      "description": "Evidence for Route 53 high availability configurations",
+      "service": "AWS",
+      "instructions": "Script: route53_high_availability.sh. Commands executed: aws route53 list-health-checks, aws route53 get-health-check-status",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains Route 53 health check configurations",
+      "requirements": []
+    },
+    "s3_encryption_status": {
+      "id": "EVD-S3-ENC",
+      "name": "S3 Encryption",
+      "description": "Evidence for S3 bucket encryption configurations and policies",
+      "service": "AWS",
+      "instructions": "Script: s3_encryption_status.sh. Commands executed: aws s3api list-buckets, aws s3api get-bucket-encryption",
+      "validation_rules": [
+        "\"ServerSideEncryptionConfiguration\"",
+        "\"ApplyServerSideEncryptionByDefault\""
+      ],
+      "expected_outcome": "JSON contains S3 bucket encryption configurations",
+      "requirements": [
+        "SVC-03"
+      ]
+    },
+    "security_groups": {
+      "id": "EVD-SECURITY-GROUPS",
+      "name": "Security Groups",
+      "description": "Evidence for security group configurations and rules",
+      "service": "AWS",
+      "instructions": "Script: security_groups.sh. Commands executed: aws ec2 describe-security-groups",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains security group rules and configurations",
+      "requirements": [
+        "CNA-01",
+        "CNA-03",
+        "SVC-01"
+      ]
+    },
+    "waf_DoS_rules": {
+      "id": "EVD-WAF-DOS-RULES",
+      "name": "WAF DoS Rules",
+      "description": "Evidence for WAF DoS protection rules and configurations",
+      "service": "AWS",
+      "instructions": "Script: waf_DoS_rules.sh. Commands executed: aws wafv2 list-web-acls, aws wafv2 get-web-acl",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains WAF web ACL configurations and rules",
+      "requirements": [
+        "CNA-05"
+      ]
+    },
+    "waf_all_rules": {
+      "id": "EVD-WAF-ALL-RULES",
+      "name": "WAF All Rules",
+      "description": "Evidence for all WAF rules and configurations",
+      "service": "AWS",
+      "instructions": "Script: waf_all_rules.sh. Commands executed: aws wafv2 list-web-acls, aws wafv2 get-web-acl, aws wafv2 list-rule-groups",
+      "validation_rules": [],
+      "expected_outcome": "JSON contains comprehensive WAF rule configurations",
+      "requirements": []
+    }
+  }
+}
