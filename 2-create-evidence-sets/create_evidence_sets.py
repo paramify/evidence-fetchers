@@ -12,6 +12,22 @@ import sys
 from pathlib import Path
 
 
+def load_env_file():
+    """Load environment variables from .env file if it exists"""
+    env_file = Path(".env")
+    if env_file.exists():
+        print(f"Loading environment variables from {env_file}")
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key] = value
+                    print(f"  Loaded {key}")
+        return True
+    return False
+
+
 def load_json_file(file_path: str) -> dict:
     """Load and parse a JSON file."""
     try:
@@ -51,7 +67,7 @@ def check_prerequisites():
         return False
     
     # Check for required environment variables
-    required_vars = ["PARAMIFY_API_TOKEN"]
+    required_vars = ["PARAMIFY_UPLOAD_API_TOKEN"]
     missing_vars = []
     
     for var in required_vars:
@@ -61,6 +77,16 @@ def check_prerequisites():
     if missing_vars:
         print(f"✗ Missing environment variables: {', '.join(missing_vars)}")
         print("Please add these to your .env file.")
+        return False
+    
+    # Check for required Python packages
+    try:
+        import requests
+        import boto3
+        print("✓ Required Python packages are available")
+    except ImportError as e:
+        print(f"✗ Missing required Python package: {e}")
+        print("Please run 'Prerequisites' (option 0) first to install dependencies.")
         return False
     
     print("✓ All prerequisites met")
@@ -97,7 +123,7 @@ def upload_evidence_sets(evidence_sets: dict, upload_scripts: bool = False):
     from paramify_pusher import ParamifyPusher
     
     # Initialize the pusher
-    api_token = os.environ.get("PARAMIFY_API_TOKEN")
+    api_token = os.environ.get("PARAMIFY_UPLOAD_API_TOKEN")
     base_url = os.environ.get("PARAMIFY_API_BASE_URL", "https://app.paramify.com/api/v0")
     
     pusher = ParamifyPusher(api_token, base_url)
@@ -151,6 +177,10 @@ def upload_evidence_sets(evidence_sets: dict, upload_scripts: bool = False):
 def main():
     """Main create evidence sets function."""
     print_header()
+    
+    # Load environment variables from .env file
+    load_env_file()
+    print()
     
     # Check prerequisites
     if not check_prerequisites():

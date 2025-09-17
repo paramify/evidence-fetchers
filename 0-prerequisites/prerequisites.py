@@ -45,12 +45,66 @@ def check_env_file():
         return False
 
 
+def check_python_dependencies():
+    """Check and install Python package dependencies."""
+    print("Checking Python package dependencies...")
+    print()
+    
+    # Check if requirements.txt exists
+    if not os.path.exists("requirements.txt"):
+        print("✗ requirements.txt not found")
+        return False
+    
+    # Check if pip is available
+    try:
+        import subprocess
+        result = subprocess.run([sys.executable, "-m", "pip", "--version"], 
+                              capture_output=True, text=True)
+        if result.returncode != 0:
+            print("✗ pip is not available")
+            return False
+    except:
+        print("✗ pip is not available")
+        return False
+    
+    # Check if required packages are installed
+    required_packages = ["requests", "boto3"]
+    missing_packages = []
+    
+    for package in required_packages:
+        try:
+            __import__(package)
+            print(f"✓ {package} is installed")
+        except ImportError:
+            print(f"✗ {package} is not installed")
+            missing_packages.append(package)
+    
+    # Install missing packages if any
+    if missing_packages:
+        print(f"\nInstalling missing Python packages: {', '.join(missing_packages)}")
+        try:
+            result = subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], 
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                print("✓ Successfully installed Python dependencies")
+                return True
+            else:
+                print(f"✗ Failed to install Python dependencies: {result.stderr}")
+                return False
+        except Exception as e:
+            print(f"✗ Error installing Python dependencies: {e}")
+            return False
+    
+    return True
+
+
 def check_dependencies():
     """Check if required dependencies are installed."""
     print("Checking dependencies...")
     print()
     
-    dependencies = [
+    # Check system dependencies
+    system_dependencies = [
         ("python3", "Python 3.x"),
         ("aws", "AWS CLI"),
         ("jq", "jq JSON processor"),
@@ -58,21 +112,26 @@ def check_dependencies():
         ("kubectl", "Kubernetes CLI (if using K8s scripts)")
     ]
     
-    all_installed = True
+    all_system_installed = True
     
-    for cmd, name in dependencies:
+    for cmd, name in system_dependencies:
         try:
             result = os.system(f"which {cmd} > /dev/null 2>&1")
             if result == 0:
                 print(f"✓ {name} is installed")
             else:
                 print(f"✗ {name} is not installed")
-                all_installed = False
+                all_system_installed = False
         except:
             print(f"✗ {name} is not installed")
-            all_installed = False
+            all_system_installed = False
     
-    return all_installed
+    print()
+    
+    # Check Python package dependencies
+    python_deps_ok = check_python_dependencies()
+    
+    return all_system_installed and python_deps_ok
 
 
 def print_paramify_setup():
