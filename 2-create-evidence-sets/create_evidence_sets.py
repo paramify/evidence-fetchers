@@ -146,6 +146,7 @@ def upload_evidence_sets(evidence_sets: dict, upload_scripts: bool = False):
                 
                 # Optionally upload script as artifact
                 if upload_scripts:
+                    # Try to find the script file in the fetchers directory
                     script_path = f"../fetchers/{script_data['service'].lower()}/{script_name}.sh"
                     if not os.path.exists(script_path):
                         script_path = f"../fetchers/{script_data['service'].lower()}/{script_name}.py"
