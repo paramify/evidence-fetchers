@@ -51,12 +51,12 @@ OKTA_ORG_URL=https://your-org.okta.com
 
 ### Paramify Setup
 
-1. Log into your Paramify application
-2. Navigate to Settings > API Keys
-3. Create a new API key with the following permissions:
-   - Evidence Sets: Read/Write
-   - Evidence Artifacts: Read/Write
-   - Requirements: Read
+1. Log into the Paramify application (app.paramify.com)
+2. Navigate to Settings (Gear Icon in top right) > API Keys
+3. Create a new API key (+ API Key) with the following permissions:
+   - Name: choose an appropriate name
+   - Expiration Time: choose 1 month - 1 year
+   - Permissions: View Evidences & Write Evidences
 4. Copy the API key and add it to your `.env` file
 5. Note your Paramify base URL (usually https://app.paramify.com/api/v0)
 

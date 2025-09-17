@@ -13,25 +13,18 @@ python main.py
 ## Main Options
 
 **0) Prerequisites** - Set up environment variables and check dependencies  
-*Files: `0-prerequisites/`*
 
 **1) Select Fetchers** - Choose which evidence fetcher scripts to use and generate evidence_sets.json  
-*Files: `1-select-fetchers/`*
 
 **2) Create Evidence Sets in Paramify** - Upload evidence sets to Paramify via API  
-*Files: `2-create-evidence-sets/`*
 
 **3) Run Fetchers** - Execute evidence fetcher scripts and store evidence files  
-*Files: `3-run-fetchers/`*
 
 **4) Tests** - Run validation and test scripts  
-*Files: `4-tests/`*
 
 **5) Add New Fetcher Script** - Add a new fetcher to the library with GitHub contribution instructions  
-*Files: `5-add-new-fetcher/`*
 
 **6) Evidence Requirement Mapping** - Map evidence to requirements from Paramify YAML files  
-*Files: `6-evidence-requirement-mapping/`*
 
 ---
 
