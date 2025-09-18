@@ -5,10 +5,10 @@ This repository contains a collection of validation scripts designed to help ass
 
 ## Recent Changes (2025)
 
-- **Script-Level Evidence Objects:**
-  - Each helper script now uploads its own evidence file to a dedicated Evidence Object in Paramify, rather than grouping by family.
-  - Evidence Object names are concise (no redundant 'Evidence' suffix).
-  - Instructions for each Evidence Object now include the exact script name and all AWS CLI/API/kubectl commands executed to generate the evidence.
+- **Script-Level Evidence Sets:**
+  - Each helper script now uploads its own evidence file to a dedicated Evidence Set in Paramify, rather than grouping by family.
+  - Evidence Set names are concise (no redundant 'Evidence' suffix).
+  - Instructions for each Evidence Set now include the exact script name and all AWS CLI/API/kubectl commands executed to generate the evidence.
 
 - **CSV Output Removed:**
   - All CSV output and parameters have been removed from helper scripts and orchestrators. JSON is now the sole output format for evidence.
@@ -18,7 +18,7 @@ This repository contains a collection of validation scripts designed to help ass
 
 - **Paramify Integration Improvements:**
   - Uploads are now granular (per-script) and include detailed, reproducible instructions.
-  - Existing Evidence Objects are reused; metadata is only set on creation.
+  - Existing Evidence Sets are reused; metadata is only set on creation.
   - Batch uploader and main runner updated to support new evidence model.
 
 - **Documentation:**
@@ -78,7 +78,7 @@ This repository includes automated integration with the **Paramify Evidence API*
 
 ### Benefits
 - **Automated Evidence Collection** - Results automatically uploaded to Paramify
-- **Organized by Control Families** - Evidence Objects created for each validation family
+- **Organized by Control Families** - Evidence Sets created for each validation family
 - **Audit Trail** - Complete history of validation runs with timestamps
 - **Compliance Ready** - Structured evidence for auditors
 

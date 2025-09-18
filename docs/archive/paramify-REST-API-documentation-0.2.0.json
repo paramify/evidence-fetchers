@@ -3208,7 +3208,7 @@
         ],
         "operationId": "getEvidence",
         "summary": "Get all evidence",
-        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs) or referenceId (custom identifiers like \"EVD-1\"). Returns array of evidence objects with associated artifacts.",
+        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs) or referenceId (custom identifiers like \"EVD-1\"). Returns array of evidence sets with associated artifacts.",
         "parameters": [
           {
             "in": "query",
@@ -3487,7 +3487,7 @@
         ],
         "operationId": "getEvidenceById",
         "summary": "Get evidence by ID",
-        "description": "Retrieves a specific evidence record by its internal ID (UUID). Returns complete evidence object with all associated artifacts. Instructions and remarks are converted from rich text.",
+        "description": "Retrieves a specific evidence record by its internal ID (UUID). Returns complete evidence set with all associated artifacts. Instructions and remarks are converted from rich text.",
         "parameters": [
           {
             "in": "path",
@@ -3576,7 +3576,7 @@
                     "artifacts",
                     "automated"
                   ],
-                  "description": "The evidence object with all associated artifacts"
+                  "description": "The evidence set with all associated artifacts"
                 }
               }
             }
@@ -3741,7 +3741,7 @@
                     "artifacts",
                     "automated"
                   ],
-                  "description": "The updated evidence object as it exists after the operation"
+                  "description": "The updated evidence set as it exists after the operation"
                 }
               }
             }

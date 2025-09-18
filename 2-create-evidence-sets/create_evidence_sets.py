@@ -128,22 +128,20 @@ def upload_evidence_sets(evidence_sets: dict, upload_scripts: bool = False):
     
     pusher = ParamifyPusher(api_token, base_url)
     
-    # Load evidence sets
-    pusher.load_evidence_sets("evidence_sets.json")
-    
     # Upload each evidence set
     success_count = 0
+    skipped_count = 0
     total_count = len(evidence_sets['evidence_sets'])
     
     for script_name, script_data in evidence_sets['evidence_sets'].items():
-        print(f"Uploading {script_name}...")
+        print(f"Processing {script_name}...")
         
         try:
-            # Create evidence set in Paramify
-            result = pusher.create_evidence_set(script_data)
+            # Get or create evidence set in Paramify
+            result = pusher.get_or_create_evidence_set(script_data)
             
             if result:
-                print(f"  ✓ Created evidence set: {script_data['name']}")
+                print(f"  ✓ Processed evidence set: {script_data['name']}")
                 success_count += 1
                 
                 # Optionally upload script as artifact
@@ -153,23 +151,28 @@ def upload_evidence_sets(evidence_sets: dict, upload_scripts: bool = False):
                         script_path = f"../fetchers/{script_data['service'].lower()}/{script_name}.py"
                     
                     if os.path.exists(script_path):
-                        print(f"  Uploading script artifact...")
-                        artifact_result = pusher.upload_script_artifact(script_data['id'], script_path)
+                        print(f"  Uploading script artifact: {script_path}")
+                        artifact_result = pusher.upload_evidence_file(result, script_path, script_name)
                         if artifact_result:
-                            print(f"  ✓ Script artifact uploaded")
+                            print(f"  ✓ Script artifact uploaded successfully")
                         else:
                             print(f"  ✗ Failed to upload script artifact")
                     else:
                         print(f"  ⚠ Script file not found: {script_path}")
+                        print(f"  ⚠ Tried paths: ../fetchers/{script_data['service'].lower()}/{script_name}.sh and ../fetchers/{script_data['service'].lower()}/{script_name}.py")
             else:
-                print(f"  ✗ Failed to create evidence set: {script_data['name']}")
+                print(f"  ✗ Failed to process evidence set: {script_data['name']}")
         
         except Exception as e:
-            print(f"  ✗ Error uploading {script_name}: {e}")
+            print(f"  ✗ Error processing {script_name}: {e}")
     
     print(f"\nUpload Summary:")
-    print(f"  Successfully uploaded: {success_count}/{total_count}")
+    print(f"  Successfully processed: {success_count}/{total_count}")
     print(f"  Failed: {total_count - success_count}/{total_count}")
+    
+    if success_count < total_count:
+        print(f"\nNote: Some evidence sets may have failed to process.")
+        print(f"Check the output above for specific error messages.")
     
     return success_count == total_count
 

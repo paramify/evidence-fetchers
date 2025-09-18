@@ -46,7 +46,16 @@
               "aws"
             ],
             "validationRules": [
-              "\"ssl_enforced\":\\s*true"
+              {
+                "id": 1,
+                "regex": "\"s3_total\":\\s*(?P<s3_total>\\d+)[\\s\\S]*?\"s3_ssl_enforced\":\\s*(?P<s3_ssl_enforced>\\d+)",
+                "logic": "IF s3_total == s3_ssl_enforced THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"rds_total\":\\s*(?P<rds_total>\\d+)[\\s\\S]*?\"rds_ssl_enforced\":\\s*(?P<rds_ssl_enforced>\\d+)",
+                "logic": "IF rds_total == rds_ssl_enforced THEN PASS"
+              }
             ]
           },
           "aws_config_conformance_packs": {

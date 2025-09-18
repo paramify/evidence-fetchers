@@ -153,7 +153,7 @@ def demo_paramify_pusher():
     print("This would be uploaded to Paramify with the following structure:")
     
     for result in summary_data["results"]:
-        print(f"\nEvidence Object for {result['check']}:")
+        print(f"\nEvidence Set for {result['check']}:")
         print(f"  - Check: {result['check']}")
         print(f"  - Resource: {result['resource']}")
         print(f"  - Status: {result['status']}")

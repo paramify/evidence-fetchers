@@ -18,6 +18,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# Add the rich text formatter to the path
+sys.path.append(str(Path(__file__).parent.parent / "1-select-fetchers"))
+from rich_text_formatter import convert_instructions_to_string
+
 
 def load_env_file():
     """Load environment variables from .env file if it exists"""
@@ -53,38 +57,38 @@ class ParamifyPusher:
         """Get evidence set information for a check"""
         return evidence_sets.get("evidence_sets", {}).get(check_name)
     
-    def find_existing_evidence_object(self, reference_id: str) -> Optional[str]:
-        """Find existing Evidence Object by reference ID"""
-        print(f"Checking for existing Evidence Object with reference ID: {reference_id}")
-        
+    def find_existing_evidence_set(self, reference_id: str) -> Optional[str]:
+        """Find existing Evidence Set by reference ID"""
         try:
             response = requests.get(f"{self.base_url}/evidence", headers=self.headers)
             response.raise_for_status()
             
             data = response.json()
+            
             for evidence in data.get("evidences", []):
                 if evidence.get("referenceId") == reference_id:
                     evidence_id = evidence.get("id")
-                    print(f"Found existing Evidence Object: {evidence_id}")
                     return evidence_id
             
-            print(f"No existing Evidence Object found for reference ID: {reference_id}")
             return None
             
         except requests.exceptions.RequestException as e:
-            print(f"Failed to retrieve Evidence Objects: {e}")
+            print(f"Failed to retrieve Evidence Sets: {e}")
             return None
     
-    def create_evidence_object(self, reference_id: str, name: str, description: str, 
+    def create_evidence_set(self, reference_id: str, name: str, description: str, 
                              instructions: str, automated: bool = True) -> Optional[str]:
-        """Create new Evidence Object"""
-        print(f"Creating Evidence Object: {name}")
+        """Create new Evidence Set"""
+        print(f"Creating Evidence Set: {name}")
+        
+        # Convert rich text instructions to string format for Paramify API
+        instructions_string = convert_instructions_to_string(instructions)
         
         data = {
             "referenceId": reference_id,
             "name": name,
             "description": description,
-            "instructions": instructions,
+            "instructions": instructions_string,
             "automated": automated
         }
         
@@ -94,46 +98,47 @@ class ParamifyPusher:
             if response.status_code in [200, 201]:
                 result = response.json()
                 evidence_id = result.get("id")
-                print(f"Evidence Object created successfully: {evidence_id}")
+                print(f"Evidence Set created successfully: {evidence_id}")
                 return evidence_id
             elif response.status_code == 400:
                 # Check if it's a "Reference ID already exists" error
                 error_data = response.json()
                 error_msg = error_data.get("message") or error_data.get("error", "Unknown error")
                 if "Reference ID already exists" in error_msg:
-                    print("Evidence Object already exists, attempting to find it...")
-                    return self.find_existing_evidence_object(reference_id)
+                    print("Evidence Set already exists, attempting to find it...")
+                    return self.find_existing_evidence_set(reference_id)
                 else:
-                    print(f"Failed to create Evidence Object (HTTP {response.status_code}): {error_msg}")
+                    print(f"Failed to create Evidence Set (HTTP {response.status_code}): {error_msg}")
                     return None
             else:
-                print(f"Failed to create Evidence Object (HTTP {response.status_code})")
+                print(f"Failed to create Evidence Set (HTTP {response.status_code})")
                 print(response.text)
                 return None
                 
         except requests.exceptions.RequestException as e:
-            print(f"Error creating evidence object: {e}")
+            print(f"Error creating evidence set: {e}")
             return None
     
-    def get_or_create_evidence_object(self, evidence_set_info: Dict) -> Optional[str]:
-        """Get or create Evidence Object for a check"""
+    def get_or_create_evidence_set(self, evidence_set_info: Dict) -> Optional[str]:
+        """Get or create Evidence Set for a check"""
         reference_id = evidence_set_info["id"]
         name = evidence_set_info["name"]
         description = evidence_set_info["description"]
         instructions = evidence_set_info["instructions"]
         
-        print(f"Processing Evidence Object: {reference_id} - {name}")
+        print(f"Processing Evidence Set: {reference_id} - {name}")
         
-        # Try to find existing Evidence Object
-        evidence_id = self.find_existing_evidence_object(reference_id)
+        # Try to find existing Evidence Set
+        evidence_id = self.find_existing_evidence_set(reference_id)
         if evidence_id:
+            print(f"Found existing Evidence Set: {evidence_id}")
             return evidence_id
         
-        # Create new Evidence Object
-        return self.create_evidence_object(reference_id, name, description, instructions)
+        # Create new Evidence Set
+        return self.create_evidence_set(reference_id, name, description, instructions)
     
     def upload_evidence_file(self, evidence_id: str, evidence_file_path: str, check_name: str) -> bool:
-        """Upload evidence file as artifact to Evidence Object"""
+        """Upload evidence file as artifact to Evidence Set"""
         if not Path(evidence_file_path).exists():
             print(f"Evidence file not found: {evidence_file_path}")
             return False
@@ -141,9 +146,10 @@ class ParamifyPusher:
         print(f"Uploading artifact: {Path(evidence_file_path).name}")
         
         # Create artifact metadata
+        script_filename = Path(evidence_file_path).name
         artifact_data = {
-            "title": f"{check_name} Results",
-            "note": f"Automated evidence collection for {check_name}",
+            "title": f"{check_name} Fetcher Script",
+            "note": f"Fetcher script for {check_name}: {script_filename}",
             "effectiveDate": datetime.now().isoformat() + "Z"
         }
         
@@ -216,10 +222,10 @@ class ParamifyPusher:
                 print(f"Warning: No evidence set info found for {check_name}")
                 continue
             
-            # Get or create Evidence Object
-            evidence_id = self.get_or_create_evidence_object(evidence_set_info)
+            # Get or create Evidence Set
+            evidence_id = self.get_or_create_evidence_set(evidence_set_info)
             if not evidence_id:
-                print(f"Failed to get/create Evidence Object for {check_name}")
+                print(f"Failed to get/create Evidence Set for {check_name}")
                 continue
             
             # Upload evidence file
@@ -231,7 +237,7 @@ class ParamifyPusher:
                 "resource": resource,
                 "status": status,
                 "evidence_file": evidence_file,
-                "evidence_object_id": evidence_id,
+                "evidence_set_id": evidence_id,
                 "upload_success": upload_success,
                 "timestamp": datetime.now().isoformat()
             }

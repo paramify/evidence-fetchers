@@ -5,7 +5,8 @@ Evidence Sets Generator
 This script generates a custom evidence_sets.json file based on customer selections
 from the customer_config.json file and the master catalog in evidence_fetchers_catalog.json.
 
-The script automatically escapes regex patterns in validation rules for safe JSON storage.
+The script automatically escapes regex patterns in validation rules for safe JSON storage
+and converts plain text instructions to rich text format with consistent layout.
 
 Usage:
     python generate_evidence_sets.py [customer_config.json] [output_file.json]
@@ -16,6 +17,7 @@ If no arguments are provided, it will use:
 
 Features:
     - Generates evidence sets from customer configuration
+    - Converts instructions to rich text format with consistent layout
     - Automatically escapes regex patterns for JSON storage
     - Processes validation rules with proper JSON escaping
     - Provides detailed logging of regex processing
@@ -26,6 +28,7 @@ import sys
 import os
 from pathlib import Path
 from typing import Dict, List, Any
+from rich_text_formatter import convert_instructions_to_rich_text
 
 
 def load_json_file(file_path: str) -> Dict[str, Any]:
@@ -143,13 +146,19 @@ def generate_evidence_sets(catalog: Dict[str, Any], customer_config: Dict[str, A
             # Process validation rules and escape regex patterns
             processed_validation_rules = process_validation_rules(script_info.get("validationRules", []))
             
+            # Convert instructions to rich text format
+            rich_text_instructions = convert_instructions_to_rich_text(
+                script_info["instructions"], 
+                processed_validation_rules
+            )
+            
             # Create evidence set entry
             evidence_set_entry = {
                 "id": script_info["id"],
                 "name": script_info["name"],
                 "description": script_info["description"],
                 "service": category_name.upper(),
-                "instructions": script_info["instructions"],
+                "instructions": rich_text_instructions,
                 "validationRules": processed_validation_rules,
                 # "expected_outcome" field removed
             }
