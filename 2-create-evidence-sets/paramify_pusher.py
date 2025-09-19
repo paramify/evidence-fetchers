@@ -251,6 +251,80 @@ class ParamifyPusher:
         
         return results
     
+    def create_evidence_set(self, evidence_set_data: Dict) -> bool:
+        """Create evidence set (Evidence Object) in Paramify"""
+        reference_id = evidence_set_data["id"]
+        name = evidence_set_data["name"]
+        description = evidence_set_data["description"]
+        instructions = evidence_set_data["instructions"]
+        
+        print(f"Creating Evidence Object: {name}")
+        
+        # Try to find existing Evidence Object first
+        evidence_id = self.find_existing_evidence_object(reference_id)
+        if evidence_id:
+            print(f"Evidence Object already exists: {evidence_id}")
+            return True
+        
+        # Create new Evidence Object
+        evidence_id = self.create_evidence_object(reference_id, name, description, instructions)
+        return evidence_id is not None
+    
+    def upload_script_artifact(self, evidence_object_id: str, script_path: str) -> bool:
+        """Upload script file as artifact to Evidence Object"""
+        if not Path(script_path).exists():
+            print(f"Script file not found: {script_path}")
+            return False
+        
+        print(f"Uploading script artifact: {Path(script_path).name}")
+        
+        # Create artifact metadata
+        artifact_data = {
+            "title": f"Fetcher Script: {Path(script_path).name}",
+            "note": f"Automated evidence collection script for {Path(script_path).name}",
+            "effectiveDate": datetime.now().isoformat() + "Z"
+        }
+        
+        try:
+            # Create temporary artifact JSON file
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_artifact:
+                json.dump(artifact_data, temp_artifact)
+                temp_artifact_path = temp_artifact.name
+            
+            # Upload using multipart form data
+            with open(script_path, 'rb') as f, open(temp_artifact_path, 'rb') as artifact_f:
+                files = {
+                    'file': f,
+                    'artifact': ('artifact.json', artifact_f, 'application/json')
+                }
+                
+                headers = {"Authorization": f"Bearer {self.api_token}"}
+                
+                response = requests.post(
+                    f"{self.base_url}/evidence/{evidence_object_id}/artifacts/upload",
+                    headers=headers,
+                    files=files
+                )
+                
+                # Clean up temp file
+                os.unlink(temp_artifact_path)
+                
+                if response.status_code in [200, 201]:
+                    print(f"✓ Script artifact uploaded successfully")
+                    return True
+                else:
+                    print(f"✗ Failed to upload script artifact (HTTP {response.status_code})")
+                    print(response.text)
+                    return False
+                    
+        except requests.exceptions.RequestException as e:
+            print(f"Error uploading script artifact: {e}")
+            return False
+        except Exception as e:
+            print(f"Error in script upload process: {e}")
+            return False
+
     def save_upload_log(self, results: List[Dict], log_path: str = "upload_log.json"):
         """Save upload results to log file"""
         log_data = {

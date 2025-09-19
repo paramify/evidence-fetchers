@@ -12,3 +12,4 @@ tests/demo_evidence/
 tests/demo_summary.json
 customer_config.json
 tmp.json
+evidence_sets.json
