@@ -660,6 +660,51 @@
           }
         }
       }
+      ,
+      "rippling": {
+        "name": "Rippling",
+        "description": "Rippling HR evidence collection scripts",
+        "scripts": {
+          "rippling_current_employees": {
+            "script_file": "fetchers/rippling/rippling_current_employees.py",
+            "name": "Rippling Current Employees",
+            "description": "Evidence for list of current active employees from Rippling",
+            "id": "EVD-RIPPLING-CURRENT-EMPLOYEES",
+            "instructions": "Script: rippling_current_employees.py. Commands executed: curl GET /platform/api/employees with limit/offset pagination",
+            "dependencies": [
+              "python3",
+              "curl"
+            ],
+            "tags": [
+              "hr",
+              "rippling",
+              "employees",
+              "current",
+              "completeness"
+            ],
+            "validationRules": []
+          },
+          "rippling_all_employees": {
+            "script_file": "fetchers/rippling/rippling_all_employees.py",
+            "name": "Rippling All Employees",
+            "description": "Evidence for list of all employees from Rippling including terminated",
+            "id": "EVD-RIPPLING-ALL-EMPLOYEES",
+            "instructions": "Script: rippling_all_employees.py. Commands executed: curl GET /platform/api/employees/include_terminated with limit/offset pagination",
+            "dependencies": [
+              "python3",
+              "curl"
+            ],
+            "tags": [
+              "hr",
+              "rippling",
+              "employees",
+              "terminated",
+              "completeness"
+            ],
+            "validationRules": []
+          }
+        }
+      }
     }
   }
 }

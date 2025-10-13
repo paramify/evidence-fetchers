@@ -266,7 +266,7 @@ def main():
     parser = argparse.ArgumentParser(description='Add new evidence fetcher scripts to the catalog')
     parser.add_argument('--interactive', action='store_true', help='Run in interactive mode')
     parser.add_argument('--script-file', help='Path to the script file')
-    parser.add_argument('--category', choices=['aws', 'k8s', 'knowbe4', 'okta'], help='Category for the script')
+    parser.add_argument('--category', choices=['aws', 'k8s', 'knowbe4', 'okta', 'rippling'], help='Category for the script')
     parser.add_argument('--name', help='Name of the script')
     parser.add_argument('--validate-only', action='store_true', help='Only validate the catalog')
     

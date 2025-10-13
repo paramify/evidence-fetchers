@@ -63,7 +63,7 @@ def validate_categories(catalog: Dict[str, Any]) -> bool:
     print("Validating categories and scripts...")
     
     categories = catalog['evidence_fetchers_catalog']['categories']
-    valid_categories = ['aws', 'k8s', 'knowbe4', 'okta']
+    valid_categories = ['aws', 'k8s', 'knowbe4', 'okta', 'rippling']
     
     for category_name, category_data in categories.items():
         if category_name not in valid_categories:
@@ -158,7 +158,10 @@ def validate_script_files_not_in_catalog() -> List[str]:
         script_files.append(str(script_file))
     
     # Get all script files referenced in catalog
-    catalog = load_json_file('evidence_fetchers_catalog.json')
+    catalog_path = 'evidence_fetchers_catalog.json'
+    if not os.path.exists(catalog_path):
+        catalog_path = os.path.join('1-select-fetchers', 'evidence_fetchers_catalog.json')
+    catalog = load_json_file(catalog_path)
     catalog_files = set()
     
     for category_data in catalog['evidence_fetchers_catalog']['categories'].values():
@@ -185,7 +188,11 @@ def validate_customer_template(catalog: Dict[str, Any]) -> bool:
     print("Validating customer template...")
     
     try:
-        template = load_json_file('customer_config_template.json')
+        # Try local file first; fallback to 1-select-fetchers path from repo root
+        template_path = 'customer_config_template.json'
+        if not os.path.exists(template_path):
+            template_path = os.path.join('1-select-fetchers', 'customer_config_template.json')
+        template = load_json_file(template_path)
     except:
         print("⚠ Warning: Could not load customer_config_template.json")
         return True
@@ -243,7 +250,11 @@ def main():
     print("=" * 40)
     
     # Load catalog
-    catalog = load_json_file('evidence_fetchers_catalog.json')
+    # Try local file first; fallback to 1-select-fetchers path from repo root
+    catalog_path = 'evidence_fetchers_catalog.json'
+    if not os.path.exists(catalog_path):
+        catalog_path = os.path.join('1-select-fetchers', 'evidence_fetchers_catalog.json')
+    catalog = load_json_file(catalog_path)
     
     # Run all validations
     validations = [

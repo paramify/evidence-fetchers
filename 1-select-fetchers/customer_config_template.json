@@ -61,13 +61,21 @@
         "selected_scripts": [
           "okta_authenticators"
         ]
+      },
+      "rippling": {
+        "enabled": false,
+        "selected_scripts": [
+          "rippling_current_employees",
+          "rippling_all_employees"
+        ]
       }
     },
     "customization_notes": {
       "aws": "Select only the AWS services you use. Remove scripts for services you don't use (e.g., if you don't use GuardDuty, remove 'guard_duty' from the list).",
       "k8s": "Enable this if you use Kubernetes/EKS. Set enabled to true and select the scripts you need.",
       "knowbe4": "Enable this if you use KnowBe4 for security awareness training. Requires KNOWBE4_API_KEY and KNOWBE4_REGION environment variables.",
-      "okta": "Enable this if you use Okta for identity management. Requires OKTA_API_TOKEN and OKTA_ORG_URL environment variables."
+      "okta": "Enable this if you use Okta for identity management. Requires OKTA_API_TOKEN and OKTA_ORG_URL environment variables.",
+      "rippling": "Enable this if you use Rippling for HR management. Requires RIPPLING_API_TOKEN environment variable."
     }
   }
 }
