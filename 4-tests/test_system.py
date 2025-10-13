@@ -11,8 +11,10 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-# Add parent directory to path
-sys.path.append('..')
+# Add repo root to path
+repo_root = Path(__file__).resolve().parents[1]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 
 
 def test_evidence_sets_loading():
@@ -20,7 +22,7 @@ def test_evidence_sets_loading():
     print("Testing evidence sets loading...")
     
     try:
-        with open("../evidence_sets.json", 'r') as f:
+        with open(str(repo_root / "evidence_sets.json"), 'r') as f:
             evidence_sets = json.load(f)
         
         # Check structure
@@ -29,9 +31,12 @@ def test_evidence_sets_loading():
         
         # Check required fields for each evidence set
         for name, config in evidence_sets["evidence_sets"].items():
-            required_fields = ["id", "name", "description", "service", "instructions", "validation_rules"]
+            required_fields = ["id", "name", "description", "service", "instructions"]
             for field in required_fields:
                 assert field in config, f"Missing field '{field}' in evidence set '{name}'"
+            # Accept either 'validation_rules' or 'validationRules'
+            rules = config.get('validation_rules', config.get('validationRules', None))
+            assert rules is not None, f"Missing validation rules in evidence set '{name}'"
         
         print("✓ Evidence sets configuration is valid")
         return True
@@ -41,28 +46,23 @@ def test_evidence_sets_loading():
 
 
 def test_fetcher_imports():
-    """Test that fetcher modules can be imported"""
+    """Test that a Python fetcher module can be imported"""
     print("Testing fetcher imports...")
     
-    fetcher_files = ["../fetchers/s3_mfa_delete.py", "../fetchers/ebs_encryption.py"]
+    fetcher_file = str(repo_root / "fetchers/rippling/rippling_current_employees.py")
     
-    for fetcher_file in fetcher_files:
-        try:
-            # Test import
-            import importlib.util
-            spec = importlib.util.spec_from_file_location("test_fetcher", fetcher_file)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
-            # Check that run function exists
-            assert hasattr(module, 'run'), f"Missing 'run' function in {fetcher_file}"
-            
-            print(f"✓ Successfully imported {fetcher_file}")
-        except Exception as e:
-            print(f"✗ Error importing {fetcher_file}: {e}")
-            return False
-    
-    return True
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("test_fetcher", fetcher_file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        
+        assert hasattr(module, 'main'), f"Missing 'main' function in {fetcher_file}"
+        print(f"✓ Successfully imported {fetcher_file}")
+        return True
+    except Exception as e:
+        print(f"✗ Error importing {fetcher_file}: {e}")
+        return False
 
 
 def test_fetcher_runner_import():
@@ -70,7 +70,10 @@ def test_fetcher_runner_import():
     print("Testing fetcher runner import...")
     
     try:
-        import fetcher_runner
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("fetcher_runner", str(repo_root / "3-run-fetchers" / "run_fetchers.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
         print("✓ Successfully imported fetcher_runner")
         return True
     except Exception as e:
@@ -79,11 +82,21 @@ def test_fetcher_runner_import():
 
 
 def test_paramify_pusher_import():
-    """Test that paramify pusher can be imported"""
+    """Test that paramify pusher can be imported (with requests mocked)"""
     print("Testing paramify pusher import...")
     
     try:
-        import paramify_pusher
+        from unittest.mock import patch, MagicMock
+        import importlib.util
+        with patch('requests.post') as mock_post:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_resp.json.return_value = {"ok": True}
+            mock_post.return_value = mock_resp
+            
+            spec = importlib.util.spec_from_file_location("paramify_pusher", str(repo_root / "2-create-evidence-sets" / "paramify_pusher.py"))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
         print("✓ Successfully imported paramify_pusher")
         return True
     except Exception as e:
@@ -95,7 +108,7 @@ def test_directory_structure():
     """Test that required directories exist"""
     print("Testing directory structure...")
     
-    required_dirs = ["../fetchers", "../evidence"]
+    required_dirs = [str(repo_root / "fetchers"), str(repo_root / "evidence")]
     
     for dir_name in required_dirs:
         if not Path(dir_name).exists():
@@ -110,7 +123,7 @@ def test_config_files():
     """Test that configuration files exist and are valid JSON"""
     print("Testing configuration files...")
     
-    config_files = ["../evidence_sets.json", "test_config.json"]
+    config_files = [str(repo_root / "evidence_sets.json"), str(Path(__file__).resolve().parent / "test_config.json")]
     
     for config_file in config_files:
         try:
@@ -125,33 +138,34 @@ def test_config_files():
 
 
 def test_fetcher_with_mock():
-    """Test a fetcher with mocked AWS CLI"""
-    print("Testing fetcher with mocked AWS CLI...")
+    """Test a Python fetcher with mocked HTTP requests"""
+    print("Testing fetcher with mocked HTTP...")
     
-    # Mock AWS CLI response for S3 MFA Delete
-    mock_response = {
-        "Status": "Enabled",
-        "MFADelete": "Enabled"
-    }
+    # Mock Rippling API response
+    mock_response = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
     
-    with patch('subprocess.run') as mock_run:
-        # Configure mock
-        mock_result = MagicMock()
-        mock_result.stdout = json.dumps(mock_response)
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
+    with patch('requests.get') as mock_get:
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = mock_response
+        mock_resp.raise_for_status.return_value = None
+        mock_get.return_value = mock_resp
         
-        # Import and test fetcher
         import importlib.util
-        spec = importlib.util.spec_from_file_location("s3_mfa_delete", "../fetchers/s3_mfa_delete.py")
+        spec = importlib.util.spec_from_file_location("rippling_current_employees", str(repo_root / "fetchers/rippling/rippling_current_employees.py"))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         
-        # Test the run function
-        status, evidence_file = module.run("test-bucket", "test_evidence")
+        # Simulate writing to a temp directory
+        tmp_dir = Path("test_evidence")
+        if tmp_dir.exists():
+            import shutil
+            shutil.rmtree(tmp_dir)
         
-        assert status == "PASS", f"Expected PASS, got {status}"
-        assert evidence_file != "", "Expected evidence file path"
+        # Call main-like behavior
+        # Ensure token is present for the module under test
+        os.environ.setdefault("RIPPLING_API_TOKEN", "test-token")
+        employees = module.fetch_current_employees()
+        assert len(employees) == 2
         
         print("✓ Fetcher test passed")
         return True

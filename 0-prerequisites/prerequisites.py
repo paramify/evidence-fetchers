@@ -31,16 +31,8 @@ def check_env_file():
         print("Please create a .env file with the following variables:")
         print()
         print("# Paramify API Configuration")
-        print("PARAMIFY_API_TOKEN=your_api_token_here")
-        print("PARAMIFY_API_BASE_URL=https://app.paramify.com/api/v0")
+        print("PARAMIFY_UPLOAD_API_TOKEN=your_api_token_here")
         print()
-        print("# Optional: KnowBe4 Configuration")
-        print("KNOWBE4_API_KEY=your_knowbe4_api_key")
-        print("KNOWBE4_REGION=us")
-        print()
-        print("# Optional: Okta Configuration")
-        print("OKTA_API_TOKEN=your_okta_api_token")
-        print("OKTA_ORG_URL=https://your-org.okta.com")
         print()
         return False
 

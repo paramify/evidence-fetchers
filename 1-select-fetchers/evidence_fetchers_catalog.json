@@ -458,27 +458,6 @@
               "\"ApplyServerSideEncryptionByDefault\""
             ]
           },
-          "s3_mfa_delete": {
-            "script_file": "fetchers/aws/s3_mfa_delete.py",
-            "name": "S3 MFA Delete",
-            "description": "Evidence for S3 bucket MFA delete configuration, particularly for CloudTrail buckets",
-            "id": "EVD-S3-MFA-DELETE",
-            "instructions": "Script: s3_mfa_delete.py. Commands executed: aws s3api get-bucket-versioning",
-            "dependencies": [
-              "aws-cli",
-              "python3"
-            ],
-            "tags": [
-              "s3",
-              "mfa",
-              "cloudtrail",
-              "aws"
-            ],
-            "validationRules": [
-              "\"MFADelete\":\\s*\"Enabled\"",
-              "\"Status\":\\s*\"Enabled\""
-            ]
-          },
           "security_groups": {
             "script_file": "fetchers/aws/security_groups.sh",
             "name": "Security Groups",
@@ -659,8 +638,65 @@
             "validationRules": []
           }
         }
-      }
-      ,
+      },
+      "gitlab": {
+        "name": "GitLab",
+        "description": "GitLab evidence collection scripts",
+        "scripts": {
+          "gitlab_ci_cd_pipeline_config": {
+            "script_file": "fetchers/gitlab/gitlab_ci_cd_pipeline_config.py",
+            "name": "GitLab CI/CD Pipeline Configuration",
+            "description": "Evidence for automated testing, security scanning, and deployment controls in .gitlab-ci.yml",
+            "id": "EVD-GITLAB-CICD-CONFIG",
+            "instructions": "Script: gitlab_ci_cd_pipeline_config.sh. Commands executed: GitLab API calls to retrieve project .gitlab-ci.yml and pipeline configuration",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "gitlab",
+              "cicd",
+              "security-scanning",
+              "testing"
+            ],
+            "validationRules": []
+          },
+          "gitlab_project_summary": {
+            "script_file": "fetchers/gitlab/gitlab_project_summary.py",
+            "name": "GitLab Project Summary",
+            "description": "Evidence for repository configuration inventory including Terraform, Docker, and YAML configs",
+            "id": "EVD-GITLAB-PROJECT-SUMMARY",
+            "instructions": "Script: gitlab_project_summary.sh. Commands executed: GitLab API to list repository tree and file metadata",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "gitlab",
+              "inventory",
+              "terraform",
+              "docker",
+              "yaml"
+            ],
+            "validationRules": []
+          },
+          "gitlab_merge_request_summary": {
+            "script_file": "fetchers/gitlab/gitlab_merge_request_summary.py",
+            "name": "GitLab Merge Request Summary",
+            "description": "Evidence for change management: approvals, reviews, discussions, and compliance metrics",
+            "id": "EVD-GITLAB-MR-SUMMARY",
+            "instructions": "Script: gitlab_merge_request_summary.sh. Commands executed: GitLab API to list merge requests, approvals, and discussions with pagination",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "gitlab",
+              "change-management",
+              "approvals",
+              "reviews"
+            ],
+            "validationRules": []
+          }
+        }
+      },
       "rippling": {
         "name": "Rippling",
         "description": "Rippling HR evidence collection scripts",

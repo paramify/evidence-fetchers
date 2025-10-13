@@ -251,7 +251,7 @@ class ParamifyPusher:
         
         return results
     
-    def create_evidence_set(self, evidence_set_data: Dict) -> bool:
+    def create_evidence_set_from_data(self, evidence_set_data: Dict) -> bool:
         """Create evidence set (Evidence Object) in Paramify"""
         reference_id = evidence_set_data["id"]
         name = evidence_set_data["name"]
@@ -323,6 +323,88 @@ class ParamifyPusher:
             return False
         except Exception as e:
             print(f"Error in script upload process: {e}")
+            return False
+
+    def find_existing_evidence_object(self, reference_id: str) -> Optional[str]:
+        """Find existing Evidence Object by reference ID"""
+        try:
+            response = requests.get(f"{self.base_url}/evidence", headers=self.headers)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            for evidence in data.get("evidences", []):
+                if evidence.get("referenceId") == reference_id:
+                    evidence_id = evidence.get("id")
+                    return evidence_id
+            
+            return None
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to retrieve Evidence Objects: {e}")
+            return None
+    
+    def create_evidence_object(self, reference_id: str, name: str, description: str, 
+                              instructions: str, automated: bool = True) -> Optional[str]:
+        """Create new Evidence Object"""
+        print(f"Creating Evidence Object: {name}")
+        
+        # Convert rich text instructions to string format for Paramify API
+        instructions_string = convert_instructions_to_string(instructions)
+        
+        data = {
+            "referenceId": reference_id,
+            "name": name,
+            "description": description,
+            "instructions": instructions_string,
+            "automated": automated
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/evidence", headers=self.headers, json=data)
+            
+            if response.status_code in [200, 201]:
+                result = response.json()
+                evidence_id = result.get("id")
+                print(f"Evidence Object created successfully: {evidence_id}")
+                return evidence_id
+            elif response.status_code == 400:
+                # Check if it's a "Reference ID already exists" error
+                error_data = response.json()
+                error_msg = error_data.get("message") or error_data.get("error", "Unknown error")
+                if "Reference ID already exists" in error_msg:
+                    print("Evidence Object already exists, attempting to find it...")
+                    return self.find_existing_evidence_object(reference_id)
+                else:
+                    print(f"Failed to create Evidence Object (HTTP {response.status_code}): {error_msg}")
+                    return None
+            else:
+                print(f"Failed to create Evidence Object (HTTP {response.status_code})")
+                print(response.text)
+                return None
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Error creating evidence object: {e}")
+            return None
+
+    def upload_evidence_directory(self, evidence_dir: str) -> bool:
+        """Upload all evidence files from a directory to Paramify"""
+        evidence_path = Path(evidence_dir)
+        if not evidence_path.exists():
+            print(f"Evidence directory not found: {evidence_dir}")
+            return False
+        
+        # Look for summary.json file
+        summary_file = evidence_path / "summary.json"
+        if summary_file.exists():
+            print(f"Found summary.json, processing evidence files...")
+            results = self.process_summary(str(summary_file))
+            success_count = sum(1 for r in results if r["upload_success"])
+            total_count = len(results)
+            print(f"Uploaded {success_count}/{total_count} evidence files")
+            return success_count == total_count
+        else:
+            print(f"No summary.json found in {evidence_dir}")
             return False
 
     def save_upload_log(self, results: List[Dict], log_path: str = "upload_log.json"):

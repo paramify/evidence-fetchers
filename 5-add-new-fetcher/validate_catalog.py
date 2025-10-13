@@ -63,7 +63,7 @@ def validate_categories(catalog: Dict[str, Any]) -> bool:
     print("Validating categories and scripts...")
     
     categories = catalog['evidence_fetchers_catalog']['categories']
-    valid_categories = ['aws', 'k8s', 'knowbe4', 'okta', 'rippling']
+    valid_categories = ['aws', 'k8s', 'knowbe4', 'okta', 'gitlab', 'rippling']
     
     for category_name, category_data in categories.items():
         if category_name not in valid_categories:
@@ -116,7 +116,7 @@ def validate_script_metadata(script_name: str, script_data: Dict[str, Any], cate
     return True
 
 
-def validate_script_files_exist(catalog: Dict[str, Any]) -> List[str]:
+def validate_script_files_exist(catalog: Dict[str, Any], repo_root: Path) -> List[str]:
     """Check if all script files referenced in the catalog actually exist."""
     print("Validating script files exist...")
     
@@ -126,8 +126,10 @@ def validate_script_files_exist(catalog: Dict[str, Any]) -> List[str]:
     for category_name, category_data in categories.items():
         for script_name, script_data in category_data['scripts'].items():
             script_file = script_data['script_file']
+            # Resolve path relative to repo root
+            full_path = repo_root / script_file
             
-            if not os.path.exists(script_file):
+            if not full_path.exists():
                 missing_files.append(f"{script_name} ({category_name}): {script_file}")
                 print(f"✗ Missing file: {script_file} (script: {script_name}, category: {category_name})")
             else:
@@ -141,35 +143,33 @@ def validate_script_files_exist(catalog: Dict[str, Any]) -> List[str]:
         return []
 
 
-def validate_script_files_not_in_catalog() -> List[str]:
+def validate_script_files_not_in_catalog(repo_root: Path) -> List[str]:
     """Find script files that exist but are not in the catalog."""
     print("Checking for script files not in catalog...")
     
     # Find all script files in the fetchers directory
-    fetchers_dir = Path('fetchers')
+    fetchers_dir = repo_root / 'fetchers'
     if not fetchers_dir.exists():
         print("⚠ Warning: 'fetchers' directory not found")
         return []
     
     script_files = []
     for script_file in fetchers_dir.rglob('*.sh'):
-        script_files.append(str(script_file))
+        script_files.append(str(script_file.relative_to(repo_root)))
     for script_file in fetchers_dir.rglob('*.py'):
-        script_files.append(str(script_file))
+        script_files.append(str(script_file.relative_to(repo_root)))
     
     # Get all script files referenced in catalog
-    catalog_path = 'evidence_fetchers_catalog.json'
-    if not os.path.exists(catalog_path):
-        catalog_path = os.path.join('1-select-fetchers', 'evidence_fetchers_catalog.json')
-    catalog = load_json_file(catalog_path)
-    catalog_files = set()
+    catalog_path = repo_root / '1-select-fetchers' / 'evidence_fetchers_catalog.json'
+    catalog = load_json_file(str(catalog_path))
+    catalog_files: Set[str] = set()
     
     for category_data in catalog['evidence_fetchers_catalog']['categories'].values():
         for script_data in category_data['scripts'].values():
             catalog_files.add(script_data['script_file'])
     
     # Find files not in catalog
-    uncatalogued_files = []
+    uncatalogued_files: List[str] = []
     for script_file in script_files:
         if script_file not in catalog_files:
             uncatalogued_files.append(script_file)
@@ -183,16 +183,36 @@ def validate_script_files_not_in_catalog() -> List[str]:
         return []
 
 
-def validate_customer_template(catalog: Dict[str, Any]) -> bool:
+def compute_catalog_diff(repo_root: Path, catalog: Dict[str, Any]) -> Dict[str, List[str]]:
+    """Compute the difference between actual fetcher scripts and catalog-listed scripts."""
+    fetchers_dir = repo_root / 'fetchers'
+    actual_files: Set[str] = set()
+    for ext in ('*.sh', '*.py'):
+        for path in fetchers_dir.rglob(ext):
+            actual_files.add(str(path.relative_to(repo_root)))
+
+    catalog_files: Set[str] = set()
+    for category_data in catalog['evidence_fetchers_catalog']['categories'].values():
+        for script_data in category_data['scripts'].values():
+            catalog_files.add(script_data['script_file'])
+
+    missing_in_catalog = sorted(actual_files - catalog_files)
+    missing_on_disk = sorted(catalog_files - actual_files)
+
+    return {
+        'missing_in_catalog': missing_in_catalog,
+        'missing_on_disk': missing_on_disk,
+    }
+
+
+def validate_customer_template(catalog: Dict[str, Any], repo_root: Path) -> bool:
     """Validate that the customer template includes all catalogued scripts."""
     print("Validating customer template...")
     
     try:
         # Try local file first; fallback to 1-select-fetchers path from repo root
-        template_path = 'customer_config_template.json'
-        if not os.path.exists(template_path):
-            template_path = os.path.join('1-select-fetchers', 'customer_config_template.json')
-        template = load_json_file(template_path)
+        template_path = repo_root / '1-select-fetchers' / 'customer_config_template.json'
+        template = load_json_file(str(template_path))
     except:
         print("⚠ Warning: Could not load customer_config_template.json")
         return True
@@ -238,30 +258,115 @@ def validate_id_uniqueness(catalog: Dict[str, Any]) -> bool:
     return True
 
 
+def humanize_name(key: str) -> str:
+    return " ".join(part.capitalize() for part in key.replace('-', '_').split('_'))
+
+
+def key_from_filename(path: str) -> str:
+    return Path(path).stem
+
+
+def ensure_category_exists(catalog: Dict[str, Any], category: str) -> None:
+    cats = catalog['evidence_fetchers_catalog']['categories']
+    if category not in cats:
+        cats[category] = {"name": category.capitalize(), "description": f"Auto-synced category {category}", "scripts": {}}
+
+
+def add_script_to_catalog(catalog: Dict[str, Any], category: str, script_file: str) -> None:
+    # Use full filename as key to distinguish .py vs .sh versions
+    key = Path(script_file).stem  # filename without extension
+    ext = Path(script_file).suffix  # .py or .sh
+    full_key = f"{key}_{ext[1:]}"  # e.g., "gitlab_project_summary_py" or "gitlab_project_summary_sh"
+    
+    cats = catalog['evidence_fetchers_catalog']['categories']
+    ensure_category_exists(catalog, category)
+    scripts = cats[category]['scripts']
+    
+    if full_key in scripts:
+        # Update existing entry to point to the new script file
+        scripts[full_key]['script_file'] = script_file
+        return
+        
+    name = humanize_name(key)
+    deps = ['python3'] if script_file.endswith('.py') else ['aws-cli']
+    id_val = f"EVD-{category.upper()}-{key.replace('_', '-').upper()}-{ext[1:].upper()}"
+    scripts[full_key] = {
+        'script_file': script_file,
+        'name': f"{name} ({ext[1:].upper()})",
+        'description': f'Auto-synced entry for {name} - {ext[1:].upper()} version',
+        'id': id_val,
+        'instructions': f'Script: {Path(script_file).name}.',
+        'dependencies': deps,
+        'tags': [ext[1:]],  # Add extension as tag
+        'validationRules': []
+    }
+
+
+def remove_script_from_catalog(catalog: Dict[str, Any], script_file: str) -> None:
+    cats = catalog['evidence_fetchers_catalog']['categories']
+    for category_data in cats.values():
+        scripts = category_data['scripts']
+        for k, v in list(scripts.items()):
+            if v.get('script_file') == script_file:
+                del scripts[k]
+
+
+def autosync_catalog(repo_root: Path, catalog: Dict[str, Any], diff: Dict[str, List[str]]) -> bool:
+    changed = False
+    
+    # Add all missing files as separate entries (no grouping)
+    for script_file in diff['missing_in_catalog']:
+        # category is second path segment: fetchers/<category>/...
+        parts = script_file.split('/')
+        category = parts[1] if len(parts) > 2 else 'aws'
+        add_script_to_catalog(catalog, category, script_file)
+        print(f"  + Added to catalog: {script_file}")
+        changed = True
+    
+    # Remove stale
+    for script_file in diff['missing_on_disk']:
+        remove_script_from_catalog(catalog, script_file)
+        print(f"  - Removed from catalog: {script_file}")
+        changed = True
+    
+    # Write back if changed
+    if changed:
+        out_path = repo_root / '1-select-fetchers' / 'evidence_fetchers_catalog.json'
+        with open(out_path, 'w') as f:
+            json.dump(catalog, f, indent=2)
+        print(f"Saved updated catalog: {out_path}")
+    return changed
+
+
 def main():
     """Main validation function."""
     parser = argparse.ArgumentParser(description='Validate the evidence fetchers catalog')
     parser.add_argument('--fix-missing', action='store_true', help='Attempt to fix missing files')
     parser.add_argument('--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('--auto-sync', action='store_true', help='Automatically reconcile catalog with fetchers on disk')
     
     args = parser.parse_args()
     
     print("Evidence Fetchers Catalog Validation")
     print("=" * 40)
     
-    # Load catalog
-    # Try local file first; fallback to 1-select-fetchers path from repo root
-    catalog_path = 'evidence_fetchers_catalog.json'
-    if not os.path.exists(catalog_path):
-        catalog_path = os.path.join('1-select-fetchers', 'evidence_fetchers_catalog.json')
-    catalog = load_json_file(catalog_path)
+    # Resolve repo root (one level up from this script directory)
+    script_dir = Path(__file__).resolve().parent
+    repo_root = script_dir.parent
+
+    # Load catalog from repo root
+    catalog_path = repo_root / '1-select-fetchers' / 'evidence_fetchers_catalog.json'
+    if not catalog_path.exists():
+        print(f"Error: File '{catalog_path.relative_to(repo_root)}' not found.")
+        sys.exit(1)
+    catalog = load_json_file(str(catalog_path))
     
     # Run all validations
     validations = [
         ("Structure", lambda: validate_catalog_structure(catalog)),
         ("Categories", lambda: validate_categories(catalog)),
         ("ID Uniqueness", lambda: validate_id_uniqueness(catalog)),
-        ("Customer Template", lambda: validate_customer_template(catalog))
+        ("Customer Template", lambda: validate_customer_template(catalog, repo_root))
     ]
     
     all_passed = True
@@ -272,27 +377,51 @@ def main():
     
     # Check for missing files
     print(f"\nFile Existence Validation:")
-    missing_files = validate_script_files_exist(catalog)
+    missing_files = validate_script_files_exist(catalog, repo_root)
     
     # Check for uncatalogued files
     print(f"\nUncatalogued Files Check:")
-    uncatalogued_files = validate_script_files_not_in_catalog()
+    uncatalogued_files = validate_script_files_not_in_catalog(repo_root)
+
+    # Compute diff summary
+    diff = compute_catalog_diff(repo_root, catalog)
+    if diff['missing_in_catalog'] or diff['missing_on_disk']:
+        print("\nCatalog vs Disk Diff:")
+        if diff['missing_in_catalog']:
+            print("  Scripts present on disk but missing in catalog:")
+            for f in diff['missing_in_catalog']:
+                print(f"    + {f}")
+            print("  Suggestion: add these entries to evidence_fetchers_catalog.json")
+        if diff['missing_on_disk']:
+            print("  Scripts listed in catalog but not found on disk:")
+            for f in diff['missing_on_disk']:
+                print(f"    - {f}")
+            print("  Suggestion: remove these entries from the catalog or restore the files")
     
-    # Summary
+    # Summary (and optional autosync)
     print(f"\n{'='*40}")
     print("VALIDATION SUMMARY")
     print(f"{'='*40}")
     
-    if all_passed and not missing_files:
+    if all_passed and not missing_files and not diff['missing_in_catalog'] and not diff['missing_on_disk']:
         print("✓ All validations passed!")
-        if uncatalogued_files:
-            print(f"⚠ Note: {len(uncatalogued_files)} script files are not in the catalog")
-            print("  Consider adding them using: python add_evidence_fetcher.py --interactive")
         return 0
     else:
+        if args.auto_sync and (diff['missing_in_catalog'] or diff['missing_on_disk']):
+            print("Attempting auto-sync of catalog...")
+            changed = autosync_catalog(repo_root, catalog, diff)
+            # Recompute diff after sync
+            new_diff = compute_catalog_diff(repo_root, catalog)
+            if not new_diff['missing_in_catalog'] and not new_diff['missing_on_disk'] and all_passed and not missing_files:
+                print("✓ Auto-sync completed and validations now pass!")
+                return 0
+            else:
+                print("✗ Auto-sync attempted but differences remain.")
         print("✗ Some validations failed!")
         if missing_files:
             print(f"  - {len(missing_files)} missing script files")
+        if diff['missing_in_catalog'] or diff['missing_on_disk']:
+            print("  - Catalog does not match fetchers on disk (see diff above)")
         return 1
 
 

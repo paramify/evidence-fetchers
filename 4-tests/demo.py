@@ -11,8 +11,10 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-# Add parent directory to path
-sys.path.append('..')
+# Add repo root to path
+repo_root = Path(__file__).resolve().parents[1]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 
 
 def demo_fetcher_runner():
@@ -65,29 +67,8 @@ def demo_fetcher_runner():
         # Test individual fetchers
         import importlib.util
         
-        # Test S3 MFA Delete fetcher
-        s3_fetcher_path = Path("../fetchers/s3_mfa_delete.py")
-        if not s3_fetcher_path.exists():
-            s3_fetcher_path = Path("fetchers/s3_mfa_delete.py")
-        
-        spec = importlib.util.spec_from_file_location("s3_mfa_delete", str(s3_fetcher_path))
-        s3_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(s3_module)
-        
-        status, evidence_file = s3_module.run("demo-bucket", str(evidence_dir))
-        print(f"S3 MFA Delete: {status} -> {evidence_file}")
-        
-        # Test EBS Encryption fetcher
-        ebs_fetcher_path = Path("../fetchers/ebs_encryption.py")
-        if not ebs_fetcher_path.exists():
-            ebs_fetcher_path = Path("fetchers/ebs_encryption.py")
-        
-        spec = importlib.util.spec_from_file_location("ebs_encryption", str(ebs_fetcher_path))
-        ebs_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(ebs_module)
-        
-        status, evidence_file = ebs_module.run("vol-0123456789abcdef", str(evidence_dir))
-        print(f"EBS Encryption: {status} -> {evidence_file}")
+        # Demo limited to listing generated evidence dir only
+        print("Skipping direct fetcher imports in demo.")
         
         # Show generated files
         print(f"\nGenerated evidence files in {evidence_dir}:")
@@ -103,10 +84,8 @@ def demo_evidence_sets():
     """Demo the evidence sets configuration"""
     print("\n=== Demo: Evidence Sets Configuration ===\n")
     
-    # Handle both running from tests/ and from project root
-    evidence_sets_path = Path("../evidence_sets.json")
-    if not evidence_sets_path.exists():
-        evidence_sets_path = Path("evidence_sets.json")
+    # Resolve evidence sets from repo root
+    evidence_sets_path = repo_root / "evidence_sets.json"
     
     with open(evidence_sets_path, 'r') as f:
         evidence_sets = json.load(f)
@@ -118,7 +97,8 @@ def demo_evidence_sets():
         print(f"  Name: {config['name']}")
         print(f"  Service: {config['service']}")
         print(f"  Description: {config['description']}")
-        print(f"  Validation Rules: {len(config['validation_rules'])} rules")
+        rules = config.get('validation_rules', config.get('validationRules', []))
+        print(f"  Validation Rules: {len(rules)} rules")
 
 
 def demo_paramify_pusher():
@@ -176,7 +156,7 @@ def main():
         print("\n✅ Demo completed successfully!")
         print("\nTo use the system with real AWS resources:")
         print("1. Configure AWS credentials: aws configure")
-        print("2. Set Paramify API token: export PARAMIFY_API_TOKEN='your-token'")
+        print("2. Set Paramify API token: export PARAMIFY_UPLOAD_API_TOKEN='your-token'")
         print("3. Run fetchers: python fetcher_runner.py --config tests/test_config.json")
         print("4. Upload to Paramify: python paramify_pusher.py evidence/YYYYMMDD_HHMMSS/summary.json")
         

@@ -7,7 +7,6 @@ This directory contains test scripts and validation tools.
 - `run_tests.py` - Main test runner
 - `simple_test.py` - Simple functionality test
 - `test_system.py` - System integration test
-- `debug_s3.py` - S3 debugging test
 - `demo.py` - Demo functionality
 - `README.md` - This documentation file
 

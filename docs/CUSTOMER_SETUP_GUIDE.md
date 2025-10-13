@@ -9,6 +9,8 @@ The evidence fetchers repository contains scripts for multiple cloud providers a
 - **Kubernetes (K8s)**: 3 evidence collection scripts  
 - **KnowBe4**: 2 security awareness training scripts
 - **Okta**: 1 identity management script
+- **GitLab**: 3 CI/CD and change management scripts
+- **Rippling**: 2 HR management scripts
 
 ## Quick Start
 
@@ -31,7 +33,15 @@ Edit `customer_config.json` to select only the evidence fetchers you need.
 python generate_evidence_sets.py
 ```
 
-### 5. Upload to Paramify
+### 5. Set Up Environment Variables
+Copy the example environment file and customize it:
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file with your configuration (see Environment Variables section below).
+
+### 6. Upload to Paramify
 Upload the generated `evidence_sets.json` file to your Paramify instance.
 
 ## Detailed Configuration
@@ -94,7 +104,6 @@ The `customer_config.json` file has the following structure:
 - `rds_encryption_status` - RDS encryption status
 - `route53_high_availability` - Route 53 high availability
 - `s3_encryption_status` - S3 bucket encryption
-- `s3_mfa_delete` - S3 MFA delete configuration
 - `security_groups` - Security group configurations
 - `waf_all_rules` - WAF rule configurations
 - `waf_dos_rules` - WAF DoS protection rules
@@ -110,6 +119,15 @@ The `customer_config.json` file has the following structure:
 
 #### Okta Scripts (1 available)
 - `okta_authenticators` - Okta authenticator configuration
+
+#### GitLab Scripts (3 available)
+- `gitlab_ci_cd_pipeline_config` - CI/CD pipeline configuration and security scanning
+- `gitlab_project_summary` - Repository file inventory and configuration analysis
+- `gitlab_merge_request_summary` - Change management process and approval metrics
+
+#### Rippling Scripts (2 available)
+- `rippling_current_employees` - Current employee data and access management
+- `rippling_all_employees` - All employee data including historical records
 
 ## Configuration Examples
 
@@ -141,6 +159,10 @@ The `customer_config.json` file has the following structure:
         "selected_scripts": []
       },
       "okta": {
+        "enabled": false,
+        "selected_scripts": []
+      },
+      "rippling": {
         "enabled": false,
         "selected_scripts": []
       }
@@ -184,6 +206,10 @@ The `customer_config.json` file has the following structure:
         "selected_scripts": [
           "okta_authenticators"
         ]
+      },
+      "rippling": {
+        "enabled": false,
+        "selected_scripts": []
       }
     }
   }
@@ -220,6 +246,10 @@ The `customer_config.json` file has the following structure:
       "okta": {
         "enabled": false,
         "selected_scripts": []
+      },
+      "rippling": {
+        "enabled": false,
+        "selected_scripts": []
       }
     }
   }
@@ -228,7 +258,19 @@ The `customer_config.json` file has the following structure:
 
 ## Environment Variables
 
-Some scripts require environment variables to be set:
+Some scripts require environment variables to be set. The project includes a comprehensive `.env.example` file that shows all available configuration options.
+
+### Environment File Setup
+
+1. Copy the example file: `cp .env.example .env`
+2. Edit `.env` with your actual values
+3. Uncomment and modify the settings you need
+
+The `.env.example` file includes:
+- **Paramify API Configuration** (required)
+- **Multi-Instance Support** for GitLab projects and AWS regions
+- **Provider-specific settings** for AWS, GitLab, KnowBe4, Okta, and Rippling
+- **Fetcher-specific flags** for advanced configuration
 
 ### KnowBe4 Scripts
 ```bash
@@ -242,6 +284,109 @@ export OKTA_API_TOKEN="your_api_token_here"
 export OKTA_ORG_URL="https://your-org.okta.com"
 ```
 
+### GitLab Scripts
+
+#### Single Project Configuration
+```bash
+# Required global settings
+export GITLAB_URL="https://gitlab.example.com"
+export GITLAB_API_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
+export GITLAB_PROJECT_ID="group/project"
+
+# Optional global defaults
+export GITLAB_BRANCH="main"
+export GITLAB_FILE_PATTERNS=".tf,.tfvars,.yml,.yaml,.json,Dockerfile,.sh"
+export GITLAB_MR_STATE="merged"
+export GITLAB_MR_DAYS_BACK="30"
+export GITLAB_MR_MAX_RESULTS="50"
+```
+
+#### Multi-Project Configuration
+```bash
+# Project 1: Change Management
+export GITLAB_PROJECT_1_URL="https://gitlab.example.com"
+export GITLAB_PROJECT_1_ID="group/change-management"
+export GITLAB_PROJECT_1_API_ACCESS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
+export GITLAB_PROJECT_1_FETCHERS="gitlab_ci_cd_pipeline_config,gitlab_project_summary,gitlab_merge_request_summary"
+
+# Project 2: Terraform
+export GITLAB_PROJECT_2_URL="https://gitlab.example.com"
+export GITLAB_PROJECT_2_ID="group/terraform"
+export GITLAB_PROJECT_2_API_ACCESS_TOKEN="glpat-yyyyyyyyyyyyyyyyyyyy"
+export GITLAB_PROJECT_2_FETCHERS="gitlab_ci_cd_pipeline_config,gitlab_project_summary"
+
+# Project 3: Main Application
+export GITLAB_PROJECT_3_URL="https://gitlab.example.com"
+export GITLAB_PROJECT_3_ID="group/main-application"
+export GITLAB_PROJECT_3_API_ACCESS_TOKEN="glpat-zzzzzzzzzzzzzzzzzzzz"
+export GITLAB_PROJECT_3_FETCHERS="gitlab_merge_request_summary"
+
+# Optional project-specific overrides
+# export GITLAB_PROJECT_1_BRANCH_CICD="dev-branch"
+# export GITLAB_PROJECT_2_FILE_PATTERNS=".py,.ini"
+# export GITLAB_PROJECT_3_MR_STATE="closed"
+# export GITLAB_PROJECT_4_MR_MAX_RESULTS="20"
+```
+
+### Rippling Scripts
+```bash
+export RIPPLING_API_TOKEN="your_rippling_api_token_here"
+```
+
+## GitLab Authentication Setup
+
+The GitLab fetcher scripts use **Project Access Tokens** for authentication. Project tokens are scoped to specific projects only, providing better security for automated scripts.
+
+### Step 1: Create a Project Access Token
+
+1. Navigate to your project in GitLab
+2. Select **Settings** → **Access tokens**
+3. Select **Add new token**
+4. Configure the token:
+   - **Token name**: `evidence-fetchers`
+   - **Expiration date**: Set appropriate expiration (max 365 days)
+   - **Role**: Select appropriate role (Reporter or Developer recommended)
+   - **Scopes**: Select `read_api` and `read_repository`
+5. Select **Create project access token**
+6. Copy the token immediately (starts with `glpat-`)
+
+**Availability**: 
+- GitLab Self-Managed: All tiers
+- GitLab.com: Premium and Ultimate only
+
+For detailed information, see the [GitLab Project Access Tokens documentation](https://docs.gitlab.com/user/project/settings/project_access_tokens/).
+
+### Step 2: Configure Environment Variables
+
+Add the token to your `.env` file:
+
+```bash
+GITLAB_URL=https://gitlab.example.com
+GITLAB_API_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
+GITLAB_PROJECT_ID=group/project
+```
+
+### Step 3: Test Authentication
+
+```bash
+curl --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+  --url "$GITLAB_URL/api/v4/projects"
+```
+
+### Security Best Practices
+
+- Use minimal scopes (`read_api`, `read_repository`)
+- Set token expiration dates (max 365 days)
+- Store tokens in `.env` files, never in code
+- Rotate tokens regularly
+- Monitor token usage
+
+### Troubleshooting
+
+**401 Unauthorized**: Verify token and expiration
+**403 Forbidden**: Check project access and permissions  
+**404 Not Found**: Verify URL and project ID
+
 ## Dependencies
 
 Ensure you have the required tools installed:
@@ -252,24 +397,74 @@ Ensure you have the required tools installed:
 - `aws-cli` - AWS command line interface
 - `kubectl` - Kubernetes command line tool
 - `python3` - Python interpreter
+- `PyYAML` - YAML parser for GitLab CI/CD configuration files
 
 ### Installation Commands
 
 #### macOS
 ```bash
 brew install jq awscli kubernetes-cli
+pip3 install PyYAML
 ```
 
 #### Ubuntu/Debian
 ```bash
 sudo apt-get update
-sudo apt-get install jq curl awscli kubectl python3
+sudo apt-get install jq curl awscli kubectl python3 python3-yaml
 ```
 
 #### CentOS/RHEL
 ```bash
-sudo yum install jq curl awscli kubectl python3
+sudo yum install jq curl awscli kubectl python3 python3-pyyaml
 ```
+
+#### Python Dependencies (if not using system packages)
+```bash
+pip3 install PyYAML requests
+```
+
+## Multi-Instance Execution
+
+The system supports running the same fetcher against multiple projects or regions:
+
+### GitLab Multi-Project Support
+
+Configure multiple GitLab projects using the `GITLAB_PROJECT_N_*` pattern:
+
+```bash
+# Each project can have its own URL, token, and project ID
+GITLAB_PROJECT_1_URL=https://gitlab.example.com
+GITLAB_PROJECT_1_ID=group/change-management
+GITLAB_PROJECT_1_API_ACCESS_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
+GITLAB_PROJECT_1_FETCHERS=gitlab_ci_cd_pipeline_config,gitlab_project_summary,gitlab_merge_request_summary
+
+GITLAB_PROJECT_2_URL=https://gitlab.example.com
+GITLAB_PROJECT_2_ID=group/terraform
+GITLAB_PROJECT_2_API_ACCESS_TOKEN=glpat-yyyyyyyyyyyyyyyyyyyy
+GITLAB_PROJECT_2_FETCHERS=gitlab_ci_cd_pipeline_config,gitlab_project_summary
+```
+
+### AWS Multi-Region Support
+
+Configure multiple AWS regions using the `AWS_REGION_N_*` pattern:
+
+```bash
+# Each region can have its own profile and configuration
+AWS_REGION_1=us-east-1
+AWS_REGION_1_PROFILE=production
+AWS_REGION_1_FETCHERS=s3_encryption_status,iam_policies
+
+AWS_REGION_2=us-west-2
+AWS_REGION_2_PROFILE=production
+AWS_REGION_2_FETCHERS=s3_encryption_status,iam_policies
+```
+
+### Benefits of Multi-Instance Execution
+
+- **Security**: Each project uses its own scoped access token
+- **Flexibility**: Different configurations per project/region
+- **Scalability**: Easy to add more projects or regions
+- **Backward Compatibility**: Single-instance mode still works
 
 ## Usage Commands
 
@@ -315,7 +510,12 @@ python generate_evidence_sets.py customer_config.json test_output.json
    - Validate your JSON syntax using `python -m json.tool customer_config.json`
 
 4. **"Environment variables not set"**
-   - Set required environment variables for KnowBe4 and Okta scripts
+   - Set required environment variables for KnowBe4, Okta, and GitLab scripts
+
+5. **"GitLab API authentication failed"**
+   - Verify `GITLAB_URL` and `GITLAB_API_TOKEN` are set correctly
+   - Check that the token has the required scopes (`read_api`, `read_repository`, `read_user`)
+   - Ensure the token hasn't expired
 
 ### Getting Help
 

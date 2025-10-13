@@ -96,13 +96,19 @@ python 2-create-evidence-sets/create_evidence_sets.py
 
 **What it does**:
 - Reads evidence_sets.json to determine which scripts to run
+- Supports **multi-instance execution** for AWS regions and GitLab projects
 - Executes each fetcher script with appropriate parameters
 - Stores evidence files in timestamped directories under /evidence
 - Optionally uploads evidence files to Paramify via API
 - Creates execution summary and CSV reports
 
+**Multi-Instance Support**:
+- **AWS Regions**: Run the same fetcher against multiple AWS regions with different profiles
+- **GitLab Projects**: Run the same fetcher against multiple GitLab projects with different access tokens
+- **Environment Variables**: Configure multiple instances using `GITLAB_PROJECT_N_*` and `AWS_REGION_N_*` patterns
+
 **Files**:
-- `3-run-fetchers/run_fetchers.py` - Main execution script
+- `3-run-fetchers/run_fetchers.py` - Main execution script with multi-instance support
 - `3-run-fetchers/main_fetcher.py` - Legacy fetcher execution script
 - `3-run-fetchers/README.md` - Detailed execution guide
 
@@ -126,7 +132,6 @@ python 3-run-fetchers/run_fetchers.py
 - `4-tests/run_tests.py` - Main test runner
 - `4-tests/simple_test.py` - Simple functionality test
 - `4-tests/test_system.py` - System integration test
-- `4-tests/debug_s3.py` - S3 debugging test
 - `4-tests/demo.py` - Demo functionality
 - `4-tests/README.md` - Test documentation
 
@@ -191,9 +196,11 @@ evidence-fetchers/
 ├── evidence/                       # Evidence storage directory
 ├── fetchers/                       # Evidence fetcher scripts
 │   ├── aws/                        # AWS-specific scripts
+│   ├── gitlab/                     # GitLab CI/CD and change management scripts
 │   ├── k8s/                        # Kubernetes scripts
 │   ├── knowbe4/                    # KnowBe4 scripts
-│   └── okta/                       # Okta scripts
+│   ├── okta/                       # Okta scripts
+│   └── rippling/                   # Rippling HR management scripts
 ├── 0-prerequisites/                # Prerequisites setup
 ├── 1-select-fetchers/              # Fetcher selection
 ├── 2-create-evidence-sets/         # Paramify upload
@@ -241,7 +248,7 @@ Create a `.env` file with the following variables:
 
 ```bash
 # Paramify API Configuration
-PARAMIFY_API_TOKEN=your_api_token_here
+PARAMIFY_UPLOAD_API_TOKEN=your_api_token_here
 PARAMIFY_API_BASE_URL=https://app.paramify.com/api/v0
 
 # Optional: KnowBe4 Configuration
@@ -251,7 +258,43 @@ KNOWBE4_REGION=us
 # Optional: Okta Configuration
 OKTA_API_TOKEN=your_okta_api_token
 OKTA_ORG_URL=https://your-org.okta.com
+
+# Optional: Rippling Configuration
+RIPPLING_API_TOKEN=your_rippling_api_token
 ```
+
+## Available Services
+
+The evidence fetchers support multiple cloud providers and services:
+
+### AWS Scripts (28 available)
+- **Security**: IAM, encryption, security groups, WAF
+- **High Availability**: Auto scaling, load balancers, databases
+- **Monitoring**: CloudWatch, Config, GuardDuty
+- **Storage**: S3, EBS, EFS encryption and policies
+- **Networking**: VPC, Route53, network policies
+
+### GitLab Scripts (3 available)
+- **CI/CD**: Pipeline configuration and security scanning
+- **Repository**: File inventory and configuration analysis
+- **Change Management**: Merge request process and approval metrics
+
+### Kubernetes Scripts (3 available)
+- **EKS**: Cluster configuration, node groups, add-ons
+- **Security**: RBAC, network policies, pod security
+- **Monitoring**: Pod inventory, resource limits
+
+### KnowBe4 Scripts (2 available)
+- **Training**: Security awareness, role-specific training
+- **Compliance**: Training completion, user status
+
+### Okta Scripts (1 available)
+- **Authentication**: MFA, authenticators, policies
+- **Identity**: User management, access policies
+
+### Rippling Scripts (2 available)
+- **HR Management**: Current employee data and access management
+- **Historical Data**: All employee data including historical records
 
 ## Dependencies
 

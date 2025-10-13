@@ -19,12 +19,18 @@ def print_header():
     print()
 
 
-def run_script(script_path: str, description: str) -> bool:
+def run_script(script_path: str, description: str, cwd: str | None = None, python_executable: str | None = None) -> bool:
     """Run a test script and return success status."""
     print(f"Running {description}...")
     
     try:
-        result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)
+        executable = python_executable or sys.executable
+        result = subprocess.run(
+            [executable, script_path],
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+        )
         
         if result.returncode == 0:
             print(f"  ✓ {description} passed")
@@ -40,12 +46,17 @@ def run_script(script_path: str, description: str) -> bool:
         return False
 
 
-def run_bash_script(script_path: str, description: str) -> bool:
+def run_bash_script(script_path: str, description: str, cwd: str | None = None) -> bool:
     """Run a bash test script and return success status."""
     print(f"Running {description}...")
     
     try:
-        result = subprocess.run(["bash", script_path], capture_output=True, text=True)
+        result = subprocess.run(
+            ["bash", script_path],
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+        )
         
         if result.returncode == 0:
             print(f"  ✓ {description} passed")
@@ -74,9 +85,17 @@ def check_file_exists(file_path: str, description: str) -> bool:
 def main():
     """Main test function."""
     print_header()
-    
+
     print("This script will run various tests to ensure the system is working correctly.")
     print()
+
+    # Resolve important directories regardless of invocation CWD
+    tests_dir = Path(__file__).resolve().parent
+    repo_root = tests_dir.parent
+
+    # Prefer project venv Python if available
+    venv_python = repo_root / "venv" / "bin" / "python"
+    preferred_python = str(venv_python) if venv_python.exists() else sys.executable
     
     # Test results
     test_results = []
@@ -86,14 +105,14 @@ def main():
     print("-" * 30)
     
     required_files = [
-        ("evidence_sets.json", "Evidence sets configuration"),
-        (".env", "Environment variables file"),
-        ("fetchers/", "Fetchers directory"),
-        ("evidence/", "Evidence directory")
+        (repo_root / "evidence_sets.json", "Evidence sets configuration"),
+        (repo_root / ".env", "Environment variables file"),
+        (repo_root / "fetchers", "Fetchers directory"),
+        (repo_root / "evidence", "Evidence directory"),
     ]
     
     for file_path, description in required_files:
-        result = check_file_exists(file_path, description)
+        result = check_file_exists(str(file_path), description)
         test_results.append(("File Check", description, result))
     
     print()
@@ -103,9 +122,9 @@ def main():
     print("-" * 30)
     
     # Check if validation script exists
-    validation_script = "../5-add-new-fetcher/validate_catalog.py"
-    if os.path.exists(validation_script):
-        result = run_script(validation_script, "Catalog validation")
+    validation_script = repo_root / "5-add-new-fetcher" / "validate_catalog.py"
+    if validation_script.exists():
+        result = run_script(str(validation_script), "Catalog validation", cwd=str(validation_script.parent), python_executable=preferred_python)
         test_results.append(("Validation", "Catalog validation", result))
     else:
         print("  ⚠ Catalog validation script not found")
@@ -119,15 +138,13 @@ def main():
     
     # Check if test scripts exist
     test_scripts = [
-        ("simple_test.py", "Simple functionality test"),
-        ("test_system.py", "System integration test"),
-        ("debug_s3.py", "S3 debugging test")
+        (tests_dir / "simple_test.py", "Simple functionality test"),
+        (tests_dir / "test_system.py", "System integration test"),
     ]
     
-    for script_name, description in test_scripts:
-        script_path = script_name
-        if os.path.exists(script_path):
-            result = run_script(script_path, description)
+    for script_path, description in test_scripts:
+        if script_path.exists():
+            result = run_script(str(script_path), description, cwd=str(tests_dir), python_executable=preferred_python)
             test_results.append(("Fetcher Test", description, result))
         else:
             print(f"  ⚠ {description} script not found")
@@ -139,9 +156,9 @@ def main():
     print("Running demo tests...")
     print("-" * 30)
     
-    demo_script = "demo.py"
-    if os.path.exists(demo_script):
-        result = run_script(demo_script, "Demo functionality")
+    demo_script = tests_dir / "demo.py"
+    if demo_script.exists():
+        result = run_script(str(demo_script), "Demo functionality", cwd=str(tests_dir), python_executable=preferred_python)
         test_results.append(("Demo", "Demo functionality", result))
     else:
         print("  ⚠ Demo script not found")

@@ -11,8 +11,11 @@ This directory contains scripts and configuration files for selecting which evid
 - `escape_regex_for_json.py` - Utility for escaping regex patterns for JSON storage
 - `regex_examples.py` - Examples of regex escaping functionality
 - `update_evidence_sets_regex.py` - Script to update existing evidence sets with escaped regex
+- `update_evidence_sets_rich_text.py` - Script to update existing evidence sets with rich text formatting
+- `rich_text_formatter.py` - Rich text formatting functionality for evidence sets
 - `REGEX_ESCAPE_README.md` - Documentation for regex escaping utilities
 - `REGEX_ESCAPING_INTEGRATION.md` - Integration documentation
+- `RICH_TEXT_FORMATTING.md` - Documentation for rich text formatting utilities
 - `README.md` - This documentation file
 
 ## What This Does

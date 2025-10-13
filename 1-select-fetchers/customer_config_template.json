@@ -35,7 +35,6 @@
           "rds_encryption_status",
           "route53_high_availability",
           "s3_encryption_status",
-          "s3_mfa_delete",
           "security_groups",
           "waf_all_rules",
           "waf_dos_rules"
@@ -60,6 +59,14 @@
         "enabled": false,
         "selected_scripts": [
           "okta_authenticators"
+        ]
+      },
+      "gitlab": {
+        "enabled": false,
+        "selected_scripts": [
+          "gitlab_ci_cd_pipeline_config",
+          "gitlab_project_summary",
+          "gitlab_merge_request_summary"
         ]
       },
       "rippling": {
