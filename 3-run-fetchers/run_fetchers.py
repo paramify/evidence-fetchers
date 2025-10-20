@@ -14,6 +14,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
+from dotenv import load_dotenv
 
 
 def load_json_file(file_path: str) -> dict:
@@ -63,6 +64,21 @@ def load_evidence_sets():
     evidence_sets = load_json_file("evidence_sets.json")
     print(f"✓ Loaded {len(evidence_sets['evidence_sets'])} evidence sets")
     return evidence_sets
+
+
+def get_aws_region_from_cli(profile: str = None) -> str:
+    """Get AWS region from AWS CLI configuration if environment variable is not set."""
+    try:
+        cmd = ["aws", "configure", "get", "region"]
+        if profile:
+            cmd.extend(["--profile", profile])
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    return ""
 
 
 def create_evidence_directory():
@@ -133,7 +149,7 @@ def parse_multi_instance_config() -> Dict[str, List[Dict[str, Any]]]:
             config["aws_regions"].append({
                 'name': f"region_{region_num}",
                 'region': region_config.get('region', region_num),
-                'profile': region_config.get('profile', 'default'),
+                'profile': region_config.get('profile', os.environ.get('AWS_PROFILE', '')),
                 'fetchers': fetchers,
                 'config': {k: v for k, v in region_config.items() 
                           if k not in ['region', 'profile', 'fetchers']}
@@ -219,8 +235,8 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, csv_file:
     
     # Add common parameters
     cmd.extend([
-        config.get("AWS_PROFILE", "default"),  # profile
-        config.get("AWS_REGION", "us-west-2"),  # region
+        config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", "")),  # profile
+        config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "")),  # region
         str(evidence_dir),  # output directory
         str(csv_file)  # CSV file
     ])
@@ -275,8 +291,12 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
         cmd = ["bash", str(script_path)]
     
     # Get AWS profile and region from environment or use defaults
-    profile = aws_profile or os.environ.get("AWS_PROFILE", "default")
-    region = aws_region or os.environ.get("AWS_DEFAULT_REGION", "us-west-2")
+    profile = aws_profile or os.environ.get("AWS_PROFILE", "")
+    region = aws_region or os.environ.get("AWS_DEFAULT_REGION", "")
+    
+    # If region is not set, try to get it from AWS CLI
+    if not region:
+        region = get_aws_region_from_cli(profile)
     
     # Add common parameters
     cmd.extend([
@@ -338,25 +358,52 @@ def upload_evidence_to_paramify(evidence_dir: Path):
 
 def create_summary_file(evidence_dir: Path, results: dict):
     """Create a summary file with execution results."""
+    timestamp = datetime.now().isoformat() + "Z"
+    
+    # Convert results to the format expected by paramify pusher
+    summary_results = []
+    for script_name, success in results.items():
+        # Determine status based on success
+        status = "PASS" if success else "FAIL"
+        
+        # Create evidence file path
+        evidence_file = str(evidence_dir / f"{script_name}.json")
+        
+        # Check if evidence file actually exists
+        if not Path(evidence_file).exists():
+            evidence_file = None
+        
+        result_entry = {
+            "check": script_name,
+            "resource": "unknown",  # Default resource, could be enhanced later
+            "status": status,
+            "evidence_file": evidence_file
+        }
+        summary_results.append(result_entry)
+    
     summary = {
-        "execution_timestamp": datetime.now().isoformat(),
+        "timestamp": timestamp,
         "evidence_directory": str(evidence_dir),
         "total_scripts": len(results),
         "successful_scripts": sum(1 for success in results.values() if success),
         "failed_scripts": sum(1 for success in results.values() if not success),
-        "results": results
+        "results": summary_results
     }
     
-    summary_file = evidence_dir / "execution_summary.json"
+    # Create the summary.json file
+    summary_file = evidence_dir / "summary.json"
     with open(summary_file, 'w') as f:
         json.dump(summary, f, indent=2)
     
-    print(f"✓ Created execution summary: {summary_file}")
+    print(f"✓ Created summary: {summary_file}")
 
 
 def main():
     """Main run fetchers function."""
     print_header()
+    
+    # Load environment variables from .env file
+    load_dotenv()
     
     # Check prerequisites
     if not check_prerequisites():
@@ -417,8 +464,12 @@ def main():
             results[instance['instance_name']] = success
     else:
         # Single-instance mode (backward compatibility)
-        aws_profile = os.environ.get("AWS_PROFILE", "default")
-        aws_region = os.environ.get("AWS_DEFAULT_REGION", "us-west-2")
+        aws_profile = os.environ.get("AWS_PROFILE", "")
+        aws_region = os.environ.get("AWS_DEFAULT_REGION", "")
+        
+        # If region is not set in environment, try to get it from AWS CLI
+        if not aws_region:
+            aws_region = get_aws_region_from_cli(aws_profile)
         
         print(f"  AWS Profile: {aws_profile}")
         print(f"  AWS Region: {aws_region}")

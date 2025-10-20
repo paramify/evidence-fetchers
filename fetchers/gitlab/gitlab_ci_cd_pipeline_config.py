@@ -10,7 +10,7 @@ import base64
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -19,7 +19,7 @@ import yaml
 
 
 def current_timestamp() -> str:
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def get_env(name: str, default: Optional[str] = None) -> str:

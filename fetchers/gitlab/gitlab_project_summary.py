@@ -9,7 +9,7 @@ to support KSI-PIY-01 (information resource inventory)
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -17,7 +17,7 @@ import requests
 
 
 def current_timestamp() -> str:
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def get_env(name: str, default: Optional[str] = None) -> str:

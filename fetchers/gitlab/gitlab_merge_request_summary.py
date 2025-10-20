@@ -9,7 +9,7 @@ and review process (KSI-CMT-04)
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -17,7 +17,7 @@ import requests
 
 
 def current_timestamp() -> str:
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def get_env(name: str, default: Optional[str] = None) -> str:
@@ -98,7 +98,7 @@ def get_merge_requests_summary(project_id: str, state: str = "merged", days_back
     }
 
     encoded_project = url_encode(project_id)
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=days_back)
 
     mr_url = f"{api_endpoint}/projects/{encoded_project}/merge_requests"
