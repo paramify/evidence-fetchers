@@ -47,12 +47,12 @@
 # Output: Creates unique JSON file and appends to Training-and-Awareness files
 
 # Required parameters
-if [ "$#" -lt 1 ]; then
-    echo "Usage: $0 <output_dir>"
+if [ "$#" -lt 4 ]; then
+    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
     exit 1
 fi
 
-OUTPUT_DIR="$1"
+OUTPUT_DIR="$3"
 
 # Component identifier
 COMPONENT="role_specific_training"
@@ -89,13 +89,13 @@ echo '{
 
 # Check for KnowBe4 API key
 if [ -z "$KNOWBE4_API_KEY" ]; then
-    echo -e "${RED}Error: KNOWBE4_API_KEY environment variable is not set in .env file${NC}"
+    echo -e "${RED}Error: KNOWBE4_API_KEY environment variable is not set in .env file${NC}" >&2
     exit 1
 fi
 
 # Check for KnowBe4 region
 if [ -z "$KNOWBE4_REGION" ]; then
-    echo -e "${RED}Error: KNOWBE4_REGION environment variable is not set in .env file${NC}"
+    echo -e "${RED}Error: KNOWBE4_REGION environment variable is not set in .env file${NC}" >&2
     exit 1
 fi
 
@@ -123,7 +123,7 @@ make_api_call() {
 echo -e "${BLUE}Fetching users from KnowBe4...${NC}"
 users_response=$(make_api_call "users")
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Failed to fetch users${NC}"
+    echo -e "${RED}Error: Failed to fetch users${NC}" >&2
     exit 1
 fi
 
@@ -131,7 +131,7 @@ fi
 echo -e "${BLUE}Fetching training campaigns...${NC}"
 campaigns_response=$(make_api_call "training/campaigns")
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Failed to fetch campaigns${NC}"
+    echo -e "${RED}Error: Failed to fetch campaigns${NC}" >&2
     exit 1
 fi
 
@@ -139,7 +139,7 @@ fi
 echo -e "${BLUE}Fetching training enrollments...${NC}"
 enrollments_response=$(make_api_call "training/enrollments?exclude_archived_users=true&include_campaign_id=true")
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Failed to fetch enrollments${NC}"
+    echo -e "${RED}Error: Failed to fetch enrollments${NC}" >&2
     exit 1
 fi
 
@@ -147,7 +147,7 @@ fi
 echo -e "${BLUE}Fetching groups...${NC}"
 groups_response=$(make_api_call "groups")
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: Failed to fetch groups${NC}"
+    echo -e "${RED}Error: Failed to fetch groups${NC}" >&2
     exit 1
 fi
 
