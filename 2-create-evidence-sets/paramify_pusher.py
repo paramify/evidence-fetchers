@@ -387,25 +387,88 @@ class ParamifyPusher:
             print(f"Error creating evidence object: {e}")
             return None
 
-    def upload_evidence_directory(self, evidence_dir: str) -> bool:
-        """Upload all evidence files from a directory to Paramify"""
+    def find_summary_file(self, evidence_dir: str) -> Optional[str]:
+        """Find a valid summary file in the evidence directory"""
         evidence_path = Path(evidence_dir)
         if not evidence_path.exists():
             print(f"Evidence directory not found: {evidence_dir}")
+            return None
+        
+        # Look for common summary file names in order of preference
+        summary_files = [
+            "summary.json",
+            "execution_summary.json", 
+            "evidence_summary.json"
+        ]
+        
+        for filename in summary_files:
+            summary_file = evidence_path / filename
+            if summary_file.exists():
+                print(f"Found {filename}, validating format...")
+                if self.validate_summary_file(str(summary_file)):
+                    print(f"✓ Valid summary file found: {filename}")
+                    return str(summary_file)
+                else:
+                    print(f"✗ Invalid format in {filename}, trying next...")
+        
+        # If no standard files found, look for any JSON file with the right structure
+        print("No standard summary files found, searching for compatible JSON files...")
+        for json_file in evidence_path.glob("*.json"):
+            if json_file.name in ["upload_log.json"]:  # Skip log files
+                continue
+            print(f"Checking {json_file.name}...")
+            if self.validate_summary_file(str(json_file)):
+                print(f"✓ Compatible summary file found: {json_file.name}")
+                return str(json_file)
+        
+        print(f"No compatible summary file found in {evidence_dir}")
+        return None
+    
+    def validate_summary_file(self, file_path: str) -> bool:
+        """Validate that a JSON file has the expected summary structure"""
+        try:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            
+            # Check if it has a results array
+            if "results" not in data:
+                return False
+            
+            results = data["results"]
+            if not isinstance(results, list):
+                return False
+            
+            # Check if results array has the expected structure
+            for result in results:
+                if not isinstance(result, dict):
+                    return False
+                
+                # Must have either "check" or "script" field
+                if "check" not in result and "script" not in result:
+                    return False
+                
+                # Must have "status" field
+                if "status" not in result:
+                    return False
+            
+            return True
+            
+        except (json.JSONDecodeError, FileNotFoundError, KeyError):
+            return False
+    
+    def upload_evidence_directory(self, evidence_dir: str) -> bool:
+        """Upload all evidence files from a directory to Paramify"""
+        # Find a compatible summary file
+        summary_file = self.find_summary_file(evidence_dir)
+        if not summary_file:
             return False
         
-        # Look for summary.json file
-        summary_file = evidence_path / "summary.json"
-        if summary_file.exists():
-            print(f"Found summary.json, processing evidence files...")
-            results = self.process_summary(str(summary_file))
-            success_count = sum(1 for r in results if r["upload_success"])
-            total_count = len(results)
-            print(f"Uploaded {success_count}/{total_count} evidence files")
-            return success_count == total_count
-        else:
-            print(f"No summary.json found in {evidence_dir}")
-            return False
+        print(f"Processing evidence files from: {Path(summary_file).name}")
+        results = self.process_summary(summary_file)
+        success_count = sum(1 for r in results if r["upload_success"])
+        total_count = len(results)
+        print(f"Uploaded {success_count}/{total_count} evidence files")
+        return success_count == total_count
 
     def save_upload_log(self, results: List[Dict], log_path: str = "upload_log.json"):
         """Save upload results to log file"""
