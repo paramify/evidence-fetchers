@@ -64,11 +64,11 @@ def fetch_current_employees() -> List[Dict]:
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        print("Usage: python rippling_current_employees.py <evidence-dir>")
+    if len(sys.argv) != 5:
+        print("Usage: python rippling_current_employees.py <profile> <region> <evidence-dir> <csv-file>")
         sys.exit(1)
 
-    evidence_dir = Path(sys.argv[1])
+    evidence_dir = Path(sys.argv[3])
     evidence_dir.mkdir(parents=True, exist_ok=True)
 
     employees = fetch_current_employees()
