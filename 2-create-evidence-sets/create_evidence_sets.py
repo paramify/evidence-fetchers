@@ -146,21 +146,40 @@ def upload_evidence_sets(evidence_sets: dict, upload_scripts: bool = False):
                 
                 # Optionally upload script as artifact
                 if upload_scripts:
+                    # Extract actual script name from instructions
+                    actual_script_name = script_name  # Default to the key
+                    instructions = script_data.get('instructions', [])
+                    if isinstance(instructions, list):
+                        for instruction in instructions:
+                            if isinstance(instruction, dict) and instruction.get('type') == 'p':
+                                children = instruction.get('children', [])
+                                for i, child in enumerate(children):
+                                    if isinstance(child, dict) and child.get('text') == 'Script:':
+                                        # Look for the next child with the script name (skip the space)
+                                        for j in range(i + 1, len(children)):
+                                            next_child = children[j]
+                                            if isinstance(next_child, dict) and next_child.get('code') and 'text' in next_child:
+                                                actual_script_name = next_child['text']
+                                                break
+                                        break
+                                if actual_script_name != script_name:
+                                    break
+                    
                     # Try to find the script file in the fetchers directory
-                    script_path = f"../fetchers/{script_data['service'].lower()}/{script_name}.sh"
+                    script_path = f"fetchers/{script_data['service'].lower()}/{actual_script_name}.sh"
                     if not os.path.exists(script_path):
-                        script_path = f"../fetchers/{script_data['service'].lower()}/{script_name}.py"
+                        script_path = f"fetchers/{script_data['service'].lower()}/{actual_script_name}.py"
                     
                     if os.path.exists(script_path):
                         print(f"  Uploading script artifact: {script_path}")
-                        artifact_result = pusher.upload_evidence_file(result, script_path, script_name)
+                        artifact_result = pusher.upload_script_artifact(result, script_path)
                         if artifact_result:
                             print(f"  ✓ Script artifact uploaded successfully")
                         else:
                             print(f"  ✗ Failed to upload script artifact")
                     else:
                         print(f"  ⚠ Script file not found: {script_path}")
-                        print(f"  ⚠ Tried paths: ../fetchers/{script_data['service'].lower()}/{script_name}.sh and ../fetchers/{script_data['service'].lower()}/{script_name}.py")
+                        print(f"  ⚠ Tried paths: fetchers/{script_data['service'].lower()}/{actual_script_name}.sh and fetchers/{script_data['service'].lower()}/{actual_script_name}.py")
             else:
                 print(f"  ✗ Failed to process evidence set: {script_data['name']}")
         
