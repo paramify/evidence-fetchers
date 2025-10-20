@@ -39,19 +39,34 @@ def print_menu():
     print("3) Run Fetchers")
     print("   - Execute evidence fetcher scripts")
     print("   - Store evidence in timestamped directories")
-    print("   - Option to upload evidence files to Paramify")
     print()
-    print("4) Tests")
+    print("4) Upload Evidence to Paramify")
+    print("   - Find latest evidence directory")
+    print("   - Upload evidence files to Paramify")
+    print()
+    print("5) Other/Extra Options")
+    print("   - Tests, Add New Fetcher, Evidence Mapping")
+    print()
+    print("q) Quit")
+    print()
+
+
+def print_other_options_menu():
+    """Print the other/extra options menu."""
+    print("Other/Extra Options:")
+    print()
+    print("1) Tests")
     print("   - Run validation and test scripts")
     print()
-    print("5) Add New Fetcher Script")
+    print("2) Add New Fetcher Script")
     print("   - Add a new fetcher to the library")
     print("   - Includes GitHub contribution instructions")
     print()
-    print("6) Evidence Requirement Mapping")
+    print("3) Evidence Requirement Mapping")
     print("   - Map evidence to requirements from Paramify YAML")
     print("   - Add requirement mappings to evidence sets")
     print()
+    print("b) Back to Main Menu")
     print("q) Quit")
     print()
 
@@ -84,13 +99,55 @@ def run_bash_script(script_path: str, *args):
         return False
 
 
+def handle_other_options():
+    """Handle the other/extra options menu."""
+    while True:
+        print_header()
+        print_other_options_menu()
+        
+        choice = input("Enter your choice (1-3, b for back, q to quit): ").strip().lower()
+        print()
+        
+        if choice == 'q':
+            return 'quit'
+        elif choice == 'b':
+            return 'back'
+        elif choice == '1':
+            print("Running Tests...")
+            print("=" * 40)
+            if os.path.exists("5-tests/run_tests.py"):
+                run_script("5-tests/run_tests.py")
+            else:
+                print("Tests script not found. Please check the 5-tests/ folder.")
+        elif choice == '2':
+            print("Running Add New Fetcher Script...")
+            print("=" * 40)
+            if os.path.exists("6-add-new-fetcher/add_new_fetcher.py"):
+                run_script("6-add-new-fetcher/add_new_fetcher.py")
+            else:
+                print("Add new fetcher script not found. Please check the 6-add-new-fetcher/ folder.")
+        elif choice == '3':
+            print("Running Evidence Requirement Mapping...")
+            print("=" * 40)
+            if os.path.exists("7-evidence-requirement-mapping/map_requirements.py"):
+                run_script("7-evidence-requirement-mapping/map_requirements.py")
+            else:
+                print("Evidence requirement mapping script not found. Please check the 7-evidence-requirement-mapping/ folder.")
+        else:
+            print("Invalid choice. Please enter 1-3, b for back, or q to quit.")
+        
+        print()
+        input("Press Enter to continue...")
+        print()
+
+
 def main():
     """Main menu loop."""
     while True:
         print_header()
         print_menu()
         
-        choice = input("Enter your choice (0-6, q to quit): ").strip().lower()
+        choice = input("Enter your choice (0-5, q to quit): ").strip().lower()
         print()
         
         if choice == 'q':
@@ -130,31 +187,22 @@ def main():
                 print("Run fetchers script not found. Please check the 3-run-fetchers/ folder.")
         
         elif choice == '4':
-            print("Running Tests...")
+            print("Running Upload Evidence to Paramify...")
             print("=" * 40)
-            if os.path.exists("4-tests/run_tests.py"):
-                run_script("4-tests/run_tests.py")
+            if os.path.exists("4-upload-to-paramify/upload_to_paramify.py"):
+                run_script("4-upload-to-paramify/upload_to_paramify.py")
             else:
-                print("Tests script not found. Please check the 4-tests/ folder.")
+                print("Upload to paramify script not found. Please check the 4-upload-to-paramify/ folder.")
         
         elif choice == '5':
-            print("Running Add New Fetcher Script...")
-            print("=" * 40)
-            if os.path.exists("5-add-new-fetcher/add_new_fetcher.py"):
-                run_script("5-add-new-fetcher/add_new_fetcher.py")
-            else:
-                print("Add new fetcher script not found. Please check the 5-add-new-fetcher/ folder.")
-        
-        elif choice == '6':
-            print("Running Evidence Requirement Mapping...")
-            print("=" * 40)
-            if os.path.exists("6-evidence-requirement-mapping/map_requirements.py"):
-                run_script("6-evidence-requirement-mapping/map_requirements.py")
-            else:
-                print("Evidence requirement mapping script not found. Please check the 6-evidence-requirement-mapping/ folder.")
+            result = handle_other_options()
+            if result == 'quit':
+                print("Goodbye!")
+                break
+            # If result is 'back', continue to main menu
         
         else:
-            print("Invalid choice. Please enter 0-6 or q to quit.")
+            print("Invalid choice. Please enter 0-5 or q to quit.")
         
         print()
         input("Press Enter to continue...")

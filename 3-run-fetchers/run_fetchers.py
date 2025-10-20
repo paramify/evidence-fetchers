@@ -331,31 +331,6 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
         return False
 
 
-def upload_evidence_to_paramify(evidence_dir: Path):
-    """Upload evidence files to Paramify."""
-    print("\nUploading evidence to Paramify...")
-    
-    # Import the paramify pusher
-    sys.path.append(str(Path(__file__).parent.parent / "2-create-evidence-sets"))
-    from paramify_pusher import ParamifyPusher
-    
-    # Initialize the pusher
-    api_token = os.environ.get("PARAMIFY_UPLOAD_API_TOKEN")
-    base_url = os.environ.get("PARAMIFY_API_BASE_URL", "https://app.paramify.com/api/v0")
-    
-    pusher = ParamifyPusher(api_token, base_url)
-    
-    # Upload evidence files
-    success = pusher.upload_evidence_directory(str(evidence_dir))
-    
-    if success:
-        print("✓ Evidence uploaded to Paramify successfully")
-    else:
-        print("✗ Some evidence files failed to upload")
-    
-    return success
-
-
 def create_summary_file(evidence_dir: Path, results: dict):
     """Create a summary file with execution results."""
     timestamp = datetime.now().isoformat() + "Z"
@@ -510,10 +485,8 @@ def main():
     print(f"  Successful: {sum(1 for success in results.values() if success)}")
     print(f"  Failed: {sum(1 for success in results.values() if not success)}")
     
-    # Ask about uploading to Paramify
-    upload_to_paramify = input(f"\nDo you want to upload evidence files to Paramify? (y/n): ").strip().lower()
-    if upload_to_paramify == 'y':
-        upload_evidence_to_paramify(evidence_dir)
+    # Note: Paramify upload is now available as a separate step (option 4)
+    print(f"\nNote: To upload evidence to Paramify, use option 4 from the main menu.")
     
     print(f"\n{'='*60}")
     print("EXECUTION COMPLETE")

@@ -122,7 +122,7 @@ def main():
     print("-" * 30)
     
     # Check if validation script exists
-    validation_script = repo_root / "5-add-new-fetcher" / "validate_catalog.py"
+    validation_script = repo_root / "6-add-new-fetcher" / "validate_catalog.py"
     if validation_script.exists():
         result = run_script(str(validation_script), "Catalog validation", cwd=str(validation_script.parent), python_executable=preferred_python)
         test_results.append(("Validation", "Catalog validation", result))

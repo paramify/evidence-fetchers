@@ -148,8 +148,8 @@ class ParamifyPusher:
         # Create artifact metadata
         script_filename = Path(evidence_file_path).name
         artifact_data = {
-            "title": f"{check_name} Fetcher Script",
-            "note": f"Fetcher script for {check_name}: {script_filename}",
+            "title": check_name,
+            "note": f"Evidence file for {check_name}: {script_filename}",
             "effectiveDate": datetime.now().isoformat() + "Z"
         }
         
@@ -279,9 +279,10 @@ class ParamifyPusher:
         print(f"Uploading script artifact: {Path(script_path).name}")
         
         # Create artifact metadata
+        script_name = Path(script_path).name
         artifact_data = {
-            "title": f"Fetcher Script: {Path(script_path).name}",
-            "note": f"Automated evidence collection script for {Path(script_path).name}",
+            "title": script_name,
+            "note": f"Automated evidence collection script: {script_name}",
             "effectiveDate": datetime.now().isoformat() + "Z"
         }
         

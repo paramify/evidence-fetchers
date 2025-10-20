@@ -20,11 +20,13 @@ python main.py
 
 **3) Run Fetchers** - Execute evidence fetcher scripts and store evidence files  
 
-**4) Tests** - Run validation and test scripts  
+**4) Upload Evidence to Paramify** - Find latest evidence directory and upload to Paramify  
 
-**5) Add New Fetcher Script** - Add a new fetcher to the library with GitHub contribution instructions  
+**5) Tests** - Run validation and test scripts  
 
-**6) Evidence Requirement Mapping** - Map evidence to requirements from Paramify YAML files  
+**6) Add New Fetcher Script** - Add a new fetcher to the library with GitHub contribution instructions  
+
+**7) Evidence Requirement Mapping** - Map evidence to requirements from Paramify YAML files  
 
 ---
 
@@ -99,7 +101,6 @@ python 2-create-evidence-sets/create_evidence_sets.py
 - Supports **multi-instance execution** for AWS regions and GitLab projects
 - Executes each fetcher script with appropriate parameters
 - Stores evidence files in timestamped directories under /evidence
-- Optionally uploads evidence files to Paramify via API
 - Creates execution summary and CSV reports
 
 **Multi-Instance Support**:
@@ -117,7 +118,27 @@ python 2-create-evidence-sets/create_evidence_sets.py
 python 3-run-fetchers/run_fetchers.py
 ```
 
-### 4) Tests
+### 4) Upload Evidence to Paramify
+
+**Purpose**: Find the latest evidence directory and upload evidence files to Paramify via API.
+
+**What it does**:
+- Automatically finds the latest evidence directory based on timestamp
+- Validates that required summary files exist
+- Uploads evidence files to Paramify via API
+- Provides user confirmation before proceeding
+- Handles errors gracefully with detailed logging
+
+**Files**:
+- `4-upload-to-paramify/upload_to_paramify.py` - Main upload script
+- `4-upload-to-paramify/README.md` - Upload documentation
+
+**Usage**:
+```bash
+python 4-upload-to-paramify/upload_to_paramify.py
+```
+
+### 5) Tests
 
 **Purpose**: Run validation and test scripts to ensure the system is working correctly.
 
@@ -129,18 +150,18 @@ python 3-run-fetchers/run_fetchers.py
 - Provides comprehensive test summary
 
 **Files**:
-- `4-tests/run_tests.py` - Main test runner
-- `4-tests/simple_test.py` - Simple functionality test
-- `4-tests/test_system.py` - System integration test
-- `4-tests/demo.py` - Demo functionality
-- `4-tests/README.md` - Test documentation
+- `5-tests/run_tests.py` - Main test runner
+- `5-tests/simple_test.py` - Simple functionality test
+- `5-tests/test_system.py` - System integration test
+- `5-tests/demo.py` - Demo functionality
+- `5-tests/README.md` - Test documentation
 
 **Usage**:
 ```bash
-python 4-tests/run_tests.py
+python 5-tests/run_tests.py
 ```
 
-### 5) Add New Fetcher Script
+### 6) Add New Fetcher Script
 
 **Purpose**: Add a new evidence fetcher script to the library with proper integration and GitHub contribution instructions.
 
@@ -152,20 +173,20 @@ python 4-tests/run_tests.py
 - Provides GitHub contribution instructions
 
 **Files**:
-- `5-add-new-fetcher/add_new_fetcher.py` - Main addition script
-- `5-add-new-fetcher/add_evidence_fetcher.py` - Core addition functionality
-- `5-add-new-fetcher/validate_catalog.py` - Catalog validation
-- `5-add-new-fetcher/new_script_template.sh` - Bash script template
-- `5-add-new-fetcher/new_script_template.py` - Python script template
-- `5-add-new-fetcher/DEVELOPER_GUIDE.md` - Comprehensive developer guide
-- `5-add-new-fetcher/README.md` - Quick start guide
+- `6-add-new-fetcher/add_new_fetcher.py` - Main addition script
+- `6-add-new-fetcher/add_evidence_fetcher.py` - Core addition functionality
+- `6-add-new-fetcher/validate_catalog.py` - Catalog validation
+- `6-add-new-fetcher/new_script_template.sh` - Bash script template
+- `6-add-new-fetcher/new_script_template.py` - Python script template
+- `6-add-new-fetcher/DEVELOPER_GUIDE.md` - Comprehensive developer guide
+- `6-add-new-fetcher/README.md` - Quick start guide
 
 **Usage**:
 ```bash
-python 5-add-new-fetcher/add_new_fetcher.py
+python 6-add-new-fetcher/add_new_fetcher.py
 ```
 
-### 6) Evidence Requirement Mapping
+### 7) Evidence Requirement Mapping
 
 **Purpose**: Map evidence to requirements from Paramify machine readable YAML files and add requirement mappings to evidence sets.
 
@@ -176,13 +197,13 @@ python 5-add-new-fetcher/add_new_fetcher.py
 - Creates updated evidence sets file with requirements
 
 **Files**:
-- `6-evidence-requirement-mapping/map_requirements.py` - Main mapping script
-- `6-evidence-requirement-mapping/paramify_evidence_mappings.json` - Existing evidence mappings
-- `6-evidence-requirement-mapping/README.md` - Mapping documentation
+- `7-evidence-requirement-mapping/map_requirements.py` - Main mapping script
+- `7-evidence-requirement-mapping/paramify_evidence_mappings.json` - Existing evidence mappings
+- `7-evidence-requirement-mapping/README.md` - Mapping documentation
 
 **Usage**:
 ```bash
-python 6-evidence-requirement-mapping/map_requirements.py
+python 7-evidence-requirement-mapping/map_requirements.py
 ```
 
 ## Directory Structure
@@ -205,9 +226,10 @@ evidence-fetchers/
 ├── 1-select-fetchers/              # Fetcher selection
 ├── 2-create-evidence-sets/         # Paramify upload
 ├── 3-run-fetchers/                 # Script execution
-├── 4-tests/                        # Testing and validation
-├── 5-add-new-fetcher/              # Adding new scripts
-└── 6-evidence-requirement-mapping/ # Requirement mapping
+├── 4-upload-to-paramify/           # Evidence upload to Paramify
+├── 5-tests/                        # Testing and validation
+├── 6-add-new-fetcher/              # Adding new scripts
+└── 7-evidence-requirement-mapping/ # Requirement mapping
 ```
 
 ## Getting Started
@@ -240,6 +262,12 @@ evidence-fetchers/
    ```bash
    python main.py
    # Choose option 3
+   ```
+
+6. **Upload evidence to Paramify**:
+   ```bash
+   python main.py
+   # Choose option 4
    ```
 
 ## Environment Variables
@@ -308,6 +336,6 @@ The evidence fetchers support multiple cloud providers and services:
 
 For detailed instructions on each component, see the README.md files in each numbered directory.
 
-For developer information, see `5-add-new-fetcher/DEVELOPER_GUIDE.md`.
+For developer information, see `6-add-new-fetcher/DEVELOPER_GUIDE.md`.
 
 For customer setup, see `1-select-fetchers/CUSTOMER_SETUP_GUIDE.md`.
