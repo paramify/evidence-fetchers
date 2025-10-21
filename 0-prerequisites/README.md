@@ -28,15 +28,6 @@ Create a `.env` file in the root directory with:
 ```bash
 # Paramify API Configuration
 PARAMIFY_UPLOAD_API_TOKEN=your_api_token_here
-PARAMIFY_API_BASE_URL=https://app.paramify.com/api/v0
-
-# Optional: KnowBe4 Configuration
-KNOWBE4_API_KEY=your_knowbe4_api_key
-KNOWBE4_REGION=us
-
-# Optional: Okta Configuration
-OKTA_API_TOKEN=your_okta_api_token
-OKTA_ORG_URL=https://your-org.okta.com
 ```
 
 ## Required Dependencies

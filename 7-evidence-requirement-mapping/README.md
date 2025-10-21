@@ -1,4 +1,4 @@
-# 6) Evidence Requirement Mapping
+# 7) Evidence Requirement Mapping
 
 This directory contains tools for mapping evidence to requirements from Paramify YAML files and updating evidence sets with KSI (Key Security Indicator) requirements.
 

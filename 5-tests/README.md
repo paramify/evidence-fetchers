@@ -1,4 +1,4 @@
-# 4) Tests
+# 5) Tests
 
 This directory contains test scripts and validation tools.
 
@@ -30,5 +30,5 @@ python run_tests.py
 
 After running tests:
 
-1. **Add New Fetcher** (option 5): Contribute new scripts
-2. **Evidence Requirement Mapping** (option 6): Map requirements
+1. **Add New Fetcher** (option 6): Contribute new scripts
+2. **Evidence Requirement Mapping** (option 7): Map requirements

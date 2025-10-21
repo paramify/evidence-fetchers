@@ -1,4 +1,4 @@
-# 5) Add New Fetcher Script
+# 6) Add New Fetcher Script
 
 This directory contains tools for adding new evidence fetcher scripts to the library.
 
@@ -32,5 +32,5 @@ python add_new_fetcher.py
 
 After adding new fetchers:
 
-1. **Tests** (option 4): Validate your changes
-2. **Evidence Requirement Mapping** (option 6): Map requirements
+1. **Tests** (option 5): Validate your changes
+2. **Evidence Requirement Mapping** (option 7): Map requirements

@@ -1,6 +1,6 @@
 # Evidence Fetchers
 
-A comprehensive system for collecting, managing, and uploading evidence for compliance and security assessments.
+Let's go fetch some evidence! And don't forget, screenshots are so 2012. 
 
 ## Quick Start
 
@@ -224,7 +224,7 @@ evidence-fetchers/
 │   └── rippling/                   # Rippling HR management scripts
 ├── 0-prerequisites/                # Prerequisites setup
 ├── 1-select-fetchers/              # Fetcher selection
-├── 2-create-evidence-sets/         # Paramify upload
+├── 2-create-evidence-sets/         # Evidence sets creation in Paramify
 ├── 3-run-fetchers/                 # Script execution
 ├── 4-upload-to-paramify/           # Evidence upload to Paramify
 ├── 5-tests/                        # Testing and validation

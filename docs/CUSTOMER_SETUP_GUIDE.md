@@ -41,8 +41,23 @@ cp .env.example .env
 
 Then edit the `.env` file with your configuration (see Environment Variables section below).
 
-### 6. Upload to Paramify
-Upload the generated `evidence_sets.json` file to your Paramify instance.
+### 6. Create Evidence Sets in Paramify
+```bash
+python main.py
+# Choose option 2
+```
+
+### 7. Run Fetchers
+```bash
+python main.py
+# Choose option 3
+```
+
+### 8. Upload Evidence to Paramify
+```bash
+python main.py
+# Choose option 4
+```
 
 ## Detailed Configuration
 
