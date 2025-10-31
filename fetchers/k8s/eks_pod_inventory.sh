@@ -10,8 +10,6 @@
 # Set AWS profile, default to 'gov_readonly' if not provided
 AWS_PROFILE=${1:-gov_readonly}
 JSON_OUTPUT="eks_all_clusters_pod_inventory.json"
-CSV_OUTPUT="eks_all_clusters_pod_inventory.csv"
-
 echo "Using AWS profile: $AWS_PROFILE"
 
 # Trigger AWS SSO login
@@ -22,9 +20,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Initialize outputs
+# Initialize JSON output
 echo "[]" > "$JSON_OUTPUT"
-echo "cluster,namespace,pod_name,node_name,status,images" > "$CSV_OUTPUT"
 
 # Get list of EKS clusters
 clusters=$(aws eks list-clusters --profile "$AWS_PROFILE" --query "clusters[]" --output text)
@@ -50,19 +47,9 @@ for cluster in $clusters; do
   tmp_file=$(mktemp)
   jq --argjson newData "$pod_data" '. + $newData' "$JSON_OUTPUT" > "$tmp_file" && mv "$tmp_file" "$JSON_OUTPUT"
 
-  # Append to CSV output
-  echo "$pod_data" | jq -r '.[] | [
-    .cluster,
-    .namespace,
-    .pod_name,
-    .node_name,
-    .status,
-    .images
-  ] | @csv' >> "$CSV_OUTPUT"
 
-  echo "Added $cluster data to JSON and CSV."
+  echo "Added $cluster data to JSON."
 done
 
 echo "Inventory complete!"
 echo "JSON: $JSON_OUTPUT"
-echo "CSV : $CSV_OUTPUT"

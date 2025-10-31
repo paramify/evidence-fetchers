@@ -72,8 +72,6 @@ for sg_id in $sg_ids; do
             while IFS=$'\t' read -r protocol from to cidrs; do
                 printf "|  %-4s|  %-5s|  %-5s|  %s  |\n" "$protocol" "${from:-None}" "${to:-None}" "${cidrs:- }"
                 
-                # Add to CSV
-                echo "$COMPONENT,$sg_id,$label,$protocol,${from:-None},${to:-None},\"${cidrs:-}\"" >> "$OUTPUT_CSV"
                 
                 # Add rule to group data
                 group_data=$(echo "$group_data" | jq --arg dir "$label" --arg p "$protocol" --arg f "${from:-null}" --arg t "${to:-null}" --arg c "${cidrs:-}" \

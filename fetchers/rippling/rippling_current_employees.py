@@ -81,13 +81,6 @@ def main() -> None:
             "results": employees
         }, f, indent=2)
 
-    # Simple CSV summary: count only
-    csv_path = evidence_dir / "rippling_employees_summary.csv"
-    if not csv_path.exists():
-        with open(csv_path, "w") as f:
-            f.write("mode,count\n")
-    with open(csv_path, "a") as f:
-        f.write(f"current,{len(employees)}\n")
 
     print(f"Saved: {out_path}")
     print(f"Total current employees: {len(employees)}")

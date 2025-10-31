@@ -233,12 +233,12 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, csv_file:
     else:
         cmd = ["bash", str(script_path)]
     
-    # Add common parameters
+    # Add common parameters - CSV disabled in favor of JSON
     cmd.extend([
         config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", "")),  # profile
         config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "")),  # region
         str(evidence_dir),  # output directory
-        str(csv_file)  # CSV file
+        "/dev/null"  # CSV file disabled - JSON output preferred
     ])
     
     try:
@@ -298,12 +298,12 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
     if not region:
         region = get_aws_region_from_cli(profile)
     
-    # Add common parameters
+    # Add common parameters - CSV disabled in favor of JSON
     cmd.extend([
         profile,  # AWS profile
         region,   # AWS region
         str(evidence_dir),  # output directory
-        str(csv_file)  # CSV file
+        "/dev/null"  # CSV file disabled - JSON output preferred
     ])
     
     # Add additional flags if provided
