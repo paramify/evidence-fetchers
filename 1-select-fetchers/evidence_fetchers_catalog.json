@@ -740,6 +740,54 @@
             "validationRules": []
           }
         }
+      },
+      "checkov": {
+        "name": "Checkov Security Scanning",
+        "description": "Infrastructure as Code security compliance scanning with Checkov",
+        "scripts": {
+          "checkov_terraform": {
+            "script_file": "fetchers/checkov/checkov_terraform.sh",
+            "name": "Checkov Terraform Security",
+            "description": "Evidence for Terraform infrastructure security compliance using Checkov",
+            "id": "EVD-CHECKOV-TERRAFORM",
+            "instructions": "Script: checkov_terraform.sh. Commands executed: checkov --framework terraform with flexible configuration options. Supports multiple source types (GitLab, GitHub, local, URL) and customizable check filtering.",
+            "dependencies": [
+              "checkov",
+              "git",
+              "jq"
+            ],
+            "tags": [
+              "checkov",
+              "terraform",
+              "security",
+              "compliance",
+              "iac",
+              "infrastructure"
+            ],
+            "validationRules": []
+          },
+          "checkov_kubernetes": {
+            "script_file": "fetchers/checkov/checkov_kubernetes.sh",
+            "name": "Checkov Kubernetes Security",
+            "description": "Evidence for Kubernetes manifest security compliance using Checkov",
+            "id": "EVD-CHECKOV-KUBERNETES",
+            "instructions": "Script: checkov_kubernetes.sh. Commands executed: checkov --framework kubernetes with flexible configuration options. Supports multiple source types (GitLab, GitHub, local, URL) and customizable check filtering.",
+            "dependencies": [
+              "checkov",
+              "git",
+              "jq"
+            ],
+            "tags": [
+              "checkov",
+              "kubernetes",
+              "security",
+              "compliance",
+              "k8s",
+              "manifests"
+            ],
+            "validationRules": []
+          }
+        }
       }
     }
   }

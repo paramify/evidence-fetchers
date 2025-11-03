@@ -75,6 +75,13 @@
           "rippling_current_employees",
           "rippling_all_employees"
         ]
+      },
+      "checkov": {
+        "enabled": false,
+        "selected_scripts": [
+          "checkov_terraform",
+          "checkov_kubernetes"
+        ]
       }
     },
     "customization_notes": {
@@ -82,7 +89,8 @@
       "k8s": "Enable this if you use Kubernetes/EKS. Set enabled to true and select the scripts you need.",
       "knowbe4": "Enable this if you use KnowBe4 for security awareness training. Requires KNOWBE4_API_KEY and KNOWBE4_REGION environment variables.",
       "okta": "Enable this if you use Okta for identity management. Requires OKTA_API_TOKEN and OKTA_ORG_URL environment variables.",
-      "rippling": "Enable this if you use Rippling for HR management. Requires RIPPLING_API_TOKEN environment variable."
+      "rippling": "Enable this if you use Rippling for HR management. Requires RIPPLING_API_TOKEN environment variable.",
+      "checkov": "Enable this if you use Checkov for Infrastructure as Code security scanning. Requires checkov installed and configured. Supports Terraform and Kubernetes manifests. Configure CHECKOV_SOURCE_TYPE, CHECKOV_SOURCE_URL, and other Checkov-specific environment variables as needed."
     }
   }
 }

@@ -1,0 +1,11 @@
+# Skip Checks Configuration File
+# One Checkov check ID per line
+# Lines starting with # are comments
+# Example entries:
+
+# Low-severity checks or non-critical policies
+CKV_AWS_23
+
+# Add more checks to skip here
+# CKV_AWS_20
+# CKV_AWS_57

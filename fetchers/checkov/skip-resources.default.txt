@@ -1,0 +1,16 @@
+# Default Skip Resources - Non-Production Resources
+# This file contains a starting set of non-production resources that are usually skipped
+# Users can add additional resources via CHECKOV_SKIP_RESOURCES in .env file (comma-separated)
+# These defaults are automatically loaded and merged with user-specified resources
+# Supports wildcards with * (e.g., aws_s3_bucket.gitlab_*)
+
+# Add non-production resource patterns here
+# One resource pattern per line
+# Lines starting with # are comments
+# Wildcards supported: * matches any characters
+
+# Example entries (uncomment and customize as needed):
+# aws_s3_bucket.gitlab_*
+# aws_s3_bucket.gitlab_runner_cache
+# aws_s3_bucket.gitlab_registry
+# aws_s3_bucket.nessus_scan_export

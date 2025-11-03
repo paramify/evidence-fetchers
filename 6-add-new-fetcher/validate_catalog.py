@@ -63,7 +63,7 @@ def validate_categories(catalog: Dict[str, Any]) -> bool:
     print("Validating categories and scripts...")
     
     categories = catalog['evidence_fetchers_catalog']['categories']
-    valid_categories = ['aws', 'k8s', 'knowbe4', 'okta', 'gitlab', 'rippling']
+    valid_categories = ['aws', 'k8s', 'knowbe4', 'okta', 'gitlab', 'rippling', 'checkov']
     
     for category_name, category_data in categories.items():
         if category_name not in valid_categories:
@@ -104,7 +104,7 @@ def validate_script_metadata(script_name: str, script_data: Dict[str, Any], cate
         return False
     
     # Validate dependencies are in expected list
-    valid_dependencies = ['aws-cli', 'kubectl', 'curl', 'jq', 'python3']
+    valid_dependencies = ['aws-cli', 'kubectl', 'curl', 'jq', 'python3', 'checkov', 'git']
     for dep in script_data['dependencies']:
         if dep not in valid_dependencies:
             print(f"⚠ Warning: Unknown dependency '{dep}' in script '{script_name}'")

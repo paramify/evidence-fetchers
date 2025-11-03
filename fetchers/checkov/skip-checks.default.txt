@@ -1,0 +1,14 @@
+# Default Skip Checks - Low Severity Checks
+# This file contains a starting set of low-severity checks that are usually skipped
+# Users can add additional checks via CHECKOV_SKIP_CHECKS in .env file
+# These defaults are automatically loaded and merged with user-specified checks
+
+# Add low-severity or non-critical checks here
+# One check ID per line
+# Lines starting with # are comments
+
+# Example entries (uncomment and customize as needed):
+# CKV_AWS_250
+# CKV_AWS_144
+
+CKV_AWS_23

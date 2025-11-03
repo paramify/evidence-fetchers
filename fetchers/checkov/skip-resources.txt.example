@@ -1,0 +1,17 @@
+# Skip Resources Configuration File
+# One resource pattern per line (supports wildcards with *)
+# Lines starting with # are comments
+# Example entries:
+
+# Non-production GitLab S3 buckets
+aws_s3_bucket.gitlab_*
+aws_s3_bucket.gitlab_runner_cache
+aws_s3_bucket.gitlab_registry
+
+# Nessus scan export buckets
+aws_s3_bucket.nessus_scan_export
+
+# Add more resource patterns to skip here
+# Use wildcards for pattern matching:
+# aws_s3_bucket.*_test
+# aws_instance.dev_*
