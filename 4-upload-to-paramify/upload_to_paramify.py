@@ -40,20 +40,34 @@ def find_latest_evidence_directory() -> Optional[Path]:
         if item.is_dir() and not item.name.startswith('.'):
             # Try to parse timestamp from directory name
             try:
-                # Handle different timestamp formats
-                if '_' in item.name:
-                    # Format: YYYYMMDD_HHMMSS
-                    timestamp_str = item.name
-                else:
-                    # Format: YYYYMMDDHHMMSS
-                    if len(item.name) == 14 and item.name.isdigit():
-                        timestamp_str = f"{item.name[:8]}_{item.name[8:]}"
-                    else:
-                        continue
+                timestamp = None
+                timestamp_str = item.name
                 
-                # Parse timestamp
-                timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
-                evidence_dirs.append((timestamp, item))
+                # Handle different timestamp formats
+                # New format: YYYY_MM_DD_HHMMSS (e.g., 2025_11_03_160232)
+                if timestamp_str.count('_') == 3:
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, "%Y_%m_%d_%H%M%S")
+                    except ValueError:
+                        pass
+                
+                # Old format: YYYYMMDD_HHMMSS (e.g., 20251103_160232)
+                if timestamp is None and timestamp_str.count('_') == 1:
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+                    except ValueError:
+                        pass
+                
+                # Very old format: YYYYMMDDHHMMSS (e.g., 20251103160232)
+                if timestamp is None and len(timestamp_str) == 14 and timestamp_str.isdigit():
+                    try:
+                        timestamp_str_with_underscore = f"{timestamp_str[:8]}_{timestamp_str[8:]}"
+                        timestamp = datetime.strptime(timestamp_str_with_underscore, "%Y%m%d_%H%M%S")
+                    except ValueError:
+                        pass
+                
+                if timestamp:
+                    evidence_dirs.append((timestamp, item))
             except ValueError:
                 # Skip directories that don't match timestamp format
                 continue
@@ -177,7 +191,8 @@ def main():
         print(f"\n{'='*60}")
         print("UPLOAD FAILED")
         print(f"{'='*60}")
-        print("Some evidence files failed to upload. Check the logs for details.")
+        print("Evidence upload failed. Check the output above for details.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

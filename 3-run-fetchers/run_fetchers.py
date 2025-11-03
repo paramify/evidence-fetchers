@@ -83,7 +83,7 @@ def get_aws_region_from_cli(profile: str = None) -> str:
 
 def create_evidence_directory():
     """Create timestamped evidence directory."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y_%m_%d_%H%M%S")
     evidence_dir = Path("evidence") / timestamp
     evidence_dir.mkdir(parents=True, exist_ok=True)
     
@@ -208,7 +208,7 @@ def create_fetcher_instances(evidence_sets: Dict[str, Any], multi_config: Dict[s
     return instances
 
 
-def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, csv_file: Path, timeout: int) -> bool:
+def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: int) -> bool:
     """Run a single fetcher instance with its specific configuration."""
     script_name = instance["script_name"]
     script_data = instance["script_data"]
@@ -218,10 +218,37 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, csv_file:
     
     print(f"Running {instance_name}...")
     
-    # Determine script path
-    script_path = Path("fetchers") / provider / f"{script_name}.sh"
-    if not script_path.exists():
-        script_path = Path("fetchers") / provider / f"{script_name}.py"
+    # Determine script path - use script_file from catalog if available
+    script_path = None
+    
+    if "script_file" in script_data:
+        script_path = Path(script_data["script_file"])
+    else:
+        # Try to load from catalog
+        catalog_path = Path("1-select-fetchers/evidence_fetchers_catalog.json")
+        if catalog_path.exists():
+            try:
+                catalog = load_json_file(str(catalog_path))
+                if "evidence_fetchers" in catalog and script_name in catalog["evidence_fetchers"]:
+                    if "script_file" in catalog["evidence_fetchers"][script_name]:
+                        script_path = Path(catalog["evidence_fetchers"][script_name]["script_file"])
+            except:
+                pass
+        
+        # Fallback to constructing from script name
+        if script_path is None or not script_path.exists():
+            # Try service-based path from script_data first (for Checkov, service is "CHECKOV")
+            if "service" in script_data:
+                service = script_data["service"].lower()
+                script_path = Path("fetchers") / service / f"{script_name}.sh"
+                if not script_path.exists():
+                    script_path = Path("fetchers") / service / f"{script_name}.py"
+            
+            # If still not found, try provider-based path
+            if script_path is None or not script_path.exists():
+                script_path = Path("fetchers") / provider / f"{script_name}.sh"
+                if not script_path.exists():
+                    script_path = Path("fetchers") / provider / f"{script_name}.py"
     
     if not script_path.exists():
         print(f"  ✗ Script not found: {script_path}")
@@ -267,18 +294,21 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, csv_file:
         return False
 
 
-def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, csv_file: Path, 
+def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
                       aws_profile: str = None, aws_region: str = None, timeout: int = 300, 
                       additional_flags: list = None) -> bool:
     """Run a single fetcher script."""
     print(f"Running {script_name}...")
     
-    # Determine script path
-    service = script_data['service'].lower()
-    script_path = Path("fetchers") / service / f"{script_name}.sh"
-    
-    if not script_path.exists():
-        script_path = Path("fetchers") / service / f"{script_name}.py"
+    # Determine script path - use script_file from catalog if available
+    if "script_file" in script_data:
+        script_path = Path(script_data["script_file"])
+    else:
+        # Fallback to constructing from script name
+        service = script_data.get('service', 'aws').lower()
+        script_path = Path("fetchers") / service / f"{script_name}.sh"
+        if not script_path.exists():
+            script_path = Path("fetchers") / service / f"{script_name}.py"
     
     if not script_path.exists():
         print(f"  ✗ Script not found: {script_path}")
@@ -331,9 +361,18 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
         return False
 
 
-def create_summary_file(evidence_dir: Path, results: dict):
-    """Create a summary file with execution results."""
+def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict = None):
+    """Create a summary file with execution results.
+    
+    Args:
+        evidence_dir: Directory containing evidence files
+        results: Dict mapping script_name/instance_name to success bool
+        instance_info: Optional dict mapping instance_name to instance config (for resource extraction)
+    """
     timestamp = datetime.now().isoformat() + "Z"
+    
+    # Get all JSON files in evidence directory (excluding summary.json)
+    json_files = {f.stem: f for f in evidence_dir.glob("*.json") if f.name != "summary.json"}
     
     # Convert results to the format expected by paramify pusher
     summary_results = []
@@ -341,16 +380,53 @@ def create_summary_file(evidence_dir: Path, results: dict):
         # Determine status based on success
         status = "PASS" if success else "FAIL"
         
-        # Create evidence file path
-        evidence_file = str(evidence_dir / f"{script_name}.json")
+        # Try to find the evidence file
+        evidence_file = None
         
-        # Check if evidence file actually exists
-        if not Path(evidence_file).exists():
-            evidence_file = None
+        # First, try exact match with script_name
+        if script_name in json_files:
+            evidence_file = str(json_files[script_name])
+        else:
+            # Extract base script name by removing instance suffixes like _project_1, _region_1, etc.
+            # Pattern: script_name_project_X or script_name_region_X
+            base_name = re.sub(r'_(project|region)_\d+$', '', script_name)
+            
+            # Try to match with base name
+            if base_name in json_files:
+                evidence_file = str(json_files[base_name])
+            else:
+                # Try to find any file that starts with the base name
+                for file_stem, file_path in json_files.items():
+                    if file_stem.startswith(base_name) or base_name.startswith(file_stem):
+                        evidence_file = str(file_path)
+                        break
+        
+        # Extract resource information from instance_name or instance_info
+        resource = "unknown"
+        if instance_info:
+            # Try to get instance info for this script_name
+            instance = instance_info.get(script_name)
+            if instance:
+                if instance.get("provider") == "gitlab" and "GITLAB_PROJECT_ID" in instance.get("config", {}):
+                    resource = instance["config"]["GITLAB_PROJECT_ID"]
+                elif instance.get("provider") == "aws" and "AWS_REGION" in instance.get("config", {}):
+                    resource = instance["config"]["AWS_REGION"]
+                elif instance.get("provider") == "aws" and "AWS_PROFILE" in instance.get("config", {}):
+                    resource = instance["config"]["AWS_PROFILE"]
+        else:
+            # Fallback: try to extract from instance_name pattern
+            # For project patterns: script_name_project_X -> use project_X
+            project_match = re.search(r'_(project_\d+)$', script_name)
+            if project_match:
+                resource = project_match.group(1)
+            # For region patterns: script_name_region_X -> use region_X
+            region_match = re.search(r'_(region_\d+)$', script_name)
+            if region_match:
+                resource = region_match.group(1)
         
         result_entry = {
             "check": script_name,
-            "resource": "unknown",  # Default resource, could be enhanced later
+            "resource": resource,
             "status": status,
             "evidence_file": evidence_file
         }
@@ -413,11 +489,6 @@ def main():
     
     # Create evidence directory
     evidence_dir = create_evidence_directory()
-    csv_file = evidence_dir / "evidence_summary.csv"
-    
-    # Initialize CSV file
-    with open(csv_file, 'w') as f:
-        f.write("script_name,status,timestamp,notes\n")
     
     # Run fetchers
     print(f"\nExecuting evidence fetchers...")
@@ -431,12 +502,16 @@ def main():
     print()
     
     results = {}
+    instance_info_map = {}  # Map instance_name to instance config
     
     if instances:
         # Multi-instance mode
         for instance in instances:
-            success = run_fetcher_instance(instance, evidence_dir, csv_file, timeout)
-            results[instance['instance_name']] = success
+            success = run_fetcher_instance(instance, evidence_dir, timeout)
+            instance_name = instance['instance_name']
+            results[instance_name] = success
+            # Store instance info for resource extraction
+            instance_info_map[instance_name] = instance
     else:
         # Single-instance mode (backward compatibility)
         aws_profile = os.environ.get("AWS_PROFILE", "")
@@ -472,12 +547,12 @@ def main():
             if additional_flags:
                 print(f"  Using additional flags: {' '.join(additional_flags)}")
             
-            success = run_fetcher_script(script_name, script_data, evidence_dir, csv_file, 
+            success = run_fetcher_script(script_name, script_data, evidence_dir, 
                                        aws_profile, aws_region, timeout, additional_flags)
             results[script_name] = success
     
     # Create summary
-    create_summary_file(evidence_dir, results)
+    create_summary_file(evidence_dir, results, instance_info_map if instance_info_map else None)
     
     # Show results
     print(f"\nExecution Summary:")
@@ -493,7 +568,6 @@ def main():
     print(f"{'='*60}")
     print(f"Evidence stored in: {evidence_dir}")
     print(f"Summary file: {evidence_dir}/execution_summary.json")
-    print(f"CSV summary: {csv_file}")
 
 
 if __name__ == "__main__":
