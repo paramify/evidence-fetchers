@@ -160,6 +160,8 @@ def generate_evidence_sets(catalog: Dict[str, Any], customer_config: Dict[str, A
                 "service": category_name.upper(),
                 "instructions": rich_text_instructions,
                 "validationRules": processed_validation_rules,
+                # Include script_file from catalog for proper script path resolution
+                "script_file": script_info.get("script_file", ""),
                 # "expected_outcome" field removed
             }
             

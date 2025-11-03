@@ -12,11 +12,12 @@ Uploads each file to Paramify via API:
 import argparse
 import json
 import os
+import re
 import requests
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 # Add the rich text formatter to the path
 sys.path.append(str(Path(__file__).parent.parent / "1-select-fetchers"))
@@ -54,8 +55,29 @@ class ParamifyPusher:
             return json.load(f)
     
     def get_evidence_set_info(self, check_name: str, evidence_sets: Dict) -> Optional[Dict]:
-        """Get evidence set information for a check"""
-        return evidence_sets.get("evidence_sets", {}).get(check_name)
+        """Get evidence set information for a check
+        
+        Tries exact match first, then tries base name (removing instance suffixes like _project_1, _region_1)
+        """
+        evidence_sets_dict = evidence_sets.get("evidence_sets", {})
+        
+        # Try exact match first
+        if check_name in evidence_sets_dict:
+            return evidence_sets_dict[check_name]
+        
+        # Try to match with base name by removing instance suffixes
+        # Pattern: check_name_project_X or check_name_region_X
+        base_name = re.sub(r'_(project|region)_\d+$', '', check_name)
+        
+        if base_name != check_name and base_name in evidence_sets_dict:
+            return evidence_sets_dict[base_name]
+        
+        # Try to find any evidence set that starts with the base name
+        for evidence_set_name, evidence_set_info in evidence_sets_dict.items():
+            if evidence_set_name.startswith(base_name) or base_name.startswith(evidence_set_name):
+                return evidence_set_info
+        
+        return None
     
     def find_existing_evidence_set(self, reference_id: str) -> Optional[str]:
         """Find existing Evidence Set by reference ID"""
@@ -193,13 +215,18 @@ class ParamifyPusher:
             print(f"Error in upload process: {e}")
             return False
     
-    def process_summary(self, summary_path: str) -> List[Dict]:
-        """Process summary.json and upload evidence"""
+    def process_summary(self, summary_path: str) -> Tuple[List[Dict], int]:
+        """Process summary.json and upload evidence
+        
+        Returns:
+            tuple: (results list, skipped_count)
+        """
         with open(summary_path, 'r') as f:
             summary = json.load(f)
         
         evidence_sets = self.load_evidence_sets()
         results = []
+        skipped_count = 0
         
         for result in summary["results"]:
             # Handle both "check" and "script" field names
@@ -214,18 +241,21 @@ class ParamifyPusher:
             # Skip if no evidence file (failed scripts)
             if not evidence_file:
                 print(f"Skipping {check_name} - no evidence file")
+                skipped_count += 1
                 continue
             
             # Get evidence set info
             evidence_set_info = self.get_evidence_set_info(check_name, evidence_sets)
             if not evidence_set_info:
                 print(f"Warning: No evidence set info found for {check_name}")
+                skipped_count += 1
                 continue
             
             # Get or create Evidence Set
             evidence_id = self.get_or_create_evidence_set(evidence_set_info)
             if not evidence_id:
                 print(f"Failed to get/create Evidence Set for {check_name}")
+                skipped_count += 1
                 continue
             
             # Upload evidence file
@@ -249,7 +279,7 @@ class ParamifyPusher:
             else:
                 print(f"✗ Failed to upload evidence for {check_name}")
         
-        return results
+        return results, skipped_count
     
     def create_evidence_set_from_data(self, evidence_set_data: Dict) -> bool:
         """Create evidence set (Evidence Object) in Paramify"""
@@ -270,16 +300,71 @@ class ParamifyPusher:
         evidence_id = self.create_evidence_object(reference_id, name, description, instructions)
         return evidence_id is not None
     
+    def script_artifact_exists(self, evidence_object_id: str, filename: str) -> bool:
+        """Check if a fetcher script artifact with the given filename already exists in the evidence set.
+        
+        This only checks for fetcher script artifacts (identified by the note field containing
+        "Automated evidence collection script:"). Evidence files are allowed to have duplicate
+        names as they represent multiple versions/runs.
+        """
+        try:
+            # Get all artifacts for this evidence set (filtering by filename)
+            response = requests.get(
+                f"{self.base_url}/evidence/{evidence_object_id}/artifacts",
+                headers=self.headers,
+                params={"originalFileName": [filename]}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Handle different response structures:
+                # 1. Direct array: [artifact1, artifact2, ...]
+                # 2. Object with artifacts array: {"artifacts": [artifact1, artifact2, ...]}
+                if isinstance(data, list):
+                    artifacts = data
+                else:
+                    artifacts = data.get("artifacts", [])
+                
+                # Check if any artifact is a fetcher script with the same filename
+                # Only match artifacts that are script artifacts (identified by note field)
+                for artifact in artifacts:
+                    artifact_filename = artifact.get("originalFileName")
+                    artifact_title = artifact.get("title")
+                    artifact_note = artifact.get("note", "")
+                    
+                    # Match by filename/title AND verify it's a script artifact (not an evidence file)
+                    # Script artifacts have a note containing "Automated evidence collection script:"
+                    is_script_artifact = "Automated evidence collection script:" in artifact_note
+                    
+                    if is_script_artifact and (artifact_filename == filename or artifact_title == filename):
+                        return True
+                
+                return False
+            else:
+                # If we can't check, assume it doesn't exist and try to upload
+                return False
+                
+        except requests.exceptions.RequestException:
+            # If we can't check, assume it doesn't exist and try to upload
+            return False
+    
     def upload_script_artifact(self, evidence_object_id: str, script_path: str) -> bool:
         """Upload script file as artifact to Evidence Object"""
         if not Path(script_path).exists():
             print(f"Script file not found: {script_path}")
             return False
         
-        print(f"Uploading script artifact: {Path(script_path).name}")
+        script_name = Path(script_path).name
+        
+        # Check if fetcher script artifact already exists (only check for script artifacts, not evidence files)
+        if self.script_artifact_exists(evidence_object_id, script_name):
+            print(f"  ⊘ Script artifact already exists: {script_name} (skipping upload)")
+            return True
+        
+        print(f"  Uploading script artifact: {script_name}")
         
         # Create artifact metadata
-        script_name = Path(script_path).name
         artifact_data = {
             "title": script_name,
             "note": f"Automated evidence collection script: {script_name}",
@@ -465,10 +550,21 @@ class ParamifyPusher:
             return False
         
         print(f"Processing evidence files from: {Path(summary_file).name}")
-        results = self.process_summary(summary_file)
+        results, skipped_count = self.process_summary(summary_file)
         success_count = sum(1 for r in results if r["upload_success"])
         total_count = len(results)
+        
+        # Check if any files were actually processed
+        if total_count == 0:
+            print(f"✗ ERROR: No evidence files were processed. {skipped_count} entries were skipped.")
+            if skipped_count > 0:
+                print(f"   All entries in summary.json were skipped (likely missing evidence_file paths).")
+            return False
+        
         print(f"Uploaded {success_count}/{total_count} evidence files")
+        if skipped_count > 0:
+            print(f"⚠ Warning: {skipped_count} entries were skipped")
+        
         return success_count == total_count
 
     def save_upload_log(self, results: List[Dict], log_path: str = "upload_log.json"):
@@ -514,7 +610,7 @@ def main():
     
     # Process summary and upload evidence
     print(f"Processing summary: {args.summary_path}")
-    results = pusher.process_summary(args.summary_path)
+    results, skipped_count = pusher.process_summary(args.summary_path)
     
     # Save upload log
     pusher.save_upload_log(results, args.log_file)
@@ -524,9 +620,16 @@ def main():
     total_count = len(results)
     
     print(f"\n--- Upload Summary ---")
-    print(f"Total: {total_count}")
+    print(f"Total processed: {total_count}")
     print(f"Successful: {success_count}")
     print(f"Failed: {total_count - success_count}")
+    if skipped_count > 0:
+        print(f"Skipped: {skipped_count}")
+    
+    # Error if no files were processed
+    if total_count == 0:
+        print(f"\n✗ ERROR: No evidence files were processed.")
+        return 1
     
     return 0 if success_count == total_count else 1
 
