@@ -1,7 +1,7 @@
 .env
 .DS_Store
 *.pyc
-old_example_process/*
+*/old_example_process/*
 evidence/*
 8_29_25_paramify_coalfire_20x_machine_readable.yaml
 
@@ -14,8 +14,6 @@ customer_config.json
 tmp.json
 evidence_sets.json
 api_spec_2024-08-01_API_Tier_1.yml
-evidence_sets.json
 upload_log.json
 security_groups.csv
 test.csv
-evidence_sets.json

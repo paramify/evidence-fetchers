@@ -129,10 +129,10 @@ def handle_other_options():
         elif choice == '3':
             print("Running Evidence Requirement Mapping...")
             print("=" * 40)
-            if os.path.exists("7-evidence-requirement-mapping/map_requirements.py"):
-                run_script("7-evidence-requirement-mapping/map_requirements.py")
+            if os.path.exists("extra-supporting-scripts/map_requirements.py"):
+                run_script("extra-supporting-scripts/map_requirements.py")
             else:
-                print("Evidence requirement mapping script not found. Please check the 7-evidence-requirement-mapping/ folder.")
+                print("Evidence requirement mapping script not found. Please check the extra-supporting-scripts/ folder.")
         else:
             print("Invalid choice. Please enter 1-3, b for back, or q to quit.")
         

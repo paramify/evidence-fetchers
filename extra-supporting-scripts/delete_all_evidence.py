@@ -15,14 +15,8 @@ The script requires TWO confirmations before proceeding with deletion:
 """
 
 import os
-import sys
 import requests
-from pathlib import Path
 from dotenv import load_dotenv
-
-# Add the paramify pusher to the path to reuse the base URL logic
-sys.path.append(str(Path(__file__).parent.parent / "2-create-evidence-sets"))
-from paramify_pusher import ParamifyPusher
 
 
 def print_header():

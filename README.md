@@ -22,11 +22,7 @@ python main.py
 
 **4) Upload Evidence to Paramify** - Find latest evidence directory and upload to Paramify  
 
-**5) Tests** - Run validation and test scripts  
-
-**6) Add New Fetcher Script** - Add a new fetcher to the library with GitHub contribution instructions  
-
-**7) Evidence Requirement Mapping** - Map evidence to requirements from Paramify YAML files  
+**5) Other/Extra Options** - Access tests, add new fetcher, and evidence requirement mapping tools  
 
 ---
 
@@ -138,73 +134,64 @@ python 3-run-fetchers/run_fetchers.py
 python 4-upload-to-paramify/upload_to_paramify.py
 ```
 
-### 5) Tests
+### 5) Other/Extra Options
 
-**Purpose**: Run validation and test scripts to ensure the system is working correctly.
+**Purpose**: Access additional tools including tests, adding new fetchers, and evidence requirement mapping.
 
 **What it does**:
-- Checks for required files and directories
-- Runs catalog validation
-- Executes evidence fetcher tests
-- Runs demo functionality tests
-- Provides comprehensive test summary
+- **Tests**: Run validation and test scripts to ensure the system is working correctly
+- **Add New Fetcher**: Add a new evidence fetcher script to the library with proper integration
+- **Evidence Requirement Mapping**: Map evidence to requirements from Paramify YAML files
 
 **Files**:
-- `5-tests/run_tests.py` - Main test runner
-- `5-tests/simple_test.py` - Simple functionality test
-- `5-tests/test_system.py` - System integration test
-- `5-tests/demo.py` - Demo functionality
-- `5-tests/README.md` - Test documentation
+- `5-tests/` - Testing and validation scripts
+- `6-add-new-fetcher/` - Scripts for adding new fetchers
+- `extra-supporting-scripts/` - Supporting tools including mapping, export/import, and evidence management
 
 **Usage**:
 ```bash
-python 5-tests/run_tests.py
+python main.py
+# Choose option 5, then select from the submenu
 ```
 
-### 6) Add New Fetcher Script
+### Extra Supporting Scripts
 
-**Purpose**: Add a new evidence fetcher script to the library with proper integration and GitHub contribution instructions.
+**Purpose**: Additional tools for evidence management, requirement mapping, and workspace operations.
 
-**What it does**:
-- Provides interactive and command-line modes for adding scripts
-- Automatically extracts metadata from script files
-- Updates the evidence fetchers catalog
-- Validates catalog integrity
-- Provides GitHub contribution instructions
+**Available Tools**:
+
+#### Evidence Requirement Mapping
+- **Purpose**: Map evidence to requirements from Paramify machine readable YAML files
+- **Scripts**:
+  - `extra-supporting-scripts/map_requirements.py` - Basic mapping script
+  - `extra-supporting-scripts/extract_evidence_ksi_mappings.py` - Advanced KSI mapping extraction
+  - `extra-supporting-scripts/mapping_summary.py` - Analysis script to summarize mappings
+- **Usage**:
+  ```bash
+  python extra-supporting-scripts/extract_evidence_ksi_mappings.py
+  ```
+
+#### Evidence Export/Import
+- **Purpose**: Transfer evidence sets and artifacts between Paramify workspaces
+- **Script**: `extra-supporting-scripts/export_import_evidence.py`
+- **Usage**:
+  ```bash
+  python extra-supporting-scripts/export_import_evidence.py
+  ```
+
+#### Evidence Management
+- **Purpose**: Delete all evidence from a Paramify workspace (⚠️ DESTRUCTIVE)
+- **Script**: `extra-supporting-scripts/delete_all_evidence.py`
+- **Usage**:
+  ```bash
+  python extra-supporting-scripts/delete_all_evidence.py
+  ```
+- **Warning**: This operation is irreversible and will permanently delete all evidence and artifacts. Use with extreme caution.
 
 **Files**:
-- `6-add-new-fetcher/add_new_fetcher.py` - Main addition script
-- `6-add-new-fetcher/add_evidence_fetcher.py` - Core addition functionality
-- `6-add-new-fetcher/validate_catalog.py` - Catalog validation
-- `6-add-new-fetcher/new_script_template.sh` - Bash script template
-- `6-add-new-fetcher/new_script_template.py` - Python script template
-- `6-add-new-fetcher/DEVELOPER_GUIDE.md` - Comprehensive developer guide
-- `6-add-new-fetcher/README.md` - Quick start guide
-
-**Usage**:
-```bash
-python 6-add-new-fetcher/add_new_fetcher.py
-```
-
-### 7) Evidence Requirement Mapping
-
-**Purpose**: Map evidence to requirements from Paramify machine readable YAML files and add requirement mappings to evidence sets.
-
-**What it does**:
-- Reads Paramify YAML files containing evidence-requirement mappings
-- Extracts evidence mappings from YAML data
-- Adds requirement mappings to evidence sets JSON
-- Creates updated evidence sets file with requirements
-
-**Files**:
-- `7-evidence-requirement-mapping/map_requirements.py` - Main mapping script
-- `7-evidence-requirement-mapping/paramify_evidence_mappings.json` - Existing evidence mappings
-- `7-evidence-requirement-mapping/README.md` - Mapping documentation
-
-**Usage**:
-```bash
-python 7-evidence-requirement-mapping/map_requirements.py
-```
+- `extra-supporting-scripts/README.md` - Documentation for all supporting scripts
+- `extra-supporting-scripts/paramify_evidence_mappings.json` - Existing evidence mappings
+- `extra-supporting-scripts/evidence_sets_with_requirements.json` - Updated evidence sets with KSI requirements
 
 ## Directory Structure
 
@@ -229,7 +216,7 @@ evidence-fetchers/
 ├── 4-upload-to-paramify/           # Evidence upload to Paramify
 ├── 5-tests/                        # Testing and validation
 ├── 6-add-new-fetcher/              # Adding new scripts
-└── 7-evidence-requirement-mapping/ # Requirement mapping
+└── extra-supporting-scripts/       # Supporting scripts (mapping, export/import, evidence management)
 ```
 
 ## Getting Started
@@ -268,6 +255,12 @@ evidence-fetchers/
    ```bash
    python main.py
    # Choose option 4
+   ```
+
+7. **Access additional tools** (optional):
+   ```bash
+   python main.py
+   # Choose option 5 for tests, adding new fetchers, or evidence mapping
    ```
 
 ## Environment Variables

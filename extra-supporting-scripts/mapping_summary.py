@@ -34,7 +34,7 @@ def analyze_mappings(evidence_sets: dict):
         
         if requirements:
             evidence_with_requirements += 1
-            print(f"✅ {evidence_key}: {requirements}")
+            print(f" {evidence_key}: {requirements}")
             
             # Count KSI occurrences
             for ksi in requirements:
