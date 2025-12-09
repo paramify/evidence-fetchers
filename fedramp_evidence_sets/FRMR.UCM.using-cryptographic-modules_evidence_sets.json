@@ -1,0 +1,60 @@
+{
+  "evidence_sets": {
+    "ucm_base_frr_ucm_01": {
+      "id": "FRR-UCM-01",
+      "name": "Cryptographic Module Documentation",
+      "description": "FedRAMP UCM > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST document the cryptographic modules used in each service (or groups of services that use the same modules) where cryptographic services are used to protect _federal customer data_, including whether these modules are validated under the NIST Cryptographic Module Validation Program or are update streams of such modules.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "UCM",
+      "group": "base"
+    },
+    "ucm_base_frr_ucm_02": {
+      "id": "FRR-UCM-02",
+      "name": "Use of Validated Cryptographic Modules",
+      "description": "FedRAMP UCM > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers SHOULD configure _agency_ tenants by default to use cryptographic services that use cryptographic modules or update streams of cryptographic modules with active validations under the NIST Cryptographic Module Validation Program when such modules are available.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "UCM",
+      "group": "base"
+    },
+    "ucm_base_frr_ucm_03": {
+      "id": "FRR-UCM-03",
+      "name": "Update Streams (Moderate)",
+      "description": "FedRAMP UCM > Base. Impact Levels: Moderate",
+      "instructions": "Providers SHOULD use cryptographic modules or update streams of cryptographic modules with active validations under the NIST Cryptographic Module Validation Program when using cryptographic services to protect _federal customer data_.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Moderate"
+      ],
+      "standard": "UCM",
+      "group": "base"
+    },
+    "ucm_base_frr_ucm_04": {
+      "id": "FRR-UCM-04",
+      "name": "Update Streams (High)",
+      "description": "FedRAMP UCM > Base. Impact Levels: High",
+      "instructions": "Providers MUST use cryptographic modules or update streams of cryptographic modules with active validations under the NIST Cryptographic Module Validation Program when using cryptographic services to protect _federal customer data_.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "High"
+      ],
+      "standard": "UCM",
+      "group": "base"
+    }
+  }
+}

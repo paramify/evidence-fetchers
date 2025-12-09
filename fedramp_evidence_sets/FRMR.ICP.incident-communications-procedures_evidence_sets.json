@@ -1,0 +1,139 @@
+{
+  "evidence_sets": {
+    "icp_base_frr_icp_01": {
+      "id": "FRR-ICP-01",
+      "name": "Incident Reporting to FedRAMP",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST responsibly report _incidents_ to FedRAMP within 1 hour of identification by sending an email to fedramp_security@fedramp.gov or fedramp_security@gsa.gov.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_02": {
+      "id": "FRR-ICP-02",
+      "name": "Incident Reporting to Agencies",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST responsibly report _incidents_ to all _agency_ customers within 1 hour of identification using the _incident_ communications points of contact provided by each _agency_ customer.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_03": {
+      "id": "FRR-ICP-03",
+      "name": "Incident Reporting to CISA",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST responsibly report _incidents_ to CISA within 1 hour of identification if the incident is confirmed or suspected to be the result of an attack vector listed at https://www.cisa.gov/federal-incident-notification-guidelines#attack-vectors-taxonomy, following the CISA Federal Incident Notification Guidelines at https://www.cisa.gov/federal-incident-notification-guidelines, by using the CISA Incident Reporting System at https://myservices.cisa.gov/irf. ",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_04": {
+      "id": "FRR-ICP-04",
+      "name": "Incident Updates",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST update _all necessary parties_, including at least FedRAMP, CISA (if applicable), and all _agency_ customers, at least once per calendar day until the _incident_ is resolved and recovery is complete.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_05": {
+      "id": "FRR-ICP-05",
+      "name": "Incident Report Availability",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST make _incident_ report information available in their secure FedRAMP repository (such as USDA Connect) or _trust center_.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_06": {
+      "id": "FRR-ICP-06",
+      "name": "Responsible Disclosure",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST NOT irresponsibly disclose specific sensitive information about _incidents_ that would _likely_ increase the impact of the _incident_, but MUST disclose sufficient information for informed risk-based decision-making to _all necessary parties_.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_07": {
+      "id": "FRR-ICP-07",
+      "name": "Final Incident Report",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST provide a final report once the _incident_ is resolved and recovery is complete that describes at least:",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_08": {
+      "id": "FRR-ICP-08",
+      "name": "Automated Reporting",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers SHOULD use automated mechanisms for reporting incidents and providing updates to all necessary parties (including CISA).",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    },
+    "icp_base_frr_icp_09": {
+      "id": "FRR-ICP-09",
+      "name": "Human-Readable and Machine-Readable Formats",
+      "description": "FedRAMP ICP > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers SHOULD make _incident_ report information available in consistent human-readable and _machine-readable_ formats.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "ICP",
+      "group": "base"
+    }
+  }
+}

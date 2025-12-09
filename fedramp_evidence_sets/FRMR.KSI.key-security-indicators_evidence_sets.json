@@ -1,0 +1,32 @@
+{
+  "evidence_sets": {
+    "ksi_base_frr_ksi_01": {
+      "id": "FRR-KSI-01",
+      "name": "Application of Key Security Indicators",
+      "description": "FedRAMP KSI > Base. Impact Levels: Low, Moderate",
+      "instructions": "Cloud service providers SHOULD apply ALL Key Security Indicators to ALL aspects of their _cloud service offering_ that are within the FedRAMP Minimum Assessment Scope.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate"
+      ],
+      "standard": "KSI",
+      "group": "base"
+    },
+    "ksi_base_frr_ksi_02": {
+      "id": "FRR-KSI-02",
+      "name": "Implementation Summaries",
+      "description": "FedRAMP KSI > Base. Impact Levels: Low, Moderate",
+      "instructions": "Providers MUST maintain simple high-level summaries of at least the following for each Key Security Indicator:",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate"
+      ],
+      "standard": "KSI",
+      "group": "base"
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "total_standards": 12,
+  "successful": 12,
+  "failed": 0,
+  "total_evidence_sets": 199,
+  "results": [
+    {
+      "standard": "FRMR.ADS.authorization-data-sharing",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.ADS.authorization-data-sharing.json",
+      "output_file": "fedramp_evidence_sets/FRMR.ADS.authorization-data-sharing_evidence_sets.json",
+      "success": true,
+      "evidence_count": 20,
+      "upload_success": true,
+      "upload_successful": 20,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.CCM.collaborative-continuous-monitoring",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.CCM.collaborative-continuous-monitoring.json",
+      "output_file": "fedramp_evidence_sets/FRMR.CCM.collaborative-continuous-monitoring_evidence_sets.json",
+      "success": true,
+      "evidence_count": 25,
+      "upload_success": true,
+      "upload_successful": 25,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.FRD.fedramp-definitions",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.FRD.fedramp-definitions.json",
+      "output_file": "fedramp_evidence_sets/FRMR.FRD.fedramp-definitions_evidence_sets.json",
+      "success": true,
+      "evidence_count": 0,
+      "upload_success": true,
+      "upload_successful": 0,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.FSI.fedramp-security-inbox",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.FSI.fedramp-security-inbox.json",
+      "output_file": "fedramp_evidence_sets/FRMR.FSI.fedramp-security-inbox_evidence_sets.json",
+      "success": true,
+      "evidence_count": 16,
+      "upload_success": true,
+      "upload_successful": 16,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.ICP.incident-communications-procedures",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.ICP.incident-communications-procedures.json",
+      "output_file": "fedramp_evidence_sets/FRMR.ICP.incident-communications-procedures_evidence_sets.json",
+      "success": true,
+      "evidence_count": 9,
+      "upload_success": true,
+      "upload_successful": 9,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.KSI.key-security-indicators",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.KSI.key-security-indicators.json",
+      "output_file": "fedramp_evidence_sets/FRMR.KSI.key-security-indicators_evidence_sets.json",
+      "success": true,
+      "evidence_count": 2,
+      "upload_success": true,
+      "upload_successful": 2,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.MAS.minimum-assessment-scope",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.MAS.minimum-assessment-scope.json",
+      "output_file": "fedramp_evidence_sets/FRMR.MAS.minimum-assessment-scope_evidence_sets.json",
+      "success": true,
+      "evidence_count": 12,
+      "upload_success": true,
+      "upload_successful": 12,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.PVA.persistent-validation-and-assessment",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.PVA.persistent-validation-and-assessment.json",
+      "output_file": "fedramp_evidence_sets/FRMR.PVA.persistent-validation-and-assessment_evidence_sets.json",
+      "success": true,
+      "evidence_count": 22,
+      "upload_success": true,
+      "upload_successful": 22,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.RSC.recommended-secure-configuration",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.RSC.recommended-secure-configuration.json",
+      "output_file": "fedramp_evidence_sets/FRMR.RSC.recommended-secure-configuration_evidence_sets.json",
+      "success": true,
+      "evidence_count": 10,
+      "upload_success": true,
+      "upload_successful": 10,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.SCN.significant-change-notifications",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.SCN.significant-change-notifications.json",
+      "output_file": "fedramp_evidence_sets/FRMR.SCN.significant-change-notifications_evidence_sets.json",
+      "success": true,
+      "evidence_count": 22,
+      "upload_success": true,
+      "upload_successful": 22,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.UCM.using-cryptographic-modules",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.UCM.using-cryptographic-modules.json",
+      "output_file": "fedramp_evidence_sets/FRMR.UCM.using-cryptographic-modules_evidence_sets.json",
+      "success": true,
+      "evidence_count": 4,
+      "upload_success": true,
+      "upload_successful": 4,
+      "upload_failed": 0,
+      "error": null
+    },
+    {
+      "standard": "FRMR.VDR.vulnerability-detection-and-response",
+      "url": "https://raw.githubusercontent.com/FedRAMP/docs/main/data/FRMR.VDR.vulnerability-detection-and-response.json",
+      "output_file": "fedramp_evidence_sets/FRMR.VDR.vulnerability-detection-and-response_evidence_sets.json",
+      "success": true,
+      "evidence_count": 57,
+      "upload_success": true,
+      "upload_successful": 57,
+      "upload_failed": 0,
+      "error": null
+    }
+  ]
+}

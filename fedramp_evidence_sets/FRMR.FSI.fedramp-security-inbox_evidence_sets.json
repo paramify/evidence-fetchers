@@ -1,0 +1,244 @@
+{
+  "evidence_sets": {
+    "fsi_base_frr_fsi_01": {
+      "id": "FRR-FSI-01",
+      "name": "Verified Emails",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MUST send messages to cloud service providers using an official @fedramp.gov or @gsa.gov email address with properly configured Sender Policy Framework (SPF), DomainKeys Identified Mail (DKIM), and Domain-based Message Authentication Reporting and Conformance (DMARC) email authentication.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_02": {
+      "id": "FRR-FSI-02",
+      "name": "Criticality Designators",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MUST convey the criticality of the message in the subject line using one of the following designators if the message requires an elevated response:",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_03": {
+      "id": "FRR-FSI-03",
+      "name": "Sender Addresses",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MUST send Emergency and Emergency Test designated messages from fedramp_security@gsa.gov OR fedramp_security@fedramp.gov.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_04": {
+      "id": "FRR-FSI-04",
+      "name": "Public Notice of Emergency Tests",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MUST post a public notice at least 10 business days in advance of sending an Emergency Test message; such notices MUST include explanation of the _likely_ expected actions and timeframes for the Emergency Test message.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_05": {
+      "id": "FRR-FSI-05",
+      "name": "Required Actions",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MUST clearly specify the required actions in the body of messages that require an elevated response.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_06": {
+      "id": "FRR-FSI-06",
+      "name": "Response Timeframes",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MUST clearly specify the expected timeframe for completing required actions in the body of messages that require an elevated response; timeframes for actions will vary depending on the situation but the default timeframes to provide an estimated resolution time for Emergency and Emergency Test designated messages will be as follows:",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_07": {
+      "id": "FRR-FSI-07",
+      "name": "Corrective Actions",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MUST clearly specify the corrective actions that will result from failure to complete the required actions in the body of messages that require an elevated response; such actions may vary from negative ratings in the FedRAMP Marketplace to suspension of FedRAMP authorization depending on the severity of the event.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_08": {
+      "id": "FRR-FSI-08",
+      "name": "Response Metrics",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "FedRAMP MAY track and publicly share the time required by cloud service providers to take the actions specified in messages that require an elevated response.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_09": {
+      "id": "FRR-FSI-09",
+      "name": "FedRAMP Security Inbox",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST establish and maintain an email address to receive messages from FedRAMP; this inbox is a _FedRAMP Security Inbox_ (FSI).",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_10": {
+      "id": "FRR-FSI-10",
+      "name": "Receiving Messages",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST treat any email originating from an @fedramp.gov or @gsa.gov email address as if it was sent from FedRAMP by default; if such a message is confirmed to originate from someone other than FedRAMP then _FedRAMP Security Inbox_ requirements no longer apply.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_11": {
+      "id": "FRR-FSI-11",
+      "name": "Response",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST receive and respond to email messages from FedRAMP without disruption and without requiring additional actions from FedRAMP.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_12": {
+      "id": "FRR-FSI-12",
+      "name": "Notification of Changes",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST immediately notify FedRAMP of any changes in addressing for their _FedRAMP Security Inbox_ by emailing info@fedramp.gov with the name and FedRAMP ID of the cloud service offering and the updated email address.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_13": {
+      "id": "FRR-FSI-13",
+      "name": "Acknowedgement of Receipt",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers SHOULD _promptly_ and automatically acknowledge the receipt of messages received from FedRAMP in their _FedRAMP Security Inbox_.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_14": {
+      "id": "FRR-FSI-14",
+      "name": "Required Response for Emergency Messages",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST complete the required actions in Emergency or Emergency Test designated messages sent by FedRAMP within the timeframe included in the message.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_15": {
+      "id": "FRR-FSI-15",
+      "name": "Routing",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers MUST route Emergency designated messages sent by FedRAMP to a senior security official for their awareness.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    },
+    "fsi_base_frr_fsi_16": {
+      "id": "FRR-FSI-16",
+      "name": "Recommended Response for Important Messages",
+      "description": "FedRAMP FSI > Base. Impact Levels: Low, Moderate, High",
+      "instructions": "Providers SHOULD complete the required actions in Important designated messages sent by FedRAMP within the timeframe specified in the message.",
+      "service": "FEDRAMP",
+      "requirements": [],
+      "impact_levels": [
+        "Low",
+        "Moderate",
+        "High"
+      ],
+      "standard": "FSI",
+      "group": "base"
+    }
+  }
+}
