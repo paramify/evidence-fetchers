@@ -50,6 +50,54 @@ python extra-supporting-scripts/export_import_evidence.py \
 - `--export-dir` - Directory to store exported evidence (optional)
 - `--keep-export` - Keep exported files after import (default: delete)
 
+## Evidence Export for KSI Mapping
+
+Export evidence UUIDs mapped to KSI indicators from Paramify for use in HTML walkthroughs or other documentation.
+
+**Usage**:
+```bash
+# Using default program ID and output directory
+python extra-supporting-scripts/export_evidence_mappings.py
+
+# Custom program ID and output directory
+python extra-supporting-scripts/export_evidence_mappings.py \
+  --program-id 69a50ce5-ddb7-4472-863c-2f42c88d37fa \
+  --output-dir /path/to/output
+
+# With custom API token
+python extra-supporting-scripts/export_evidence_mappings.py \
+  --api-token <your-token>
+```
+
+**Environment Variables**:
+- `PARAMIFY_UPLOAD_API_TOKEN` - API token (required if not provided via --api-token)
+- `PARAMIFY_API_BASE_URL` - API base URL (optional, defaults to `https://app.paramify.com/api/v0`)
+
+**Options**:
+- `--program-id` - Paramify program ID (default: FedRAMP 20x Phase Two Moderate)
+- `--output-dir` - Output directory for export files (default: `/Users/isaacteuscher/fedramp-20x-pilot`)
+- `--api-token` - Paramify API token (optional if env var is set)
+- `--base-url` - Paramify API base URL (optional)
+
+**Output Files**:
+- `evidence_mappings.json` - JSON format mapping KSI IDs to evidence UUID arrays
+- `evidence_mappings.csv` - CSV format with columns: KSI_ID, Evidence_UUID, Evidence_Name, Evidence_ReferenceId
+
+**Example Output**:
+```json
+{
+  "CNA-01": [
+    "c19ebbfe-ea5e-4c4e-97a8-037e8cfc0bdf",
+    "another-evidence-uuid-here"
+  ],
+  "CNA-02": [
+    "evidence-uuid-for-cna-02"
+  ]
+}
+```
+
+**Requirements**: Python 3.6+, requests (`pip install requests`)
+
 ## Evidence Requirement Mapping
 
 Map evidence to requirements from Paramify machine readable YAML files and add requirement mappings to evidence sets.
