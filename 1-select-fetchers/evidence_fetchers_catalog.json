@@ -511,6 +511,157 @@
           }
         }
       },
+  "sentinelone": {
+    "name": "SentinelOne",
+    "description": "SentinelOne-specific evidence collection scripts and fetchers for users, agents, XDR assets, cloud detection rules, and activities.",
+    "scripts": {
+      "sentinelone_user_config": {
+        "script_file": "fetchers/sentinelone/userfetcher.py",
+        "name": "SentinelOne User Config",
+        "description": "Retrieve SentinelOne user records and produce summary analysis (admin counts, 2FA, last login).",
+        "id": "EVD-S1-USER",
+        "instructions": "Script: userfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/users using ApiToken authorization, pages with cursor, and writes JSON and CSV summary.",
+        "dependencies": [
+          "python3",
+          "requests"
+        ],
+        "tags": [
+          "users",
+          "iam",
+          "sentinelone"
+        ],
+        "validationRules": [
+          {
+            "id": 1,
+            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+            "logic": "IF record_count >= 0 THEN PASS (ensures script returned numeric count)"
+          },
+          {
+            "id": 2,
+            "regex": "\"admin_user_count\":\\s*(?P<admin_user_count>\\d+)",
+            "logic": "IF admin_user_count <= record_count THEN PASS"
+          }
+        ]
+      },
+
+      "sentinelone_xdr_assets": {
+        "script_file": "fetchers/sentinelone/xdrassetfetcher.py",
+        "name": "SentinelOne XDR Assets",
+        "description": "Retrieve XDR asset inventory (containers, images, cloud resources) and summary counts.",
+        "id": "EVD-S1-XDR-ASSET",
+        "instructions": "Script: xdrassetfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/xdr/assets, supports cursor pagination, summarizes infectionStatus and assetStatus, writes JSON and CSV summary.",
+        "dependencies": [
+          "python3",
+          "requests"
+        ],
+        "tags": [
+          "assets",
+          "xdr",
+          "sentinelone"
+        ],
+        "validationRules": [
+          {
+            "id": 1,
+            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+            "logic": "IF record_count >= 0 THEN PASS"
+          },
+          {
+            "id": 2,
+            "regex": "\"healthy_infection_status_count\":\\s*(?P<healthy>\\d+)",
+            "logic": "IF healthy <= record_count THEN PASS"
+          }
+        ]
+      },
+
+      "sentinelone_agents": {
+        "script_file": "fetchers/sentinelone/agentfetcher.py",
+        "name": "SentinelOne Agents",
+        "description": "Retrieve agents information, containerized workload counts, cloud provider metadata, and optional agent counts endpoint.",
+        "id": "EVD-S1-AGENT",
+        "instructions": "Script: agentfetcher.py. Calls /web/api/v2.1/agents (and /web/api/v2.1/agents/count), pages with cursor, collects cluster names and container/pod counts, writes JSON and CSV summary.",
+        "dependencies": [
+          "python3",
+          "requests"
+        ],
+        "tags": [
+          "agents",
+          "endpoints",
+          "sentinelone"
+        ],
+        "validationRules": [
+          {
+            "id": 1,
+            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+            "logic": "IF record_count >= 0 THEN PASS"
+          },
+          {
+            "id": 2,
+            "regex": "\"reported_agent_count\":\\s*(?P<reported>\\d+)",
+            "logic": "IF reported_agent_count is null or reported_agent_count >= 0 THEN PASS (optional count may be missing)"
+          }
+        ]
+      },
+
+      "sentinelone_cloud_detection_rules": {
+        "script_file": "fetchers/sentinelone/clouddetectionrules.py",
+        "name": "SentinelOne Cloud Detection Rules",
+        "description": "Retrieve custom cloud detection rules, last alert times and update timestamps.",
+        "id": "EVD-S1-CLOUD-RULE",
+        "instructions": "Script: clouddetectionrules.py. Calls /web/api/v2.1/cloud-detection/rules with cursor pagination, extracts lastAlertTime and updatedAt fields, writes JSON and CSV summary.",
+        "dependencies": [
+          "python3",
+          "requests"
+        ],
+        "tags": [
+          "detection",
+          "rules",
+          "cloud",
+          "sentinelone"
+        ],
+        "validationRules": [
+          {
+            "id": 1,
+            "regex": "\"total_custom_detection_rules\":\\s*(?P<total>\\d+)",
+            "logic": "IF total >= 0 THEN PASS"
+          },
+          {
+            "id": 2,
+            "regex": "\"rules_never_triggered_count\":\\s*(?P<never_triggered>\\d+)",
+            "logic": "IF never_triggered <= total THEN PASS"
+          }
+        ]
+      },
+
+      "sentinelone_activities": {
+        "script_file": "fetchers/sentinelone/activityfetcher.py",
+        "name": "SentinelOne Activities",
+        "description": "Retrieve SentinelOne activity events for a set of activity types (FedRAMP list) and summarize activity types and descriptions.",
+        "id": "EVD-S1-ACTIVITY",
+        "instructions": "Script: activityfetcher.py. Calls /web/api/v2.1/activities with activityTypes filter (cursor pagination), aggregates activityType counts and primary descriptions, writes JSON and CSV summary.",
+        "dependencies": [
+          "python3",
+          "requests"
+        ],
+        "tags": [
+          "activities",
+          "audit",
+          "sentinelone"
+        ],
+        "validationRules": [
+          {
+            "id": 1,
+            "regex": "\"total_activities_collected\":\\s*(?P<total>\\d+)",
+            "logic": "IF total >= 0 THEN PASS"
+          },
+          {
+            "id": 2,
+            "regex": "\"activity_type\":\\s*\\{(?P<types>[\\s\\S]*?)\\}",
+            "logic": "IF activity_type object exists THEN PASS"
+          }
+        ]
+      }
+    }
+  },
       "k8s": {
         "name": "Kubernetes",
         "description": "Kubernetes and EKS-specific evidence collection scripts",
