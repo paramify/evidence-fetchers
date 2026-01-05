@@ -72,6 +72,18 @@ def extract_field_list(records: List[Dict[str, Any]], field_key: str) -> List[An
     return [r.get(field_key) for r in records if field_key in r]
 
 
+def last_successful_scan_percentage(records: List[Dict[str, Any]]) -> float:
+    """Return the fraction (0..1) of records with a non-null lastSuccessfulScanDate."""
+    if not records:
+        return 0.0
+    total = len(records)
+    non_null = sum(1 for r in records if r.get("lastSuccessfulScanDate") not in (None, "", []))
+    try:
+        return float(non_null) / float(total)
+    except Exception:
+        return 0.0
+
+
 def get_agents() -> Dict[str, Any]:
     api_url = get_env("SENTINELONE_API_URL")
     api_token = get_env("SENTINELONE_API_TOKEN")
@@ -132,6 +144,7 @@ def get_agents() -> Dict[str, Any]:
                 "pods_count": pods_count,
                 "tasks_count": tasks_count,
                 "subnet_ids": subnet_ids,
+                "last_successful_scan_percentage": last_successful_scan_percentage(records),
             },
             "retrieved_at": current_timestamp(),
         }
