@@ -15,6 +15,37 @@ from typing import Any, Dict, List, Optional
 import requests
 
 
+def run_power_query(api_url: str, api_token: str, body: dict = None) -> dict:
+    """Run a power query against the SentinelOne powerQuery endpoint and return the JSON payload.
+
+    If no body is provided, a default grouping query over dataSource.name for the last hour
+    is used. Errors are returned as an error-shaped dict so callers can inspect them
+    without the whole fetch failing.
+    """
+    base_url = api_url.rstrip("/")
+    endpoint = f"{base_url}/sdl/api/powerQuery"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_token}",
+    }
+
+    if body is None:
+        body = {
+            "query": "dataSource.name=* | group Count = count() by dataSource.name | sort -Count",
+            "startTime": "1hr",
+            "endTime": "",
+        }
+
+    try:
+        resp = requests.post(endpoint, headers=headers, json=body, timeout=30)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Power query request failed: {e}", file=sys.stderr)
+        return {"status": "error", "message": str(e)}
+
+
 def current_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -86,9 +117,28 @@ def get_cloud_detection_rules() -> Dict[str, Any]:
                 "last_alert_times": last_alert_time,
                 "last_updated_at": last_updated_at,
                 "last_activity_time": last_activity_list,
+                # data_sources will be filled by running a power query below
             },
             "retrieved_at": current_timestamp(),
         }
+
+        # Attempt to enrich the analysis with data sources from the powerQuery API.
+        try:
+            power_query_result = run_power_query(api_url, api_token)
+        except Exception as e:
+            # Shouldn't happen because run_power_query handles requests exceptions,
+            # but guard defensively.
+            power_query_result = {"status": "error", "message": str(e)}
+
+        # Prefer the 'values' array from the powerQuery response; fall back to the
+        # full response object if 'values' is not present. This keeps the
+        # `analysis.data_sources` payload small and focused on the data rows.
+        if isinstance(power_query_result, dict) and "values" in power_query_result:
+            data_sources_value = power_query_result.get("values")
+        else:
+            data_sources_value = power_query_result
+
+        result.setdefault("analysis", {})["data_sources"] = data_sources_value
 
         return result
 
