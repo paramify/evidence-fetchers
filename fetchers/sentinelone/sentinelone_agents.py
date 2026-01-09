@@ -166,7 +166,7 @@ def main() -> int:
     csv_file = sys.argv[4]
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    component = "agents_config"
+    component = "sentinelone_agents"
     output_json = Path(output_dir) / f"{component}.json"
 
     result = get_agents()

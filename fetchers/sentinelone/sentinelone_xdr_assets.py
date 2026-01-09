@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-SentinelOne Activities Retrieval
+SentinelOne XDR Asset Configuration Retrieval
 
-Purpose: Pull SentinelOne activities for selected activity types and provide summary analysis.
+Purpose: Pull SentinelOne XDR asset records to demonstrate automated inventory
+and summary reporting.
 """
 
 import json
 import os
 import sys
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -30,27 +32,40 @@ def http_get(url: str, headers: Dict[str, str], params: Optional[Dict[str, Any]]
     return requests.get(url, headers=headers, params=params, timeout=30)
 
 
-def fetch_all_pages(base_url: str, headers: Dict[str, str], activity_type_ids: Optional[List[int]] = None) -> List[Dict[str, Any]]:
+def count_healthy_infection(records: List[Dict[str, Any]]) -> int:
+    return sum(1 for r in records if r.get("infectionStatus") == "Healthy")
+
+
+def count_active_assets(records: List[Dict[str, Any]]) -> int:
+    return sum(1 for r in records if r.get("assetStatus") == "Active")
+
+
+def extract_field_list(records: List[Dict[str, Any]], field_key: str) -> List[Any]:
+    return [r.get(field_key) for r in records if field_key in r]
+
+
+def fetch_all_pages(base_url: str, headers: Dict[str, str]) -> List[Dict[str, Any]]:
+    """
+    Handles cursor-based pagination to retrieve all XDR asset records.
+    """
     all_records: List[Dict[str, Any]] = []
     cursor = None
-    endpoint = f"{base_url}/web/api/v2.1/activities"
-
-    # If activity types provided, join into comma-separated string
-    activity_type_str = ",".join(map(str, activity_type_ids)) if activity_type_ids else None
+    endpoint = f"{base_url}/web/api/v2.1/xdr/assets"
 
     while True:
-        params = {"cursor": cursor}
-        if activity_type_str:
-            params["activityTypes"] = activity_type_str
+        params = {"cursor": cursor} if cursor else {}
+
         try:
             response = http_get(endpoint, headers=headers, params=params)
             response.raise_for_status()
+
             payload = response.json()
             data = payload.get("data", [])
             all_records.extend(data)
 
             pagination = payload.get("pagination", {})
             cursor = pagination.get("nextCursor")
+
             if not cursor:
                 break
         except requests.exceptions.RequestException as e:
@@ -60,35 +75,42 @@ def fetch_all_pages(base_url: str, headers: Dict[str, str], activity_type_ids: O
     return all_records
 
 
-def get_activities() -> Dict[str, Any]:
+def get_xdr_assets() -> Dict[str, Any]:
+    # Use environment variables set by orchestration layer
     api_url = get_env("SENTINELONE_API_URL")
     api_token = get_env("SENTINELONE_API_TOKEN")
+
     api_url = api_url.rstrip("/")
 
-    headers = {"Content-Type": "application/json", "Authorization": f"ApiToken {api_token}"}
-
-    # Default fedramp activity type ids (from original activity_fetcher)
-    fedramp_ids = [5125, 5232, 4112, 7803, 104, 111, 5040, 5041, 5042, 7700, 7800, 7853, 7881, 70, 77, 5044, 3750, 3752, 5228, 65, 153, 1025, 5027, 7834, 7854, 13029]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"ApiToken {api_token}",
+    }
 
     try:
-        records = fetch_all_pages(api_url, headers, activity_type_ids=fedramp_ids)
-        if not records:
-            return {"status": "partial_or_empty", "message": "No records found", "retrieved_at": current_timestamp()}
+        records = fetch_all_pages(api_url, headers)
 
-        activity_type = [r.get("activityType") for r in records if "activityType" in r]
-        created_at = [r.get("createdAt") for r in records if "createdAt" in r]
-        primary_description = [r.get("primaryDescription") for r in records if "primaryDescription" in r]
+        if not records:
+            return {
+                "status": "partial_or_empty",
+                "message": "No records found or API returned empty list",
+                "retrieved_at": current_timestamp(),
+            }
+
+        region_list = [r.get("region") for r in records if "region" in r]
+        name_list = [r.get("name") for r in records if "name" in r]
 
         result = {
             "status": "success",
-            "api_endpoint": f"{api_url}/web/api/v2.1/activities",
+            "api_endpoint": f"{api_url}/web/api/v2.1/xdr/assets",
             "record_count": len(records),
             "data": records,
             "analysis": {
-                "total_activities_collected": len(records),
-                "activity_type": dict(Counter(activity_type)) if activity_type else {},
-                "created_at": created_at,
-                "primary_description": primary_description,
+                "total_asset_count": len(records),
+                "healthy_infection_status_count": count_healthy_infection(records),
+                "active_asset_status_count": count_active_assets(records),
+                "region_count": dict(Counter(region_list)),
+                "name_count": dict(Counter(name_list)),
             },
             "retrieved_at": current_timestamp(),
         }
@@ -96,12 +118,17 @@ def get_activities() -> Dict[str, Any]:
         return result
 
     except Exception as e:
-        return {"status": "error", "message": str(e), "retrieved_at": current_timestamp()}
+        return {
+            "status": "error",
+            "message": str(e),
+            "retrieved_at": current_timestamp(),
+        }
 
 
 def main() -> int:
+    # Args from runner: profile, region, output_dir, csv_file
     if len(sys.argv) != 5:
-        print("Usage: python activityfetcher.py <profile> <region> <output_dir> <csv_file>")
+        print("Usage: python xdrassetfetcher.py <profile> <region> <output_dir> <csv_file>")
         return 1
 
     _profile = sys.argv[1]
@@ -110,22 +137,21 @@ def main() -> int:
     csv_file = sys.argv[4]
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    component = "activities"
+    component = "sentinelone_xdr_assets"
     output_json = Path(output_dir) / f"{component}.json"
 
-    result = get_activities()
+    result = get_xdr_assets()
 
     with open(output_json, "w") as f:
         json.dump(result, f, indent=2, default=str)
 
     with open(csv_file, "a") as f:
         status = result.get("status", "unknown")
-        msg = f"Activities retrieved. Records: {result.get('record_count', 0)}"
+        msg = f"Asset config retrieved. Records: {result.get('record_count', 0)}"
         f.write(f"{component},{status},{current_timestamp()},{msg}\n")
 
     return 0 if result.get("status") in {"success", "partial_or_empty"} else 1
 
 
 if __name__ == "__main__":
-    from collections import Counter
     sys.exit(main())

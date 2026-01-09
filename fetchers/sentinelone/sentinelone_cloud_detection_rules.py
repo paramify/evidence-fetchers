@@ -157,7 +157,7 @@ def main() -> int:
     csv_file = sys.argv[4]
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    component = "cloud_detection_rules"
+    component = "sentinelone_cloud_detection_rules"
     output_json = Path(output_dir) / f"{component}.json"
 
     result = get_cloud_detection_rules()

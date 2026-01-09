@@ -516,7 +516,7 @@
     "description": "SentinelOne-specific evidence collection scripts and fetchers for users, agents, XDR assets, cloud detection rules, and activities.",
     "scripts": {
       "sentinelone_user_config": {
-        "script_file": "fetchers/sentinelone/userfetcher.py",
+        "script_file": "fetchers/sentinelone/sentinelone_user_config.py",
         "name": "SentinelOne User Config",
         "description": "Retrieve SentinelOne user records and produce summary analysis (admin counts, 2FA, last login).",
         "id": "EVD-S1-USER",
@@ -545,7 +545,7 @@
       },
 
       "sentinelone_xdr_assets": {
-        "script_file": "fetchers/sentinelone/xdrassetfetcher.py",
+        "script_file": "fetchers/sentinelone/sentinelone_xdr_assets.py",
         "name": "SentinelOne XDR Assets",
         "description": "Retrieve XDR asset inventory (containers, images, cloud resources) and summary counts.",
         "id": "EVD-S1-XDR-ASSET",
@@ -574,7 +574,7 @@
       },
 
       "sentinelone_agents": {
-        "script_file": "fetchers/sentinelone/agentfetcher.py",
+        "script_file": "fetchers/sentinelone/sentinelone_agents.py",
         "name": "SentinelOne Agents",
         "description": "Retrieve agents information, containerized workload counts, cloud provider metadata, and optional agent counts endpoint.",
         "id": "EVD-S1-AGENT",
@@ -603,7 +603,7 @@
       },
 
       "sentinelone_cloud_detection_rules": {
-        "script_file": "fetchers/sentinelone/clouddetectionrules.py",
+        "script_file": "fetchers/sentinelone/sentinelone_cloud_detection_rules.py",
         "name": "SentinelOne Cloud Detection Rules",
         "description": "Retrieve custom cloud detection rules, last alert times and update timestamps.",
         "id": "EVD-S1-CLOUD-RULE",
@@ -633,7 +633,7 @@
       },
 
       "sentinelone_activities": {
-        "script_file": "fetchers/sentinelone/activityfetcher.py",
+        "script_file": "fetchers/sentinelone/sentinelone_activities.py",
         "name": "SentinelOne Activities",
         "description": "Retrieve SentinelOne activity events for a set of activity types (FedRAMP list) and summarize activity types and descriptions.",
         "id": "EVD-S1-ACTIVITY",
