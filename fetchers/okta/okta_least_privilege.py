@@ -36,9 +36,24 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print(f"\n✅ Evidence saved to: {output_path}")
-    print("\nSummary:")
-    for k, v in evidence.get("summary", {}).items():
-        print(f"  {k}: {v}")
+    # Avoid logging unvetted summary values (may include PII like admin email lists).
+    # Evidence JSON output remains unchanged.
+    summary = evidence.get("summary", {}) or {}
+    safe_keys = [
+        "total_active_users",
+        "admin_users_count",
+        "regular_users_count",
+        "admin_percentage",
+        "regular_user_percentage",
+        "super_admin_count",
+        "read_only_admin_count",
+        "other_admin_count",
+        "groups_analyzed",
+    ]
+    print("\nSummary (safe metrics):")
+    for key in safe_keys:
+        if key in summary and not isinstance(summary.get(key), (dict, list)):
+            print(f"  {key}: {summary.get(key)}")
 
 
 if __name__ == "__main__":

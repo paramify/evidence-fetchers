@@ -36,9 +36,21 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print(f"\n✅ Evidence saved to: {output_path}")
-    print("\nSummary:")
-    for k, v in evidence.get("summary", {}).items():
-        print(f"  {k}: {v}")
+    # Avoid logging unvetted summary values (may include detailed authenticator metadata / PII).
+    # Evidence JSON output remains unchanged.
+    summary = evidence.get("summary", {}) or {}
+    safe_keys = [
+        "phishing_resistant_authenticator_types_count",
+        "total_users",
+        "users_with_phishing_resistant_mfa",
+        "phishing_resistant_mfa_percentage",
+        "mfa_events_last_7_days",
+    ]
+    print("\nSummary (safe metrics):")
+    for key in safe_keys:
+        if key in summary and not isinstance(summary.get(key), (dict, list)):
+            print(f"  {key}: {summary.get(key)}")
+    print("  (Full details are written to the JSON evidence file.)")
 
 
 if __name__ == "__main__":

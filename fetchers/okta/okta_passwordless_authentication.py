@@ -36,9 +36,42 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print(f"\n✅ Evidence saved to: {output_path}")
-    print("\nSummary:")
-    for k, v in evidence.get("summary", {}).items():
-        print(f"  {k}: {v}")
+    # Avoid logging unvetted summary values (may include sensitive/PII or large policy structures).
+    # Evidence JSON output remains unchanged.
+    summary = evidence.get("summary", {}) or {}
+    safe_keys = [
+        "password_policies_count",
+        "mfa_enrollment_policies_count",
+        "passwordless_authenticators_count",
+        "total_active_users_checked",
+        "users_with_security_key_enrolled",
+        "security_key_enrollment_percentage",
+        "security_key_enforced_for_application_sign_on",
+    ]
+
+    print("\nSummary (safe metrics):")
+    for key in safe_keys:
+        if key in summary and not isinstance(summary.get(key), (dict, list)):
+            print(f"  {key}: {summary.get(key)}")
+
+    # For complex fields, print only sizes (no raw contents).
+    if "password_policy_requirements" in summary:
+        ppr = summary.get("password_policy_requirements") or []
+        try:
+            count = len(ppr)
+        except TypeError:
+            count = 1
+        print(f"  password_policy_requirements (items): {count}")
+
+    if "enforced_authentication_method_for_sign_on" in summary:
+        enforced = summary.get("enforced_authentication_method_for_sign_on") or []
+        try:
+            count = len(enforced)
+        except TypeError:
+            count = 1
+        print(f"  enforced_authentication_method_for_sign_on (items): {count}")
+
+    print("  (Full details are written to the JSON evidence file.)")
 
 
 if __name__ == "__main__":
