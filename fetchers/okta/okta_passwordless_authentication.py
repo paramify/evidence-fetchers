@@ -49,10 +49,10 @@ def main():
         "security_key_enforced_for_application_sign_on",
     ]
 
-    print("\nSummary (safe metrics):")
-    for key in safe_keys:
-        if key in summary and not isinstance(summary.get(key), (dict, list)):
-            print(f"  {key}: {summary.get(key)}")
+    # print("\nSummary (safe metrics):")
+    # for key in safe_keys:
+    #     if key in summary and not isinstance(summary.get(key), (dict, list)):
+    #         print(f"  {key}: {summary.get(key)}")
 
     # For complex fields, print only sizes (no raw contents).
     if "password_policy_requirements" in summary:

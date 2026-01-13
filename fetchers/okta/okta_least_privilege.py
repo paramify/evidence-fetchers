@@ -50,10 +50,10 @@ def main():
         "other_admin_count",
         "groups_analyzed",
     ]
-    print("\nSummary (safe metrics):")
-    for key in safe_keys:
-        if key in summary and not isinstance(summary.get(key), (dict, list)):
-            print(f"  {key}: {summary.get(key)}")
+    # print("\nSummary (safe metrics):")
+    # for key in safe_keys:
+    #     if key in summary and not isinstance(summary.get(key), (dict, list)):
+    #         print(f"  {key}: {summary.get(key)}")
 
 
 if __name__ == "__main__":
