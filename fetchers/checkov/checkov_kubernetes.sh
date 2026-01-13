@@ -142,7 +142,8 @@ echo "{
     \"passed_checks\": 0,
     \"failed_checks\": 0,
     \"skipped_checks\": 0,
-    \"total_checks\": 0
+    \"total_checks\": 0,
+    \"passed_percentage\": 0
   },
   \"results\": []
 }" > "$OUTPUT_JSON"
@@ -291,9 +292,7 @@ if checkov --directory "$TEMP_DIR" $CHECKOV_ARGS $CONFIG_FILE > "$CHECKOV_OUTPUT
         TOTAL_FAILED=$FAILED
         TOTAL_SKIPPED=$SKIPPED
         TOTAL_CHECKS=$CHECKS
-        
-        # Copy results to main JSON
-        cp "$CHECKOV_OUTPUT" "$OUTPUT_JSON"
+        jq '.summary.passed_percentage = (if .summary.total_checks > 0 then ((.summary.passed_checks / .summary.total_checks) * 100) else 0 end)' "$CHECKOV_OUTPUT" > "$OUTPUT_JSON"
     fi
 else
     echo -e "${RED}✗ Checkov Kubernetes scan failed${NC}"

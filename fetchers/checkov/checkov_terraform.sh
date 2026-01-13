@@ -494,7 +494,8 @@ jq --argjson passed "$TOTAL_PASSED" --argjson failed "$TOTAL_FAILED" --argjson s
     .summary.passed_checks = $passed |
     .summary.failed_checks = $failed |
     .summary.skipped_checks = $skipped |
-    .summary.total_checks = $total
+    .summary.total_checks = $total |
+    .summary.aggregate_percentage = (if $total > 0 then ($passed / $total) * 100 else 0 end)
 ' "$OUTPUT_JSON" > "${OUTPUT_JSON}.tmp" && mv "${OUTPUT_JSON}.tmp" "$OUTPUT_JSON"
 
 # Clean up
