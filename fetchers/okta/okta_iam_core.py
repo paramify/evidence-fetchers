@@ -742,7 +742,7 @@ class OktaIAMEvidenceFetcher:
             "mfa_events_last_7_days": len(mfa_logs)
         }
         
-        print(f"  ✓ Summary: {evidence['summary']}")
+       # print(f"  ✓ Summary: {evidence['summary']}")
         return evidence
 
     # =========================================================================
@@ -1160,7 +1160,8 @@ class OktaIAMEvidenceFetcher:
                                 if any(v is not None for v in extracted.values()):
                                     policy_requirements["settings"].update({k: v for k, v in extracted.items() if v is not None})
                 except Exception as e:
-                    print(f"    ⚠️ Could not fetch full policy details for {policy.get('name')}: {e}")
+                    #print(f"    ⚠️ Could not fetch full policy details for {policy.get('name')}: {e}")
+                    pass
             
             # Method 3: Try fetching individual rules to get more detail
             if not policy_requirements["settings"] or all(v is None for v in policy_requirements["settings"].values()):
@@ -1230,7 +1231,7 @@ class OktaIAMEvidenceFetcher:
             "note": "Email and phone are default Okta 2FA methods available in the system. Security key (YubiKey 5 FIPS) is enforced as the required authentication method for application sign-on, as evidenced by 100% user enrollment." if security_key_enforced else "Multiple authentication methods available. Review access policies to determine enforcement."
         }
 
-        print(f"  ✓ Summary: {evidence['summary']}")
+    #    print(f"  ✓ Summary: {evidence['summary']}")
         return evidence
 
     # =========================================================================
@@ -2291,8 +2292,8 @@ class OktaIAMEvidenceFetcher:
         print(f"      \"total_active_users\": {total_users},")
         print(f"      \"admin_users_count\": {admin_count},")
         print(f"      \"regular_users_count\": {regular_user_count},")
-        print(f"      \"admin_percentage\": {evidence['summary']['admin_percentage']},")
-        print(f"      \"regular_user_percentage\": {evidence['summary']['regular_user_percentage']},")
+    #    print(f"      \"admin_percentage\": {evidence['summary']['admin_percentage']},")
+    #    print(f"      \"regular_user_percentage\": {evidence['summary']['regular_user_percentage']},")
         print(f"      \"super_admin_count\": {len(super_admins)},")
         print(f"      \"super_admins\": [")
         for i, sa in enumerate(super_admins):
@@ -2300,8 +2301,8 @@ class OktaIAMEvidenceFetcher:
             name_escaped = json.dumps(sa['name'])
             email_escaped = json.dumps(sa['email'])
             print(f"        {{")
-            print(f"          \"name\": {name_escaped},")
-            print(f"          \"email\": {email_escaped}")
+        #    print(f"          \"name\": {name_escaped},")
+        #    print(f"          \"email\": {email_escaped}")
             print(f"        }}{comma}")
         print(f"      ],")
         print(f"      \"read_only_admin_count\": {len(read_only_admins)},")
@@ -2311,8 +2312,8 @@ class OktaIAMEvidenceFetcher:
             name_escaped = json.dumps(roa['name'])
             email_escaped = json.dumps(roa['email'])
             print(f"        {{")
-            print(f"          \"name\": {name_escaped},")
-            print(f"          \"email\": {email_escaped}")
+        #    print(f"          \"name\": {name_escaped},")
+        #    print(f"          \"email\": {email_escaped}")
             print(f"        }}{comma}")
         print(f"      ],")
         if other_admins:
@@ -2323,8 +2324,8 @@ class OktaIAMEvidenceFetcher:
                 name_escaped = json.dumps(oa['name'])
                 email_escaped = json.dumps(oa['email'])
                 print(f"        {{")
-                print(f"          \"name\": {name_escaped},")
-                print(f"          \"email\": {email_escaped}")
+        #        print(f"          \"name\": {name_escaped},")
+        #        print(f"          \"email\": {email_escaped}")
                 print(f"        }}{comma}")
             print(f"      ],")
         print(f"      \"groups_analyzed\": {len(group_sizes)}")

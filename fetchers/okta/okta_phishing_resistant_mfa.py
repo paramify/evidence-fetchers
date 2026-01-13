@@ -20,7 +20,7 @@ from okta_iam_core import OktaIAMEvidenceFetcher  # type: ignore
 def main():
     skip_check = "--skip-check" in sys.argv
     filtered_argv = [arg for arg in sys.argv if arg != "--skip-check"]
-
+    
     if len(filtered_argv) < 4:
         print("Usage: python okta_phishing_resistant_mfa.py <profile> <region> <output_dir> [--skip-check]")
         sys.exit(1)
