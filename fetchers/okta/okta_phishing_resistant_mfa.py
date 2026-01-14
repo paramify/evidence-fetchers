@@ -46,10 +46,11 @@ def main():
         "phishing_resistant_mfa_percentage",
         "mfa_events_last_7_days",
     ]
-    print("\nSummary (safe metrics):")
-    for key in safe_keys:
-        if key in summary and not isinstance(summary.get(key), (dict, list)):
-            print(f"  {key}: {summary.get(key)}")
+    #print("\nSummary (safe metrics):")
+    #for key in safe_keys:
+    #    if key in summary and not isinstance(summary.get(key), (dict, list)):
+    #        print(f"  {key}: {summary.get(key)}")
+    #        pass
     print("  (Full details are written to the JSON evidence file.)")
 
 
