@@ -5,7 +5,7 @@ This directory contains scripts for executing evidence fetcher scripts and stori
 ## Files
 
 - `run_fetchers.py` - Main execution script with multi-instance support
-- `main_fetcher.py` - Legacy fetcher execution script
+- `legacy_fetcher.py` - Legacy fetcher execution script
 - `README.md` - This documentation file
 
 ## What This Does
