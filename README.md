@@ -1,6 +1,6 @@
 # Evidence Fetchers
 
-Let's go fetch some evidence! And don't forget, screenshots are so 2012. 
+Let's go fetch some evidence! And don't forget, screenshots are so 2012.
 
 ## Quick Start
 
@@ -22,313 +22,63 @@ python main.py
 
 **4) Upload Evidence to Paramify** - Find latest evidence directory and upload to Paramify  
 
-**5) Other/Extra Options** - Access tests, add new fetcher, and evidence requirement mapping tools  
+## Key Features
 
----
-
-## Detailed Documentation
-
-### 0) Prerequisites
-
-**Purpose**: Set up the environment and check dependencies before using the system.
-
-**What it does**:
-- Checks for required environment variables (.env file)
-- Validates that all dependencies are installed
-- Provides setup instructions for Paramify, AWS, and Kubernetes
-
-**Files**:
-- `0-prerequisites/prerequisites.py` - Main prerequisites script
-- `0-prerequisites/README.md` - Detailed setup instructions
-
-**Usage**:
-```bash
-python 0-prerequisites/prerequisites.py
-```
-
-### 1) Select Fetchers
-
-**Purpose**: Choose which evidence fetcher scripts you want to use and generate a custom evidence_sets.json file.
-
-**What it does**:
-- Shows available evidence fetcher scripts by category
-- Allows interactive selection of scripts
-- Generates evidence_sets.json for Paramify upload
-- Creates customer_config.json for your selections
-
-**Files**:
-- `1-select-fetchers/select_fetchers.py` - Main selection script
-- `1-select-fetchers/generate_evidence_sets.py` - Evidence sets generator
-- `1-select-fetchers/customer_config_template.json` - Template for customer configuration
-- `1-select-fetchers/evidence_fetchers_catalog.json` - Complete catalog of all available scripts
-- `1-select-fetchers/README.md` - Detailed selection guide
-
-**Usage**:
-```bash
-python 1-select-fetchers/select_fetchers.py
-```
-
-### 2) Create Evidence Sets in Paramify
-
-**Purpose**: Upload evidence sets to Paramify via API and optionally upload fetcher scripts as evidence artifacts.
-
-**What it does**:
-- Reads evidence_sets.json generated in step 1
-- Creates evidence sets in Paramify via API
-- Optionally uploads fetcher scripts as evidence artifacts
-- Records upload results in upload_log.json
-
-**Files**:
-- `2-create-evidence-sets/create_evidence_sets.py` - Main upload script
-- `2-create-evidence-sets/paramify_pusher.py` - Paramify API integration
-- `2-create-evidence-sets/README.md` - Detailed upload instructions
-
-**Usage**:
-```bash
-python 2-create-evidence-sets/create_evidence_sets.py
-```
-
-### 3) Run Fetchers
-
-**Purpose**: Execute the selected evidence fetcher scripts and store evidence in timestamped directories.
-
-**What it does**:
-- Reads evidence_sets.json to determine which scripts to run
-- Supports **multi-instance execution** for AWS regions and GitLab projects
-- Executes each fetcher script with appropriate parameters
-- Stores evidence files in timestamped directories under /evidence
-- Creates execution summary and CSV reports
-
-**Multi-Instance Support**:
-- **AWS Regions**: Run the same fetcher against multiple AWS regions with different profiles
-- **GitLab Projects**: Run the same fetcher against multiple GitLab projects with different access tokens
-- **Environment Variables**: Configure multiple instances using `GITLAB_PROJECT_N_*` and `AWS_REGION_N_*` patterns
-
-**Files**:
-- `3-run-fetchers/run_fetchers.py` - Main execution script with multi-instance support
-- `3-run-fetchers/main_fetcher.py` - Legacy fetcher execution script
-- `3-run-fetchers/README.md` - Detailed execution guide
-
-**Usage**:
-```bash
-python 3-run-fetchers/run_fetchers.py
-```
-
-### 4) Upload Evidence to Paramify
-
-**Purpose**: Find the latest evidence directory and upload evidence files to Paramify via API.
-
-**What it does**:
-- Automatically finds the latest evidence directory based on timestamp
-- Validates that required summary files exist
-- Uploads evidence files to Paramify via API
-- Provides user confirmation before proceeding
-- Handles errors gracefully with detailed logging
-
-**Files**:
-- `4-upload-to-paramify/upload_to_paramify.py` - Main upload script
-- `4-upload-to-paramify/README.md` - Upload documentation
-
-**Usage**:
-```bash
-python 4-upload-to-paramify/upload_to_paramify.py
-```
-
-### 5) Other/Extra Options
-
-**Purpose**: Access additional tools including tests, adding new fetchers, and evidence requirement mapping.
-
-**What it does**:
-- **Tests**: Run validation and test scripts to ensure the system is working correctly
-- **Add New Fetcher**: Add a new evidence fetcher script to the library with proper integration
-- **Evidence Requirement Mapping**: Map evidence to requirements from Paramify YAML files
-
-**Files**:
-- `5-tests/` - Testing and validation scripts
-- `6-add-new-fetcher/` - Scripts for adding new fetchers
-- `extra-supporting-scripts/` - Supporting tools including mapping, export/import, and evidence management
-
-**Usage**:
-```bash
-python main.py
-# Choose option 5, then select from the submenu
-```
-
-### Extra Supporting Scripts
-
-**Purpose**: Additional tools for evidence management, requirement mapping, and workspace operations.
-
-**Available Tools**:
-
-#### Evidence Requirement Mapping
-- **Purpose**: Map evidence to requirements from Paramify machine readable YAML files
-- **Scripts**:
-  - `extra-supporting-scripts/map_requirements.py` - Basic mapping script
-  - `extra-supporting-scripts/extract_evidence_ksi_mappings.py` - Advanced KSI mapping extraction
-  - `extra-supporting-scripts/mapping_summary.py` - Analysis script to summarize mappings
-- **Usage**:
-  ```bash
-  python extra-supporting-scripts/extract_evidence_ksi_mappings.py
-  ```
-
-#### Evidence Export/Import
-- **Purpose**: Transfer evidence sets and artifacts between Paramify workspaces
-- **Script**: `extra-supporting-scripts/export_import_evidence.py`
-- **Usage**:
-  ```bash
-  python extra-supporting-scripts/export_import_evidence.py
-  ```
-
-#### Evidence Management
-- **Purpose**: Delete all evidence from a Paramify workspace (⚠️ DESTRUCTIVE)
-- **Script**: `extra-supporting-scripts/delete_all_evidence.py`
-- **Usage**:
-  ```bash
-  python extra-supporting-scripts/delete_all_evidence.py
-  ```
-- **Warning**: This operation is irreversible and will permanently delete all evidence and artifacts. Use with extreme caution.
-
-**Files**:
-- `extra-supporting-scripts/README.md` - Documentation for all supporting scripts
-- `extra-supporting-scripts/paramify_evidence_mappings.json` - Existing evidence mappings
-- `extra-supporting-scripts/evidence_sets_with_requirements.json` - Updated evidence sets with KSI requirements
+- **Multi-Instance Support**: Run the same fetcher against multiple AWS regions or GitLab projects
+- **Evidence Sets**: Selectively choose which fetchers to run based on your needs
+- **Paramify Integration**: Automatic upload of evidence sets and evidence files
+- **Timestamped Storage**: All evidence stored in organized, timestamped directories
 
 ## Directory Structure
 
 ```
 evidence-fetchers/
-├── main.py                          # Main menu system
-├── README.md                        # This file
-├── requirements.txt                 # Python dependencies
-├── .env                            # Environment variables (create this)
-├── evidence/                       # Evidence storage directory
-├── fetchers/                       # Evidence fetcher scripts
-│   ├── aws/                        # AWS-specific scripts
-│   ├── gitlab/                     # GitLab CI/CD and change management scripts
-│   ├── k8s/                        # Kubernetes scripts
-│   ├── knowbe4/                    # KnowBe4 scripts
-│   ├── okta/                       # Okta scripts
-│   └── rippling/                   # Rippling HR management scripts
-├── 0-prerequisites/                # Prerequisites setup
-├── 1-select-fetchers/              # Fetcher selection
-├── 2-create-evidence-sets/         # Evidence sets creation in Paramify
-├── 3-run-fetchers/                 # Script execution
-├── 4-upload-to-paramify/           # Evidence upload to Paramify
-├── 5-tests/                        # Testing and validation
-├── 6-add-new-fetcher/              # Adding new scripts
-└── extra-supporting-scripts/       # Supporting scripts (mapping, export/import, evidence management)
+├── main.py                    # Main menu system
+├── fetchers/                  # Evidence fetcher scripts
+│   ├── aws/                  # AWS scripts (29 available)
+│   ├── gitlab/               # GitLab scripts (3 available)
+│   ├── k8s/                  # Kubernetes scripts (3 available)
+│   ├── knowbe4/              # KnowBe4 scripts (2 available)
+│   ├── okta/                 # Okta scripts (9 available)
+│   └── rippling/             # Rippling scripts (2 available)
+├── 0-prerequisites/          # Setup and dependencies
+├── 1-select-fetchers/        # Fetcher selection
+├── 2-create-evidence-sets/   # Create evidence sets in Paramify
+├── 3-run-fetchers/           # Execute fetchers
+├── 4-upload-to-paramify/     # Upload evidence to Paramify
+├── 5-tests/                  # Testing and validation
+├── 6-add-new-fetcher/        # Add new fetchers
+└── extra-supporting-scripts/ # Additional tools
 ```
-
-## Getting Started
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd evidence-fetchers
-   ```
-
-2. **Set up prerequisites**:
-   ```bash
-   python main.py
-   # Choose option 0
-   ```
-
-3. **Select your fetchers**:
-   ```bash
-   python main.py
-   # Choose option 1
-   ```
-
-4. **Create evidence sets in Paramify**:
-   ```bash
-   python main.py
-   # Choose option 2
-   ```
-
-5. **Run the fetchers**:
-   ```bash
-   python main.py
-   # Choose option 3
-   ```
-
-6. **Upload evidence to Paramify**:
-   ```bash
-   python main.py
-   # Choose option 4
-   ```
-
-7. **Access additional tools** (optional):
-   ```bash
-   python main.py
-   # Choose option 5 for tests, adding new fetchers, or evidence mapping
-   ```
 
 ## Environment Variables
 
-Create a `.env` file with the following variables:
+Create a `.env` file with:
 
 ```bash
-# Paramify API Configuration
+# Required: Paramify API Configuration
 PARAMIFY_UPLOAD_API_TOKEN=your_api_token_here
 PARAMIFY_API_BASE_URL=https://app.paramify.com/api/v0
 
-# Optional: KnowBe4 Configuration
+# Optional: Service-specific configuration
+AWS_PROFILE=your_aws_profile
+AWS_REGION=us-east-1
 KNOWBE4_API_KEY=your_knowbe4_api_key
-KNOWBE4_REGION=us
-
-# Optional: Okta Configuration
 OKTA_API_TOKEN=your_okta_api_token
 OKTA_ORG_URL=https://your-org.okta.com
-
-# Optional: Rippling Configuration
 RIPPLING_API_TOKEN=your_rippling_api_token
 ```
-
-## Available Services
-
-The evidence fetchers support multiple cloud providers and services:
-
-### AWS Scripts (28 available)
-- **Security**: IAM, encryption, security groups, WAF
-- **High Availability**: Auto scaling, load balancers, databases
-- **Monitoring**: CloudWatch, Config, GuardDuty
-- **Storage**: S3, EBS, EFS encryption and policies
-- **Networking**: VPC, Route53, network policies
-
-### GitLab Scripts (3 available)
-- **CI/CD**: Pipeline configuration and security scanning
-- **Repository**: File inventory and configuration analysis
-- **Change Management**: Merge request process and approval metrics
-
-### Kubernetes Scripts (3 available)
-- **EKS**: Cluster configuration, node groups, add-ons
-- **Security**: RBAC, network policies, pod security
-- **Monitoring**: Pod inventory, resource limits
-
-### KnowBe4 Scripts (2 available)
-- **Training**: Security awareness, role-specific training
-- **Compliance**: Training completion, user status
-
-### Okta Scripts (1 available)
-- **Authentication**: MFA, authenticators, policies
-- **Identity**: User management, access policies
-
-### Rippling Scripts (2 available)
-- **HR Management**: Current employee data and access management
-- **Historical Data**: All employee data including historical records
 
 ## Dependencies
 
 - Python 3.x
-- AWS CLI
+- AWS CLI (for AWS scripts)
 - jq (JSON processor)
 - curl (HTTP client)
 - kubectl (for Kubernetes scripts)
 
-## Support
+## Documentation
 
-For detailed instructions on each component, see the README.md files in each numbered directory.
-
-For developer information, see `6-add-new-fetcher/DEVELOPER_GUIDE.md`.
-
-For customer setup, see `1-select-fetchers/CUSTOMER_SETUP_GUIDE.md`.
+- **Component docs**: See `README.md` in each numbered directory
+- **Developer guide**: `6-add-new-fetcher/DEVELOPER_GUIDE.md`
+- **Customer setup**: `1-select-fetchers/CUSTOMER_SETUP_GUIDE.md`
