@@ -16,9 +16,14 @@ REGION="$2"
 OUTPUT_DIR="$3"
 OUTPUT_CSV="$4"
 
-# Component identifier
+# Component identifier - include GitLab project ID to avoid overwriting
 COMPONENT="checkov_kubernetes"
-OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
+# Sanitize project ID for filename (replace / with _)
+PROJECT_ID_SANITIZED=$(echo "${GITLAB_PROJECT_ID:-unknown}" | sed 's/\//_/g' | sed 's/[^a-zA-Z0-9_-]/_/g')
+OUTPUT_JSON="$OUTPUT_DIR/${COMPONENT}_${PROJECT_ID_SANITIZED}.json"
+
+# Ensure output directory exists
+mkdir -p "$OUTPUT_DIR"
 
 # ANSI color codes for better output readability
 GREEN='\033[0;32m'
@@ -133,7 +138,19 @@ case "$SOURCE_TYPE" in
     "url") SOURCE_INFO="$CHECKOV_SOURCE_URL" ;;
 esac
 
+# Get project metadata
+PROJECT_NAME=$(echo "$GITLAB_PROJECT_ID" | sed 's|.*/||')
+PROJECT_GROUP=$(echo "$GITLAB_PROJECT_ID" | sed 's|/.*||')
+
 echo "{
+  \"metadata\": {
+    \"project_id\": \"${GITLAB_PROJECT_ID:-unknown}\",
+    \"project_name\": \"${PROJECT_NAME:-unknown}\",
+    \"project_group\": \"${PROJECT_GROUP:-unknown}\",
+    \"gitlab_url\": \"${GITLAB_URL:-unknown}\",
+    \"branch\": \"${GITLAB_BRANCH:-main}\",
+    \"scan_timestamp\": \"$TIMESTAMP\"
+  },
   \"framework\": \"kubernetes\",
   \"scan_timestamp\": \"$TIMESTAMP\",
   \"source_type\": \"$SOURCE_TYPE\",
@@ -166,25 +183,104 @@ if [ "${CHECKOV_COMPACT:-true}" = "true" ]; then
     CHECKOV_ARGS="$CHECKOV_ARGS --compact"
 fi
 
-# Add specific checks to run (if specified)
-if [ -n "$CHECKOV_CHECKS" ]; then
-    CHECKOV_ARGS="$CHECKOV_ARGS --check $CHECKOV_CHECKS"
-    echo -e "${BLUE}Running specific checks: $CHECKOV_CHECKS${NC}"
+# Note: We'll add specific checks to the config file instead of CLI args
+# This allows us to filter out skipped checks properly
+# Store the requested checks for later use in config file generation
+if [ -n "$CHECKOV_K8S_CHECKS" ]; then
+    REQUESTED_CHECKS_FOR_CONFIG="$CHECKOV_K8S_CHECKS"
+    echo -e "${BLUE}Will run specific Kubernetes checks: $CHECKOV_K8S_CHECKS${NC}"
+elif [ -n "$CHECKOV_CHECKS" ]; then
+    # Fallback: Filter CHECKOV_CHECKS to only include Kubernetes-related checks
+    K8S_CHECKS=""
+    IFS=',' read -ra ALL_CHECKS <<< "$CHECKOV_CHECKS"
+    for check in "${ALL_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        if [[ "$check" =~ ^CKV_K8S_ ]] || [[ "$check" =~ ^CKV2_K8S_ ]]; then
+            if [ -z "$K8S_CHECKS" ]; then
+                K8S_CHECKS="$check"
+            else
+                K8S_CHECKS="$K8S_CHECKS,$check"
+            fi
+        fi
+    done
+    REQUESTED_CHECKS_FOR_CONFIG="$K8S_CHECKS"
+    if [ -n "$K8S_CHECKS" ]; then
+        echo -e "${BLUE}Will run filtered Kubernetes checks: $K8S_CHECKS${NC}"
+    fi
 fi
 
-# Add checks to skip (if specified)
+# Combine skip checks from defaults and .env configuration
+# But exclude any checks that are explicitly requested via CHECKOV_K8S_CHECKS
+SKIP_CHECKS_LIST=""
+REQUESTED_CHECKS=""
+
+# Get list of requested checks to exclude from skip list
+if [ -n "$CHECKOV_K8S_CHECKS" ]; then
+    REQUESTED_CHECKS="$CHECKOV_K8S_CHECKS"
+elif [ -n "$CHECKOV_CHECKS" ]; then
+    # Extract Kubernetes checks from CHECKOV_CHECKS
+    K8S_CHECKS=""
+    IFS=',' read -ra ALL_CHECKS <<< "$CHECKOV_CHECKS"
+    for check in "${ALL_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        if [[ "$check" =~ ^CKV_K8S_ ]] || [[ "$check" =~ ^CKV2_K8S_ ]]; then
+            if [ -z "$K8S_CHECKS" ]; then
+                K8S_CHECKS="$check"
+            else
+                K8S_CHECKS="$K8S_CHECKS,$check"
+            fi
+        fi
+    done
+    REQUESTED_CHECKS="$K8S_CHECKS"
+fi
+
+# 1) Load default skip checks for Kubernetes (if file exists)
+# Skip list takes priority - if a check is in skip list, it will be skipped even if explicitly requested
+DEFAULT_SKIP_CHECKS_FILE="fetchers/checkov/skip-checks-k8s.default.txt"
+if [ -f "$DEFAULT_SKIP_CHECKS_FILE" ]; then
+    while IFS= read -r check || [ -n "$check" ]; do
+        [[ -z "$check" || "$check" =~ ^[[:space:]]*# ]] && continue
+        # Add to skip list (skip list takes priority over requested checks)
+        if [ -z "$SKIP_CHECKS_LIST" ]; then
+            SKIP_CHECKS_LIST="$check"
+        else
+            SKIP_CHECKS_LIST="$SKIP_CHECKS_LIST,$check"
+        fi
+    done < "$DEFAULT_SKIP_CHECKS_FILE"
+    echo -e "${BLUE}Loaded default K8S skip checks from: $DEFAULT_SKIP_CHECKS_FILE${NC}"
+fi
+
+# 2) Add user-specified skip checks from .env (comma-separated)
+# Skip list takes priority - if a check is in skip list, it will be skipped even if explicitly requested
 if [ -n "$CHECKOV_SKIP_CHECKS" ]; then
-    CHECKOV_ARGS="$CHECKOV_ARGS --skip-check $CHECKOV_SKIP_CHECKS"
-    echo -e "${BLUE}Skipping checks: $CHECKOV_SKIP_CHECKS${NC}"
+    IFS=',' read -ra USER_SKIP_CHECKS <<< "$CHECKOV_SKIP_CHECKS"
+    for check in "${USER_SKIP_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        # Only add K8S checks to skip list
+        if [[ "$check" =~ ^CKV_K8S_ ]] || [[ "$check" =~ ^CKV2_K8S_ ]]; then
+            if [ -z "$SKIP_CHECKS_LIST" ]; then
+                SKIP_CHECKS_LIST="$check"
+            else
+                SKIP_CHECKS_LIST="$SKIP_CHECKS_LIST,$check"
+            fi
+        fi
+    done
+    echo -e "${BLUE}Added skip checks from .env: $CHECKOV_SKIP_CHECKS${NC}"
+fi
+
+# Add all skip checks to Checkov arguments
+if [ -n "$SKIP_CHECKS_LIST" ]; then
+    CHECKOV_ARGS="$CHECKOV_ARGS --skip-check $SKIP_CHECKS_LIST"
+    echo -e "${BLUE}Skipping K8S checks: $SKIP_CHECKS_LIST${NC}"
 fi
 
 # Add severity filtering (if specified)
-# Note: --severity is not a valid Checkov flag. Use --check or --skip-check with severity values instead
-# Example: --skip-check LOW,MEDIUM or --check HIGH,CRITICAL
+# Note: Checkov doesn't support direct severity filtering via CLI flags
+# Severity filtering requires using the Prisma Cloud API or filtering results post-scan
+# This option is ignored to prevent Checkov failures
 if [ -n "$CHECKOV_SEVERITY" ]; then
-    # Use severity with --skip-check to filter by severity
-    CHECKOV_ARGS="$CHECKOV_ARGS --skip-check $CHECKOV_SEVERITY"
-    echo -e "${BLUE}Severity filter (via --skip-check): $CHECKOV_SEVERITY${NC}"
+    echo -e "${YELLOW}Warning:${NC} CHECKOV_SEVERITY is set but Checkov CLI doesn't support direct severity filtering. This option is ignored.${NC}"
+    echo -e "${YELLOW}Note:${NC} To filter by severity, use CHECKOV_CHECKS to specify specific check IDs or use Prisma Cloud API.${NC}"
 fi
 
 # Add external checks directory (if specified)
@@ -221,27 +317,94 @@ quiet: true
 EOF
 
 # Add specific checks if specified
-if [ -n "$CHECKOV_CHECKS" ]; then
-    echo "check:" >> "$CHECKOV_CONFIG_FILE"
-    IFS=',' read -ra CHECKS <<< "$CHECKOV_CHECKS"
-    for check in "${CHECKS[@]}"; do
-        echo "  - $check" >> "$CHECKOV_CONFIG_FILE"
-    done
+# Use CHECKOV_K8S_CHECKS if set, otherwise fall back to filtering CHECKOV_CHECKS
+# Filter out any checks that are in the skip list
+if [ -n "$REQUESTED_CHECKS_FOR_CONFIG" ]; then
+    # Use the stored requested checks
+    CHECKOV_K8S_CHECKS="$REQUESTED_CHECKS_FOR_CONFIG"
 fi
 
-# Add skip checks if specified
-if [ -n "$CHECKOV_SKIP_CHECKS" ]; then
+if [ -n "$CHECKOV_K8S_CHECKS" ]; then
+    # Track if we have any checks to add
+    CHECKS_ADDED=0
+    IFS=',' read -ra CHECKS <<< "$CHECKOV_K8S_CHECKS"
+    for check in "${CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        # Skip this check if it's in the skip list
+        if [ -n "$SKIP_CHECKS_LIST" ] && [[ ",$SKIP_CHECKS_LIST," =~ ,$check, ]]; then
+            continue  # Don't add checks that are in the skip list
+        fi
+        # Add check: section header only on first check
+        if [ $CHECKS_ADDED -eq 0 ]; then
+            echo "check:" >> "$CHECKOV_CONFIG_FILE"
+        fi
+        echo "  - $check" >> "$CHECKOV_CONFIG_FILE"
+        CHECKS_ADDED=$((CHECKS_ADDED + 1))
+    done
+    # If all checks were filtered out, don't add check: section (let Checkov run all checks)
+    if [ $CHECKS_ADDED -eq 0 ]; then
+        echo -e "${YELLOW}Warning:${NC} All checks in CHECKOV_K8S_CHECKS are in the skip list. Running all Kubernetes checks instead.${NC}"
+    fi
+elif [ -n "$CHECKOV_CHECKS" ]; then
+    # Fallback: Filter CHECKOV_CHECKS to only include Kubernetes-related checks
+    K8S_CHECKS=""
+    IFS=',' read -ra ALL_CHECKS <<< "$CHECKOV_CHECKS"
+    for check in "${ALL_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        if [[ "$check" =~ ^CKV_K8S_ ]] || [[ "$check" =~ ^CKV2_K8S_ ]]; then
+            if [ -z "$K8S_CHECKS" ]; then
+                K8S_CHECKS="$check"
+            else
+                K8S_CHECKS="$K8S_CHECKS,$check"
+            fi
+        fi
+    done
+    
+    if [ -n "$K8S_CHECKS" ]; then
+        # Track if we have any checks to add
+        CHECKS_ADDED=0
+        IFS=',' read -ra CHECKS <<< "$K8S_CHECKS"
+        for check in "${CHECKS[@]}"; do
+            check=$(echo "$check" | xargs)  # Trim whitespace
+            # Skip this check if it's in the skip list
+            if [ -n "$SKIP_CHECKS_LIST" ] && [[ ",$SKIP_CHECKS_LIST," =~ ,$check, ]]; then
+                continue  # Don't add checks that are in the skip list
+            fi
+            # Add check: section header only on first check
+            if [ $CHECKS_ADDED -eq 0 ]; then
+                echo "check:" >> "$CHECKOV_CONFIG_FILE"
+            fi
+            echo "  - $check" >> "$CHECKOV_CONFIG_FILE"
+            CHECKS_ADDED=$((CHECKS_ADDED + 1))
+        done
+        # If all checks were filtered out, don't add check: section (let Checkov run all checks)
+        if [ $CHECKS_ADDED -eq 0 ]; then
+            echo -e "${YELLOW}Warning:${NC} All filtered Kubernetes checks are in the skip list. Running all Kubernetes checks instead.${NC}"
+        fi
+    fi
+fi
+
+# Add skip checks if specified (use the same SKIP_CHECKS_LIST from above)
+if [ -n "$SKIP_CHECKS_LIST" ]; then
     echo "skip-check:" >> "$CHECKOV_CONFIG_FILE"
-    IFS=',' read -ra SKIP_CHECKS <<< "$CHECKOV_SKIP_CHECKS"
+    IFS=',' read -ra SKIP_CHECKS <<< "$SKIP_CHECKS_LIST"
     for check in "${SKIP_CHECKS[@]}"; do
         echo "  - $check" >> "$CHECKOV_CONFIG_FILE"
     done
+elif [ -n "$CHECKOV_SKIP_CHECKS" ]; then
+    # Fallback to CHECKOV_SKIP_CHECKS if SKIP_CHECKS_LIST wasn't built
+    echo "skip-check:" >> "$CHECKOV_CONFIG_FILE"
+    IFS=',' read -ra SKIP_CHECKS <<< "$CHECKOV_SKIP_CHECKS"
+    for check in "${SKIP_CHECKS[@]}"; do
+        # Only add K8S checks
+        if [[ "$check" =~ ^CKV_K8S_ ]] || [[ "$check" =~ ^CKV2_K8S_ ]]; then
+            echo "  - $check" >> "$CHECKOV_CONFIG_FILE"
+        fi
+    done
 fi
 
-# Add severity filter if specified
-if [ -n "$CHECKOV_SEVERITY" ]; then
-    echo "severity: $CHECKOV_SEVERITY" >> "$CHECKOV_CONFIG_FILE"
-fi
+# Note: Severity filtering is not supported in Checkov YAML config
+# This option is ignored to prevent Checkov failures
 
 # Add skip paths if specified
 if [ -n "$CHECKOV_SKIP_PATHS" ]; then
@@ -277,34 +440,123 @@ echo -e "${BLUE}Using generated config: $CHECKOV_CONFIG_FILE${NC}"
 
 # Run Checkov with flexible arguments
 CHECKOV_OUTPUT=$(mktemp)
-if checkov --directory "$TEMP_DIR" $CHECKOV_ARGS $CONFIG_FILE > "$CHECKOV_OUTPUT" 2>/dev/null; then
+CHECKOV_ERROR=$(mktemp)
+# Capture stderr to see actual errors
+# Use eval to properly handle arguments with spaces/quotes
+CHECKOV_CMD="checkov --directory \"$TEMP_DIR\" $CHECKOV_ARGS $CONFIG_FILE"
+if eval "$CHECKOV_CMD" > "$CHECKOV_OUTPUT" 2>"$CHECKOV_ERROR"; then
     echo -e "${GREEN}✓ Checkov Kubernetes scan completed${NC}"
     
     # Parse Checkov JSON output
     if [ -s "$CHECKOV_OUTPUT" ]; then
-        # Extract summary statistics
-        PASSED=$(jq -r '.summary.passed_checks // 0' "$CHECKOV_OUTPUT")
-        FAILED=$(jq -r '.summary.failed_checks // 0' "$CHECKOV_OUTPUT")
-        SKIPPED=$(jq -r '.summary.skipped_checks // 0' "$CHECKOV_OUTPUT")
-        CHECKS=$(jq -r '.summary.total_checks // 0' "$CHECKOV_OUTPUT")
+        # Extract summary statistics - Checkov uses 'passed', 'failed', 'skipped' not 'passed_checks'
+        PASSED=$(jq -r '.summary.passed // 0' "$CHECKOV_OUTPUT")
+        FAILED=$(jq -r '.summary.failed // 0' "$CHECKOV_OUTPUT")
+        SKIPPED=$(jq -r '.summary.skipped // 0' "$CHECKOV_OUTPUT")
+        TOTAL_CHECKS=$((PASSED + FAILED + SKIPPED))
         
         TOTAL_PASSED=$PASSED
         TOTAL_FAILED=$FAILED
         TOTAL_SKIPPED=$SKIPPED
-        TOTAL_CHECKS=$CHECKS
-        jq '.summary.passed_percentage = (if .summary.total_checks > 0 then ((.summary.passed_checks / .summary.total_checks) * 100) else 0 end)' "$CHECKOV_OUTPUT" > "$OUTPUT_JSON"
+        
+        # Calculate percentage and update output with correct field names
+        if [ $TOTAL_CHECKS -gt 0 ]; then
+            PASSED_PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", ($PASSED / $TOTAL_CHECKS) * 100}")
+        else
+            PASSED_PERCENTAGE=0
+        fi
+        
+        # Merge Checkov output with our metadata and fix summary fields
+        # Preserve check_type and results from Checkov output
+        jq --argjson passed "$PASSED" \
+           --argjson failed "$FAILED" \
+           --argjson skipped "$SKIPPED" \
+           --argjson total "$TOTAL_CHECKS" \
+           --argjson percentage "$PASSED_PERCENTAGE" \
+           --arg project_id "${GITLAB_PROJECT_ID:-unknown}" \
+           --arg project_name "${PROJECT_NAME:-unknown}" \
+           --arg project_group "${PROJECT_GROUP:-unknown}" \
+           --arg gitlab_url "${GITLAB_URL:-unknown}" \
+           --arg branch "${GITLAB_BRANCH:-main}" \
+           --arg timestamp "$TIMESTAMP" \
+           --arg source_info "$SOURCE_INFO" \
+           --arg source_type "$SOURCE_TYPE" \
+           '. + {
+               metadata: {
+                   project_id: $project_id,
+                   project_name: $project_name,
+                   project_group: $project_group,
+                   gitlab_url: $gitlab_url,
+                   branch: $branch,
+                   scan_timestamp: $timestamp
+               },
+               framework: "kubernetes",
+               scan_timestamp: $timestamp,
+               source_type: $source_type,
+               source: $source_info,
+               summary: (.summary + {
+                   passed_checks: $passed,
+                   failed_checks: $failed,
+                   skipped_checks: $skipped,
+                   total_checks: $total,
+                   passed_percentage: $percentage
+               })
+           } |
+           # Preserve check_type if it exists
+           if has("check_type") then . else . end' "$CHECKOV_OUTPUT" > "$OUTPUT_JSON"
     fi
 else
     echo -e "${RED}✗ Checkov Kubernetes scan failed${NC}"
-    # Add error result
-    ERROR_RESULT=$(jq -n --arg error "Checkov Kubernetes scan failed" '{
-        "error": $error,
-        "status": "ERROR"
-    }')
-    jq --argjson error_result "$ERROR_RESULT" '.results += [$error_result]' "$OUTPUT_JSON" > "${OUTPUT_JSON}.tmp" && mv "${OUTPUT_JSON}.tmp" "$OUTPUT_JSON"
+    # Show the actual error
+    if [ -s "$CHECKOV_ERROR" ]; then
+        ERROR_MSG=$(cat "$CHECKOV_ERROR" | head -10 | tr '\n' '; ')
+        echo -e "${YELLOW}Checkov error:${NC} $ERROR_MSG" >&2
+    fi
+    # Create error output if file doesn't exist
+    if [ ! -f "$OUTPUT_JSON" ]; then
+        # Create basic error structure
+        jq -n --arg project_id "${GITLAB_PROJECT_ID:-unknown}" \
+           --arg project_name "${PROJECT_NAME:-unknown}" \
+           --arg project_group "${PROJECT_GROUP:-unknown}" \
+           --arg gitlab_url "${GITLAB_URL:-unknown}" \
+           --arg branch "${GITLAB_BRANCH:-main}" \
+           --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+           '{
+               metadata: {
+                   project_id: $project_id,
+                   project_name: $project_name,
+                   project_group: $project_group,
+                   gitlab_url: $gitlab_url,
+                   branch: $branch,
+                   scan_timestamp: $timestamp
+               },
+               framework: "kubernetes",
+               scan_timestamp: $timestamp,
+               source_type: "",
+               source: "",
+               summary: {
+                   passed_checks: 0,
+                   failed_checks: 0,
+                   skipped_checks: 0,
+                   total_checks: 0,
+                   passed_percentage: 0
+               },
+               results: [{
+                   error: "Checkov Kubernetes scan failed",
+                   status: "ERROR"
+               }]
+           }' > "$OUTPUT_JSON"
+    else
+        # Add error result to existing file
+        ERROR_RESULT=$(jq -n --arg error "Checkov Kubernetes scan failed" '{
+            "error": $error,
+            "status": "ERROR"
+        }')
+        jq --argjson error_result "$ERROR_RESULT" '.results += [$error_result]' "$OUTPUT_JSON" > "${OUTPUT_JSON}.tmp" && mv "${OUTPUT_JSON}.tmp" "$OUTPUT_JSON"
+    fi
 fi
 
-rm -f "$CHECKOV_OUTPUT"
+rm -f "$CHECKOV_OUTPUT" "$CHECKOV_ERROR"
 
 # Clean up
 rm -rf "$TEMP_DIR"

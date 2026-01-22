@@ -3,12 +3,13 @@
 GitLab CI/CD Pipeline Configuration Retrieval
 
 Purpose: Pull .gitlab-ci.yml file to demonstrate automated testing and
-validation (KSI-CMT-03: automated testing before deployment)
+validation (eg: KSI-CMT-03: automated testing before deployment)
 """
 
 import base64
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -198,14 +199,37 @@ def main() -> int:
     project_id = os.environ.get("GITLAB_PROJECT_ID", "group/project")
     branch = os.environ.get("GITLAB_BRANCH", "main")
 
+    # Sanitize project ID for filename (replace / with _)
+    project_id_sanitized = project_id.replace("/", "_").replace(" ", "_")
+    # Remove any other special characters
+    project_id_sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', project_id_sanitized)
+
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     component = "gitlab_ci_cd_pipeline_config"
-    output_json = Path(output_dir) / f"{component}.json"
+    output_json = Path(output_dir) / f"{component}_{project_id_sanitized}.json"
 
     result = get_gitlab_ci_config(project_id, branch)
+    
+    # Extract project metadata
+    project_name = project_id.split("/")[-1] if "/" in project_id else project_id
+    project_group = project_id.split("/")[0] if "/" in project_id else "unknown"
+    gitlab_url = os.environ.get("GITLAB_URL", "unknown")
+    
+    # Add metadata section at the top
+    result_with_metadata = {
+        "metadata": {
+            "project_id": project_id,
+            "project_name": project_name,
+            "project_group": project_group,
+            "gitlab_url": gitlab_url,
+            "branch": branch,
+            "scan_timestamp": current_timestamp()
+        },
+        **result
+    }
 
     with open(output_json, "w") as f:
-        json.dump(result, f, indent=2, default=str)
+        json.dump(result_with_metadata, f, indent=2, default=str)
 
     # Append CSV summary
     with open(csv_file, "a") as f:
