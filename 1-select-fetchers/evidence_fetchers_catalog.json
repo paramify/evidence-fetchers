@@ -769,22 +769,142 @@
         "name": "Okta",
         "description": "Okta identity and access management evidence collection scripts",
         "scripts": {
-          "okta_authenticators": {
-            "script_file": "fetchers/okta/okta_authenticators.sh",
-            "name": "Okta Authenticators",
-            "description": "Evidence for Okta authenticator configuration and phishing-resistant MFA validation",
-            "id": "EVD-OKTA-AUTHENTICATORS",
-            "instructions": "Script: okta_authenticators.sh. Commands executed: Okta API calls for authenticator configuration, enrollment policies, and policy simulation",
+          "okta_phishing_resistant_mfa": {
+            "script_file": "fetchers/okta/okta_phishing_resistant_mfa.py",
+            "name": "Okta Phishing-Resistant MFA (KSI-IAM-01)",
+            "description": "FedRAMP 20x KSI-IAM-01 evidence: phishing-resistant MFA configuration and adoption (WebAuthn/security keys).",
+            "id": "EVD-OKTA-KSI-IAM-01",
+            "instructions": "Script: okta_phishing_resistant_mfa.py. Uses Okta APIs to collect phishing-resistant MFA (FIDO2/WebAuthn) configuration and adoption evidence. Output: okta_phishing_resistant_mfa.json",
             "dependencies": [
-              "curl",
-              "jq"
+              "python3"
             ],
             "tags": [
               "okta",
+              "iam",
+              "fedramp-20x",
+              "ksi-iam-01",
               "mfa",
-              "authenticators",
               "phishing-resistant",
-              "identity"
+              "webauthn",
+              "security-key"
+            ],
+            "validationRules": []
+          },
+          "okta_passwordless_authentication": {
+            "script_file": "fetchers/okta/okta_passwordless_authentication.py",
+            "name": "Okta Passwordless Authentication (KSI-IAM-02)",
+            "description": "FedRAMP 20x KSI-IAM-02 evidence: passwordless authentication enforcement and user enrollment (security keys / policy).",
+            "id": "EVD-OKTA-KSI-IAM-02",
+            "instructions": "Script: okta_passwordless_authentication.py. Uses Okta APIs to collect passwordless authentication policy and enrollment evidence. Output: okta_passwordless_authentication.json",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "okta",
+              "iam",
+              "fedramp-20x",
+              "ksi-iam-02",
+              "passwordless",
+              "security-key"
+            ],
+            "validationRules": []
+          },
+          "okta_non_user_accounts_authentication": {
+            "script_file": "fetchers/okta/okta_non_user_accounts_authentication.py",
+            "name": "Okta Non-User Accounts (KSI-IAM-03)",
+            "description": "FedRAMP 20x KSI-IAM-03 evidence: service/non-user accounts and automation authentication (API tokens, OAuth apps).",
+            "id": "EVD-OKTA-KSI-IAM-03",
+            "instructions": "Script: okta_non_user_accounts_authentication.py. Uses Okta APIs to identify non-user/service accounts using definitive indicators and automation credentials. Output: okta_non_user_accounts_authentication.json",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "okta",
+              "iam",
+              "fedramp-20x",
+              "ksi-iam-03",
+              "service-accounts",
+              "api-tokens",
+              "oauth"
+            ],
+            "validationRules": []
+          },
+          "okta_just_in_time_authorization": {
+            "script_file": "fetchers/okta/okta_just_in_time_authorization.py",
+            "name": "Okta Just-in-Time Authorization (KSI-IAM-04)",
+            "description": "FedRAMP 20x KSI-IAM-04 evidence: conditional access, group-based assignments, and recent access activity (JIT authorization).",
+            "id": "EVD-OKTA-KSI-IAM-04",
+            "instructions": "Script: okta_just_in_time_authorization.py. Uses Okta APIs to collect JIT authorization evidence (policies, rules, group-based access, activity). Output: okta_just_in_time_authorization.json",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "okta",
+              "iam",
+              "fedramp-20x",
+              "ksi-iam-04",
+              "jit",
+              "conditional-access",
+              "groups"
+            ],
+            "validationRules": []
+          },
+          "okta_least_privilege": {
+            "script_file": "fetchers/okta/okta_least_privilege.py",
+            "name": "Okta Least Privilege (KSI-IAM-05)",
+            "description": "FedRAMP 20x KSI-IAM-05 evidence: privileged admin population and least-privilege posture (admins vs regular users).",
+            "id": "EVD-OKTA-KSI-IAM-05",
+            "instructions": "Script: okta_least_privilege.py. Uses Okta APIs to identify admins and summarize privileged access. Output: okta_least_privilege.json",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "okta",
+              "iam",
+              "fedramp-20x",
+              "ksi-iam-05",
+              "least-privilege",
+              "admins"
+            ],
+            "validationRules": []
+          },
+          "okta_suspicious_activity_management": {
+            "script_file": "fetchers/okta/okta_suspicious_activity_management.py",
+            "name": "Okta Suspicious Activity (KSI-IAM-06)",
+            "description": "FedRAMP 20x KSI-IAM-06 evidence: suspicious activity monitoring, security events, and behavior detection.",
+            "id": "EVD-OKTA-KSI-IAM-06",
+            "instructions": "Script: okta_suspicious_activity_management.py. Uses Okta APIs to collect security event monitoring and behavior detection evidence. Output: okta_suspicious_activity_management.json",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "okta",
+              "iam",
+              "fedramp-20x",
+              "ksi-iam-06",
+              "suspicious-activity",
+              "monitoring",
+              "behavior-detection"
+            ],
+            "validationRules": []
+          },
+          "okta_automated_account_management": {
+            "script_file": "fetchers/okta/okta_automated_account_management.py",
+            "name": "Okta Automated Account Management (KSI-IAM-07)",
+            "description": "FedRAMP 20x KSI-IAM-07 evidence: automated account lifecycle management and account health monitoring.",
+            "id": "EVD-OKTA-KSI-IAM-07",
+            "instructions": "Script: okta_automated_account_management.py. Uses Okta APIs to collect account lifecycle monitoring and health evidence. Output: okta_automated_account_management.json",
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "okta",
+              "iam",
+              "fedramp-20x",
+              "ksi-iam-07",
+              "account-management",
+              "lifecycle",
+              "automation"
             ],
             "validationRules": []
           }
