@@ -30,8 +30,29 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Initialize JSON file
-echo '{"results": []}' > "$OUTPUT_JSON"
+# Get caller identity for metadata
+CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
+ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
+ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
+DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Initialize JSON file with metadata
+jq -n \
+  --arg profile "$PROFILE" \
+  --arg region "$REGION" \
+  --arg datetime "$DATETIME" \
+  --arg account_id "$ACCOUNT_ID" \
+  --arg arn "$ARN" \
+  '{
+    "metadata": {
+      "profile": $profile,
+      "region": $region,
+      "datetime": $datetime,
+      "account_id": $account_id,
+      "arn": $arn
+    },
+    "results": []
+  }' > "$OUTPUT_JSON"
 
 echo -e "${BLUE}Starting Network Resilience High Availability validation...${NC}"
 

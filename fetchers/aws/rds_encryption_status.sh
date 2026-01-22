@@ -28,8 +28,11 @@ CSV_FILE="$4"
 total_databases=0
 encrypted_databases=0
 
-# Create results object
-results_json=$(jq -n '{results: {}}')
+# Get caller identity for metadata
+CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
+ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
+ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
+DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Check RDS instances
 rds_results=()
@@ -85,14 +88,26 @@ for cluster in $(aws rds describe-db-clusters --profile "$PROFILE" --region "$RE
     fi
 done
 
-# Combine results
+# Combine results with metadata
 results_json=$(jq -n \
+    --arg profile "$PROFILE" \
+    --arg region "$REGION" \
+    --arg datetime "$DATETIME" \
+    --arg account_id "$ACCOUNT_ID" \
+    --arg arn "$ARN" \
     --argjson rds "[$(IFS=,; echo "${rds_results[*]}")]" \
     --argjson aurora "[$(IFS=,; echo "${aurora_results[*]}")]" \
     --arg total "$total_databases" \
     --arg encrypted "$encrypted_databases" \
     --arg percentage "$(( (encrypted_databases * 100) / total_databases ))" \
     '{
+        metadata: {
+            profile: $profile,
+            region: $region,
+            datetime: $datetime,
+            account_id: $account_id,
+            arn: $arn
+        },
         results: {
             storage_inventory: {
                 instances: $rds,
