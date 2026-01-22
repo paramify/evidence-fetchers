@@ -3,11 +3,12 @@
 GitLab Project Summary
 
 Purpose: Generate inventory of configuration files (e.g., Terraform)
-to support KSI-PIY-01 (information resource inventory)
+eg: KSI-PIY-01 (information resource inventory)
 """
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -145,13 +146,37 @@ def main() -> int:
     patterns_env = os.environ.get("GITLAB_FILE_PATTERNS")
     patterns = [p.strip() for p in patterns_env.split(",")] if patterns_env else None
 
+    # Sanitize project ID for filename (replace / with _)
+    project_id_sanitized = project_id.replace("/", "_").replace(" ", "_")
+    # Remove any other special characters
+    project_id_sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', project_id_sanitized)
+
     component = "gitlab_project_summary"
-    output_json = Path(output_dir) / f"{component}.json"
+    output_json = Path(output_dir) / f"{component}_{project_id_sanitized}.json"
 
     result = get_project_file_summary(project_id, patterns)
+    
+    # Extract project metadata
+    project_name = project_id.split("/")[-1] if "/" in project_id else project_id
+    project_group = project_id.split("/")[0] if "/" in project_id else "unknown"
+    gitlab_url = os.environ.get("GITLAB_URL", "unknown")
+    branch = os.environ.get("GITLAB_BRANCH", "main")
+    
+    # Add metadata section at the top
+    result_with_metadata = {
+        "metadata": {
+            "project_id": project_id,
+            "project_name": project_name,
+            "project_group": project_group,
+            "gitlab_url": gitlab_url,
+            "branch": branch,
+            "scan_timestamp": current_timestamp()
+        },
+        **result
+    }
 
     with open(output_json, "w") as f:
-        json.dump(result, f, indent=2, default=str)
+        json.dump(result_with_metadata, f, indent=2, default=str)
 
     with open(csv_file, "a") as f:
         status = result.get("status", "unknown")

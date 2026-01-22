@@ -3,11 +3,12 @@
 GitLab Merge Request Summary
 
 Purpose: Pull recent merge requests to demonstrate change management
-and review process (KSI-CMT-04)
+and review process (eg: KSI-CMT-04)
 """
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -68,7 +69,7 @@ def calculate_time_to_merge(mr: Dict[str, Any]) -> Optional[float]:
     return delta.total_seconds() / 3600.0
 
 
-def check_approval_before_merge(mr: Dict[str, Any], approvals_data: Dict[str, Any]) -> Optional[bool]:
+def check_approval_before_merge(mr: Dict[str, Any], approvals_data: Dict[str, Any], approval_state_data: Dict[str, Any] = None) -> Optional[bool]:
     if not mr.get("merged_at"):
         return None
     approved_by = approvals_data.get("approved_by", []) or []
@@ -76,12 +77,45 @@ def check_approval_before_merge(mr: Dict[str, Any], approvals_data: Dict[str, An
         return False
     merge_time = parse_datetime(mr.get("merged_at"))
     times: List[datetime] = []
-    for entry in approved_by:
-        created_at = entry.get("user", {}).get("created_at") or entry.get("created_at")
-        if created_at:
-            times.append(parse_datetime(created_at))
+    
+    # First, try to get approval timestamps from approval_state endpoint
+    if approval_state_data:
+        # Check approval_state.rules[].approved_by[] for timestamps
+        rules = approval_state_data.get("rules", []) or []
+        for rule in rules:
+            rule_approved_by = rule.get("approved_by", []) or []
+            for approver in rule_approved_by:
+                # Try to get the approval timestamp
+                approval_time = (
+                    approver.get("created_at") or
+                    approver.get("approved_at") or
+                    approver.get("updated_at")
+                )
+                if approval_time:
+                    try:
+                        times.append(parse_datetime(approval_time))
+                    except (ValueError, TypeError):
+                        continue
+    
+    # Fallback: try to get timestamps from approvals endpoint
+    if not times:
+        for entry in approved_by:
+            # Try multiple possible fields for approval timestamp
+            approval_time = (
+                entry.get("created_at") or  # Direct approval timestamp
+                entry.get("approved_at") or  # Alternative field name
+                entry.get("updated_at")  # Sometimes used as approval time
+            )
+            if approval_time:
+                try:
+                    times.append(parse_datetime(approval_time))
+                except (ValueError, TypeError):
+                    continue
+    
     if not times:
         # If no timestamps available, we cannot confirm ordering
+        # Return None to indicate we cannot determine if approval happened before merge
+        # This ensures only MRs with verifiable timing are included in compliance calculations
         return None
     return all(t < merge_time for t in times)
 
@@ -133,11 +167,16 @@ def get_merge_requests_summary(project_id: str, state: str = "merged", days_back
         for mr in all_mrs:
             iid = mr.get("iid")
             approvals_url = f"{api_endpoint}/projects/{encoded_project}/merge_requests/{iid}/approvals"
+            approval_state_url = f"{api_endpoint}/projects/{encoded_project}/merge_requests/{iid}/approval_state"
             discussions_url = f"{api_endpoint}/projects/{encoded_project}/merge_requests/{iid}/discussions"
             changes_url = f"{api_endpoint}/projects/{encoded_project}/merge_requests/{iid}/changes"
 
             approvals_resp = http_get(approvals_url, headers=headers)
             approvals_data = approvals_resp.json() if approvals_resp.status_code == 200 else {}
+            
+            # Try to get approval state which may have timestamps
+            approval_state_resp = http_get(approval_state_url, headers=headers)
+            approval_state_data = approval_state_resp.json() if approval_state_resp.status_code == 200 else {}
 
             discussions_resp = http_get(discussions_url, headers=headers)
             discussions = discussions_resp.json() if discussions_resp.status_code == 200 else []
@@ -176,13 +215,26 @@ def get_merge_requests_summary(project_id: str, state: str = "merged", days_back
                 "compliance_checks": {
                     "has_approvals": len(approvals_data.get("approved_by", []) or []) > 0,
                     "has_discussion": len(discussions) > 0,
-                    "approved_before_merge": check_approval_before_merge(mr, approvals_data),
+                    "approved_before_merge": check_approval_before_merge(mr, approvals_data, approval_state_data),
                     "time_to_merge_hours": calculate_time_to_merge(mr) if mr.get("merged_at") else None,
                 },
             }
             enriched_mrs.append(enriched)
 
         merged_mrs = [mr for mr in enriched_mrs if mr.get("state") == "merged"]
+        
+        # Calculate compliance rate: only count MRs where we can determine approval timing
+        # Exclude MRs where approved_before_merge is None (can't determine)
+        mrs_with_known_approval_timing = [mr for mr in merged_mrs if mr["compliance_checks"]["approved_before_merge"] is not None]
+        if mrs_with_known_approval_timing:
+            compliance_rate = calculate_percentage(
+                sum(1 for mr in mrs_with_known_approval_timing if mr["compliance_checks"]["approved_before_merge"] is True),
+                len(mrs_with_known_approval_timing)
+            )
+        else:
+            # If we can't determine timing for any MRs, return None
+            compliance_rate = None
+        
         metrics = {
             "total_mrs": len(enriched_mrs),
             "merged_count": len(merged_mrs),
@@ -191,7 +243,7 @@ def get_merge_requests_summary(project_id: str, state: str = "merged", days_back
             "mrs_with_approvals": sum(1 for mr in enriched_mrs if mr["compliance_checks"]["has_approvals"]),
             "mrs_with_discussion": sum(1 for mr in enriched_mrs if mr["compliance_checks"]["has_discussion"]),
             "approval_rate": calculate_percentage(sum(1 for mr in enriched_mrs if mr["compliance_checks"]["has_approvals"]), len(enriched_mrs)),
-            "compliance_rate": calculate_percentage(sum(1 for mr in merged_mrs if mr["compliance_checks"]["approved_before_merge"] is True), len(merged_mrs)),
+            "compliance_rate": compliance_rate,
         }
 
         def generate_compliance_findings(metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -202,7 +254,7 @@ def get_merge_requests_summary(project_id: str, state: str = "merged", days_back
                     "message": f"Only {metrics.get('approval_rate', 0):.1f}% of MRs have approvals",
                     "recommendation": "Ensure all merge requests receive proper review and approval",
                 })
-            if metrics.get("compliance_rate", 0) < 100 and metrics.get("merged_count", 0) > 0:
+            if metrics.get("compliance_rate") is not None and metrics.get("compliance_rate", 0) < 100 and metrics.get("merged_count", 0) > 0:
                 findings.append({
                     "severity": "info",
                     "message": f"{metrics.get('compliance_rate', 0):.1f}% of merged MRs had approvals before merge",
@@ -256,13 +308,37 @@ def main() -> int:
     days_back = int(os.environ.get("GITLAB_MR_DAYS_BACK", "30"))
     max_results = int(os.environ.get("GITLAB_MR_MAX_RESULTS", "50"))
 
+    # Sanitize project ID for filename (replace / with _)
+    project_id_sanitized = project_id.replace("/", "_").replace(" ", "_")
+    # Remove any other special characters
+    project_id_sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', project_id_sanitized)
+
     component = "gitlab_merge_request_summary"
-    output_json = Path(output_dir) / f"{component}.json"
+    output_json = Path(output_dir) / f"{component}_{project_id_sanitized}.json"
 
     result = get_merge_requests_summary(project_id, state=state, days_back=days_back, max_results=max_results)
+    
+    # Extract project metadata
+    project_name = project_id.split("/")[-1] if "/" in project_id else project_id
+    project_group = project_id.split("/")[0] if "/" in project_id else "unknown"
+    gitlab_url = os.environ.get("GITLAB_URL", "unknown")
+    branch = os.environ.get("GITLAB_BRANCH", "main")
+    
+    # Add metadata section at the top
+    result_with_metadata = {
+        "metadata": {
+            "project_id": project_id,
+            "project_name": project_name,
+            "project_group": project_group,
+            "gitlab_url": gitlab_url,
+            "branch": branch,
+            "scan_timestamp": current_timestamp()
+        },
+        **result
+    }
 
     with open(output_json, "w") as f:
-        json.dump(result, f, indent=2, default=str)
+        json.dump(result_with_metadata, f, indent=2, default=str)
 
     with open(csv_file, "a") as f:
         status = result.get("status", "unknown")

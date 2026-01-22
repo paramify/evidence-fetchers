@@ -10,5 +10,3 @@
 # Example entries (uncomment and customize as needed):
 # CKV_AWS_250
 # CKV_AWS_144
-
-CKV_AWS_23

@@ -391,15 +391,29 @@ def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict =
             # Pattern: script_name_project_X or script_name_region_X
             base_name = re.sub(r'_(project|region)_\d+$', '', script_name)
             
-            # Try to match with base name
+            # Try to match with base name (exact match)
             if base_name in json_files:
                 evidence_file = str(json_files[base_name])
             else:
-                # Try to find any file that starts with the base name
+                # Try to find any file that starts with the base name followed by underscore
+                # This handles cases like: base_name_paramify_project.json
+                # Priority: exact prefix match (base_name_*), then any file starting with base_name
+                matching_files = []
                 for file_stem, file_path in json_files.items():
-                    if file_stem.startswith(base_name) or base_name.startswith(file_stem):
-                        evidence_file = str(file_path)
-                        break
+                    if file_stem == base_name:
+                        # Exact match (already checked above, but keep for completeness)
+                        matching_files.insert(0, (file_path, 0))  # Priority 0
+                    elif file_stem.startswith(base_name + "_"):
+                        # File starts with base_name_ (e.g., gitlab_merge_request_summary_paramify_paramify)
+                        matching_files.append((file_path, 1))  # Priority 1
+                    elif file_stem.startswith(base_name):
+                        # File starts with base_name but no underscore (less specific)
+                        matching_files.append((file_path, 2))  # Priority 2
+                
+                if matching_files:
+                    # Sort by priority and take the first (best match)
+                    matching_files.sort(key=lambda x: x[1])
+                    evidence_file = str(matching_files[0][0])
         
         # Extract resource information from instance_name or instance_info
         resource = "unknown"

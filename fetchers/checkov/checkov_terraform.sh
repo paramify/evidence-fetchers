@@ -16,9 +16,11 @@ REGION="$2"
 OUTPUT_DIR="$3"
 OUTPUT_CSV="$4"
 
-# Component identifier
+# Component identifier - include GitLab project ID to avoid overwriting
 COMPONENT="checkov_terraform"
-OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
+# Sanitize project ID for filename (replace / with _)
+PROJECT_ID_SANITIZED=$(echo "${GITLAB_PROJECT_ID:-unknown}" | sed 's/\//_/g' | sed 's/[^a-zA-Z0-9_-]/_/g')
+OUTPUT_JSON="$OUTPUT_DIR/${COMPONENT}_${PROJECT_ID_SANITIZED}.json"
 
 # ANSI color codes for better output readability
 GREEN='\033[0;32m'
@@ -135,7 +137,20 @@ echo "$TERRAFORM_DIRS" | sed 's/^/  /'
 
 # Initialize JSON output with metadata
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# Get project metadata
+PROJECT_NAME=$(echo "$GITLAB_PROJECT_ID" | sed 's|.*/||')
+PROJECT_GROUP=$(echo "$GITLAB_PROJECT_ID" | sed 's|/.*||')
+
 echo "{
+  \"metadata\": {
+    \"project_id\": \"${GITLAB_PROJECT_ID:-unknown}\",
+    \"project_name\": \"${PROJECT_NAME:-unknown}\",
+    \"project_group\": \"${PROJECT_GROUP:-unknown}\",
+    \"gitlab_url\": \"${GITLAB_URL:-unknown}\",
+    \"branch\": \"${GITLAB_BRANCH:-main}\",
+    \"scan_timestamp\": \"$TIMESTAMP\"
+  },
   \"framework\": \"terraform\",
   \"scan_timestamp\": \"$TIMESTAMP\",
   \"source_type\": \"gitlab\",
@@ -193,19 +208,67 @@ elif [ "${CHECKOV_DEEP_ANALYSIS:-false}" = "true" ] && [ "$SCAN_MODE" = "plan" ]
 fi
 
 # Add project-specific checks to run (if specified in .env)
-if [ -n "$CHECKOV_CHECKS" ]; then
-    CHECKOV_ARGS="$CHECKOV_ARGS --check $CHECKOV_CHECKS"
-    echo -e "${BLUE}Running specific checks: $CHECKOV_CHECKS${NC}"
+# Use CHECKOV_TERRAFORM_CHECKS if set, otherwise fall back to filtering CHECKOV_CHECKS
+    if [ -n "$CHECKOV_TERRAFORM_CHECKS" ]; then
+        # Use dedicated Terraform checks variable
+        CHECKOV_ARGS="$CHECKOV_ARGS --check $CHECKOV_TERRAFORM_CHECKS"
+        echo -e "${BLUE}Running specific Terraform checks: $CHECKOV_TERRAFORM_CHECKS${NC}"
+elif [ -n "$CHECKOV_CHECKS" ]; then
+    # Fallback: Filter CHECKOV_CHECKS to only include Terraform/AWS-related checks
+    TERRAFORM_CHECKS=""
+    IFS=',' read -ra ALL_CHECKS <<< "$CHECKOV_CHECKS"
+    for check in "${ALL_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        # Include AWS, GCP, Azure, and other non-K8S checks
+        if [[ ! "$check" =~ ^CKV_K8S_ ]] && [[ ! "$check" =~ ^CKV2_K8S_ ]]; then
+            if [ -z "$TERRAFORM_CHECKS" ]; then
+                TERRAFORM_CHECKS="$check"
+            else
+                TERRAFORM_CHECKS="$TERRAFORM_CHECKS,$check"
+            fi
+        fi
+    done
+    
+    if [ -n "$TERRAFORM_CHECKS" ]; then
+        CHECKOV_ARGS="$CHECKOV_ARGS --check $TERRAFORM_CHECKS"
+        echo -e "${BLUE}Running filtered Terraform checks: $TERRAFORM_CHECKS${NC}"
+    fi
 fi
 
 # Combine skip checks from defaults and .env configuration
+# But exclude any checks that are explicitly requested via CHECKOV_TERRAFORM_CHECKS
 SKIP_CHECKS_LIST=""
+REQUESTED_CHECKS=""
+
+# Get list of requested checks to exclude from skip list
+if [ -n "$CHECKOV_TERRAFORM_CHECKS" ]; then
+    REQUESTED_CHECKS="$CHECKOV_TERRAFORM_CHECKS"
+elif [ -n "$CHECKOV_CHECKS" ]; then
+    # Extract Terraform checks from CHECKOV_CHECKS
+    TERRAFORM_CHECKS=""
+    IFS=',' read -ra ALL_CHECKS <<< "$CHECKOV_CHECKS"
+    for check in "${ALL_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        if [[ ! "$check" =~ ^CKV_K8S_ ]] && [[ ! "$check" =~ ^CKV2_K8S_ ]]; then
+            if [ -z "$TERRAFORM_CHECKS" ]; then
+                TERRAFORM_CHECKS="$check"
+            else
+                TERRAFORM_CHECKS="$TERRAFORM_CHECKS,$check"
+            fi
+        fi
+    done
+    REQUESTED_CHECKS="$TERRAFORM_CHECKS"
+fi
 
 # 1) Load default skip checks (low-severity checks to usually skip)
 DEFAULT_SKIP_CHECKS_FILE="fetchers/checkov/skip-checks.default.txt"
 if [ -f "$DEFAULT_SKIP_CHECKS_FILE" ]; then
     while IFS= read -r check || [ -n "$check" ]; do
         [[ -z "$check" || "$check" =~ ^[[:space:]]*# ]] && continue
+        # Skip this check if it's in the requested checks list
+        if [ -n "$REQUESTED_CHECKS" ] && [[ ",$REQUESTED_CHECKS," =~ ,$check, ]]; then
+            continue  # Don't skip checks that are explicitly requested
+        fi
         if [ -z "$SKIP_CHECKS_LIST" ]; then
             SKIP_CHECKS_LIST="$check"
         else
@@ -217,11 +280,20 @@ fi
 
 # 2) Add user-specified skip checks from .env (comma-separated)
 if [ -n "$CHECKOV_SKIP_CHECKS" ]; then
-    if [ -z "$SKIP_CHECKS_LIST" ]; then
-        SKIP_CHECKS_LIST="$CHECKOV_SKIP_CHECKS"
-    else
-        SKIP_CHECKS_LIST="$SKIP_CHECKS_LIST,$CHECKOV_SKIP_CHECKS"
-    fi
+    # Filter out any checks that are in the requested checks list
+    IFS=',' read -ra USER_SKIP_CHECKS <<< "$CHECKOV_SKIP_CHECKS"
+    for check in "${USER_SKIP_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        # Skip this check if it's in the requested checks list
+        if [ -n "$REQUESTED_CHECKS" ] && [[ ",$REQUESTED_CHECKS," =~ ,$check, ]]; then
+            continue  # Don't skip checks that are explicitly requested
+        fi
+        if [ -z "$SKIP_CHECKS_LIST" ]; then
+            SKIP_CHECKS_LIST="$check"
+        else
+            SKIP_CHECKS_LIST="$SKIP_CHECKS_LIST,$check"
+        fi
+    done
     echo -e "${BLUE}Added skip checks from .env: $CHECKOV_SKIP_CHECKS${NC}"
 fi
 
@@ -232,13 +304,12 @@ if [ -n "$SKIP_CHECKS_LIST" ]; then
 fi
 
 # Add project-specific severity filtering (if specified in .env)
-# Note: --severity is not a valid Checkov flag. Use --check or --skip-check with severity values instead
-# Example: --skip-check LOW,MEDIUM or --check HIGH,CRITICAL
-# Note: Plan JSON doesn't include severities without API key, so this may not work for plan files
+# Note: Checkov doesn't support direct severity filtering via CLI flags
+# Severity filtering requires using the Prisma Cloud API or filtering results post-scan
+# This option is ignored to prevent Checkov failures
 if [ -n "$CHECKOV_SEVERITY" ]; then
-    # Use severity with --skip-check to filter by severity
-    CHECKOV_ARGS="$CHECKOV_ARGS --skip-check $CHECKOV_SEVERITY"
-    echo -e "${BLUE}Severity filter (via --skip-check): $CHECKOV_SEVERITY${NC}"
+    echo -e "${YELLOW}Warning:${NC} CHECKOV_SEVERITY is set but Checkov CLI doesn't support direct severity filtering. This option is ignored.${NC}"
+    echo -e "${YELLOW}Note:${NC} To filter by severity, use CHECKOV_CHECKS to specify specific check IDs or use Prisma Cloud API.${NC}"
 fi
 
 # Add external checks directory (if specified)
@@ -317,12 +388,36 @@ if [ -n "$CHECKOV_EXTERNAL_MODULES_PATH" ]; then
 fi
 
 # Add specific checks if specified
-if [ -n "$CHECKOV_CHECKS" ]; then
+# Use CHECKOV_TERRAFORM_CHECKS if set, otherwise fall back to filtering CHECKOV_CHECKS
+if [ -n "$CHECKOV_TERRAFORM_CHECKS" ]; then
     echo "check:" >> "$CHECKOV_CONFIG_FILE"
-    IFS=',' read -ra CHECKS <<< "$CHECKOV_CHECKS"
+    IFS=',' read -ra CHECKS <<< "$CHECKOV_TERRAFORM_CHECKS"
     for check in "${CHECKS[@]}"; do
         echo "  - $check" >> "$CHECKOV_CONFIG_FILE"
     done
+elif [ -n "$CHECKOV_CHECKS" ]; then
+    # Fallback: Filter CHECKOV_CHECKS to only include Terraform/AWS-related checks
+    TERRAFORM_CHECKS=""
+    IFS=',' read -ra ALL_CHECKS <<< "$CHECKOV_CHECKS"
+    for check in "${ALL_CHECKS[@]}"; do
+        check=$(echo "$check" | xargs)  # Trim whitespace
+        # Include AWS, GCP, Azure, and other non-K8S checks
+        if [[ ! "$check" =~ ^CKV_K8S_ ]] && [[ ! "$check" =~ ^CKV2_K8S_ ]]; then
+            if [ -z "$TERRAFORM_CHECKS" ]; then
+                TERRAFORM_CHECKS="$check"
+            else
+                TERRAFORM_CHECKS="$TERRAFORM_CHECKS,$check"
+            fi
+        fi
+    done
+    
+    if [ -n "$TERRAFORM_CHECKS" ]; then
+        echo "check:" >> "$CHECKOV_CONFIG_FILE"
+        IFS=',' read -ra CHECKS <<< "$TERRAFORM_CHECKS"
+        for check in "${CHECKS[@]}"; do
+            echo "  - $check" >> "$CHECKOV_CONFIG_FILE"
+        done
+    fi
 fi
 
 # Add skip checks if specified
@@ -357,6 +452,7 @@ echo -e "${BLUE}Generated Checkov configuration:${NC}"
 cat "$CHECKOV_CONFIG_FILE" | sed 's/^/  /'
 
 echo -e "${BLUE}Checkov command: checkov $CHECKOV_ARGS${NC}"
+echo -e "${BLUE}Full command will be: checkov --directory \"$TEMP_DIR\" $CHECKOV_ARGS $CONFIG_FILE${NC}"
 
 # Run Checkov based on scan mode
 TOTAL_PASSED=0
@@ -375,25 +471,53 @@ if [ "$SCAN_MODE" = "plan" ]; then
     # Scan Terraform plan JSON file
     echo -e "${BLUE}Scanning Terraform plan file: $TERRAFORM_PLAN_FILE${NC}"
     
-    if checkov --file "$TERRAFORM_PLAN_FILE" $CHECKOV_ARGS $CONFIG_FILE > "$CHECKOV_RAW_OUTPUT" 2>/dev/null; then
+    # Capture stderr to see actual errors
+    CHECKOV_ERROR=$(mktemp)
+    # Build command - use eval to properly handle --check with comma-separated values
+    # The CHECKOV_ARGS variable contains properly formatted arguments
+    if eval "checkov --file \"$TERRAFORM_PLAN_FILE\" $CHECKOV_ARGS $CONFIG_FILE" > "$CHECKOV_RAW_OUTPUT" 2>"$CHECKOV_ERROR"; then
         echo -e "${GREEN}✓ Checkov scan completed for plan file${NC}"
     else
         echo -e "${RED}✗ Checkov scan failed for plan file${NC}"
+        # Show the actual error
+        if [ -s "$CHECKOV_ERROR" ]; then
+            ERROR_MSG=$(cat "$CHECKOV_ERROR" | head -5 | tr '\n' '; ')
+            echo -e "${YELLOW}Checkov error:${NC} $ERROR_MSG"
+        fi
         # Create empty result with error
-        echo '{"results": {"passed_checks": [], "failed_checks": [], "skipped_checks": []}, "summary": {"passed_checks": 0, "failed_checks": 0, "skipped_checks": 0, "total_checks": 0}, "error": "Checkov scan failed"}' > "$CHECKOV_RAW_OUTPUT"
+        ERROR_DETAILS="Checkov scan failed"
+        if [ -s "$CHECKOV_ERROR" ]; then
+            ERROR_DETAILS="Checkov scan failed: $(cat "$CHECKOV_ERROR" | head -3 | tr '\n' ' ')"
+        fi
+        echo "{\"results\": {\"passed_checks\": [], \"failed_checks\": [], \"skipped_checks\": []}, \"summary\": {\"passed_checks\": 0, \"failed_checks\": 0, \"skipped_checks\": 0, \"total_checks\": 0}, \"error\": \"$ERROR_DETAILS\"}" > "$CHECKOV_RAW_OUTPUT"
     fi
+    rm -f "$CHECKOV_ERROR"
 else
     # Scan Terraform directories
     echo -e "${BLUE}Scanning Terraform directories${NC}"
     
     # Combine all directories into one scan
-    if checkov --directory "$TEMP_DIR" $CHECKOV_ARGS $CONFIG_FILE > "$CHECKOV_RAW_OUTPUT" 2>/dev/null; then
+    # Capture stderr to see actual errors
+    CHECKOV_ERROR=$(mktemp)
+    # Build command - use eval to properly handle --check with comma-separated values
+    # The CHECKOV_ARGS variable contains properly formatted arguments
+    if eval "checkov --directory \"$TEMP_DIR\" $CHECKOV_ARGS $CONFIG_FILE" > "$CHECKOV_RAW_OUTPUT" 2>"$CHECKOV_ERROR"; then
         echo -e "${GREEN}✓ Checkov scan completed${NC}"
     else
         echo -e "${RED}✗ Checkov scan failed${NC}"
+        # Show the actual error
+        if [ -s "$CHECKOV_ERROR" ]; then
+            ERROR_MSG=$(cat "$CHECKOV_ERROR" | head -5 | tr '\n' '; ')
+            echo -e "${YELLOW}Checkov error:${NC} $ERROR_MSG"
+        fi
         # Create empty result with error
-        echo '{"results": {"passed_checks": [], "failed_checks": [], "skipped_checks": []}, "summary": {"passed_checks": 0, "failed_checks": 0, "skipped_checks": 0, "total_checks": 0}, "error": "Checkov scan failed"}' > "$CHECKOV_RAW_OUTPUT"
+        ERROR_DETAILS="Checkov scan failed"
+        if [ -s "$CHECKOV_ERROR" ]; then
+            ERROR_DETAILS="Checkov scan failed: $(cat "$CHECKOV_ERROR" | head -3 | tr '\n' ' ')"
+        fi
+        echo "{\"results\": {\"passed_checks\": [], \"failed_checks\": [], \"skipped_checks\": []}, \"summary\": {\"passed_checks\": 0, \"failed_checks\": 0, \"skipped_checks\": 0, \"total_checks\": 0}, \"error\": \"$ERROR_DETAILS\"}" > "$CHECKOV_RAW_OUTPUT"
     fi
+    rm -f "$CHECKOV_ERROR"
 fi
 
 # Combine skip resources from defaults and .env configuration
@@ -465,37 +589,63 @@ fi
 
 # Parse Checkov JSON output
 if [ -s "$CHECKOV_FILTERED_OUTPUT" ]; then
-    # Extract summary statistics
-    TOTAL_PASSED=$(jq -r '.summary.passed_checks // (.results.passed_checks | length) // 0' "$CHECKOV_FILTERED_OUTPUT")
-    TOTAL_FAILED=$(jq -r '.summary.failed_checks // (.results.failed_checks | length) // 0' "$CHECKOV_FILTERED_OUTPUT")
-    TOTAL_SKIPPED=$(jq -r '.summary.skipped_checks // (.results.skipped_checks | length) // 0' "$CHECKOV_FILTERED_OUTPUT")
-    TOTAL_CHECKS=$(jq -r '.summary.total_checks // (([.results.passed_checks, .results.failed_checks, .results.skipped_checks] | map(length) | add) // 0) // 0' "$CHECKOV_FILTERED_OUTPUT")
+    # Extract summary statistics - Checkov uses 'passed', 'failed', 'skipped' not 'passed_checks'
+    PASSED=$(jq -r '.summary.passed // 0' "$CHECKOV_FILTERED_OUTPUT")
+    FAILED=$(jq -r '.summary.failed // 0' "$CHECKOV_FILTERED_OUTPUT")
+    SKIPPED=$(jq -r '.summary.skipped // 0' "$CHECKOV_FILTERED_OUTPUT")
+    TOTAL_CHECKS=$((PASSED + FAILED + SKIPPED))
+    
+    TOTAL_PASSED=$PASSED
+    TOTAL_FAILED=$FAILED
+    TOTAL_SKIPPED=$SKIPPED
+    
+    # Calculate percentage
+    if [ $TOTAL_CHECKS -gt 0 ]; then
+        AGGREGATE_PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", ($PASSED / $TOTAL_CHECKS) * 100}")
+    else
+        AGGREGATE_PERCENTAGE=0
+    fi
     
     # Copy filtered results to main output
     cp "$CHECKOV_FILTERED_OUTPUT" "$OUTPUT_JSON"
     
-    # Add metadata to output
+    # Add metadata and update summary with correct field names and percentage
     jq --arg timestamp "$TIMESTAMP" \
        --arg source "$GITLAB_URL/$GITLAB_PROJECT_ID" \
        --arg scan_mode "$SCAN_MODE" \
+       --argjson passed "$TOTAL_PASSED" \
+       --argjson failed "$TOTAL_FAILED" \
+       --argjson skipped "$TOTAL_SKIPPED" \
+       --argjson total "$TOTAL_CHECKS" \
+       --argjson percentage "$AGGREGATE_PERCENTAGE" \
+       --arg project_id "${GITLAB_PROJECT_ID:-unknown}" \
+       --arg project_name "${PROJECT_NAME:-unknown}" \
+       --arg project_group "${PROJECT_GROUP:-unknown}" \
+       --arg gitlab_url "${GITLAB_URL:-unknown}" \
+       --arg branch "${GITLAB_BRANCH:-main}" \
        '. + {
+           metadata: {
+               project_id: $project_id,
+               project_name: $project_name,
+               project_group: $project_group,
+               gitlab_url: $gitlab_url,
+               branch: $branch,
+               scan_timestamp: $timestamp
+           },
            framework: "terraform",
            scan_timestamp: $timestamp,
            source_type: "gitlab",
            source: $source,
            scan_mode: $scan_mode
-       }' "$OUTPUT_JSON" > "${OUTPUT_JSON}.tmp" && mv "${OUTPUT_JSON}.tmp" "$OUTPUT_JSON"
+       } |
+       .summary.passed_checks = $passed |
+       .summary.failed_checks = $failed |
+       .summary.skipped_checks = $skipped |
+       .summary.total_checks = $total |
+       .summary.aggregate_percentage = $percentage' "$OUTPUT_JSON" > "${OUTPUT_JSON}.tmp" && mv "${OUTPUT_JSON}.tmp" "$OUTPUT_JSON"
 fi
 
 rm -f "$CHECKOV_RAW_OUTPUT" "$CHECKOV_FILTERED_OUTPUT"
-
-# Update summary with totals
-jq --argjson passed "$TOTAL_PASSED" --argjson failed "$TOTAL_FAILED" --argjson skipped "$TOTAL_SKIPPED" --argjson total "$TOTAL_CHECKS" '
-    .summary.passed_checks = $passed |
-    .summary.failed_checks = $failed |
-    .summary.skipped_checks = $skipped |
-    .summary.total_checks = $total
-' "$OUTPUT_JSON" > "${OUTPUT_JSON}.tmp" && mv "${OUTPUT_JSON}.tmp" "$OUTPUT_JSON"
 
 # Clean up
 rm -rf "$TEMP_DIR"

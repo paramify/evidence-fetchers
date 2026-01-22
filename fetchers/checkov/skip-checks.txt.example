@@ -4,7 +4,7 @@
 # Example entries:
 
 # Low-severity checks or non-critical policies
-CKV_AWS_23
+#CKV_AWS_23
 
 # Add more checks to skip here
 # CKV_AWS_20
