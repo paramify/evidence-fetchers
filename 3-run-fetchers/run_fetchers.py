@@ -470,16 +470,30 @@ def main():
     # Create fetcher instances
     instances = create_fetcher_instances(evidence_sets, multi_config)
     
-    # Show summary
+    # Track which fetchers are covered by multi-instance config
+    covered_fetchers = set()
     if instances:
-        print(f"\nWill execute {len(instances)} evidence fetcher instances:")
         for instance in instances:
-            print(f"  • {instance['script_data']['name']} ({instance['instance_name']})")
-    else:
-        # Fallback to single-instance mode for backward compatibility
-        print(f"\nWill execute {len(evidence_sets['evidence_sets'])} evidence fetcher scripts:")
-        for script_name, script_data in evidence_sets['evidence_sets'].items():
-            print(f"  • {script_data['name']} ({script_name})")
+            covered_fetchers.add(instance['script_name'])
+    
+    # Find fetchers not covered by multi-instance config
+    all_fetchers = set(evidence_sets['evidence_sets'].keys())
+    uncovered_fetchers = all_fetchers - covered_fetchers
+    
+    # Show summary
+    total_to_run = len(instances) + len(uncovered_fetchers)
+    print(f"\nWill execute {total_to_run} evidence fetcher scripts:")
+    
+    if instances:
+        print(f"  Multi-instance fetchers ({len(instances)} instances):")
+        for instance in instances:
+            print(f"    • {instance['script_data']['name']} ({instance['instance_name']})")
+    
+    if uncovered_fetchers:
+        print(f"  Standard fetchers ({len(uncovered_fetchers)} scripts):")
+        for script_name in sorted(uncovered_fetchers):
+            script_data = evidence_sets['evidence_sets'][script_name]
+            print(f"    • {script_data['name']} ({script_name})")
     
     # Ask for confirmation
     confirm = input(f"\nDo you want to proceed? (y/n): ").strip().lower()
@@ -504,28 +518,36 @@ def main():
     results = {}
     instance_info_map = {}  # Map instance_name to instance config
     
+    # Get AWS profile and region for standard fetchers
+    aws_profile = os.environ.get("AWS_PROFILE", "")
+    aws_region = os.environ.get("AWS_DEFAULT_REGION", "")
+    
+    # If region is not set in environment, try to get it from AWS CLI
+    if not aws_region:
+        aws_region = get_aws_region_from_cli(aws_profile)
+    
+    # Run multi-instance fetchers first
     if instances:
-        # Multi-instance mode
+        print("Running multi-instance fetchers...")
         for instance in instances:
             success = run_fetcher_instance(instance, evidence_dir, timeout)
             instance_name = instance['instance_name']
             results[instance_name] = success
             # Store instance info for resource extraction
             instance_info_map[instance_name] = instance
-    else:
-        # Single-instance mode (backward compatibility)
-        aws_profile = os.environ.get("AWS_PROFILE", "")
-        aws_region = os.environ.get("AWS_DEFAULT_REGION", "")
-        
-        # If region is not set in environment, try to get it from AWS CLI
-        if not aws_region:
-            aws_region = get_aws_region_from_cli(aws_profile)
-        
+        print()
+    
+    # Run standard fetchers that aren't covered by multi-instance config
+    if uncovered_fetchers:
+        if instances:
+            print("Running standard fetchers...")
         print(f"  AWS Profile: {aws_profile}")
         print(f"  AWS Region: {aws_region}")
         print()
         
-        for script_name, script_data in evidence_sets['evidence_sets'].items():
+        for script_name in sorted(uncovered_fetchers):
+            script_data = evidence_sets['evidence_sets'][script_name]
+            
             # Get additional flags for this specific fetcher
             additional_flags = []
             
