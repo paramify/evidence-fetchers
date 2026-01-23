@@ -47,37 +47,61 @@ if [ -z "$web_acls" ]; then
 fi
 
 while IFS=$'\t' read -r acl_id acl_name; do
-    echo -e "${BLUE}========== WEB ACL: $acl_name ($acl_id) ==========\n${NC}"
-    acl_data=$(jq -n --arg id "$acl_id" --arg name "$acl_name" '{"WebACLId": $id, "WebACLName": $name, "Rules": []}')
-    echo -e "${GREEN}Retrieving detailed configuration...${NC}"
-    acl_details=$(aws wafv2 get-web-acl --scope REGIONAL --region "$REGION" --profile "$PROFILE" --name "$acl_name" --id "$acl_id")
-    rules_count=$(echo "$acl_details" | jq '.WebACL.Rules | length')
-    if [ "$rules_count" -eq 0 ]; then
-        echo -e "${YELLOW}No rules found for this Web ACL.${NC}"
-        jq --argjson data "$acl_data" '.results += [$data]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    # Extract ID from ARN if necessary (ARN format: arn:partition:wafv2:region:account:scope/webacl/name/id)
+    # The ID is the last segment after the final slash
+    if [[ "$acl_id" == arn:* ]]; then
+        acl_id=$(echo "$acl_id" | awk -F'/' '{print $NF}')
+    fi
+    
+    # Skip if we don't have both ID and name
+    if [ -z "$acl_id" ] || [ -z "$acl_name" ]; then
+        echo -e "${YELLOW}Skipping invalid entry: id='$acl_id', name='$acl_name'${NC}" >&2
         continue
     fi
-    echo -e "${BLUE}RULES (Name | Type | Details | Action | Status):${NC}"
-    rules_json="[]"
+    
+    echo -e "${BLUE}========== WEB ACL: $acl_name ($acl_id) ==========\n${NC}"
+    echo -e "${GREEN}Retrieving detailed configuration...${NC}"
+    acl_details=$(aws wafv2 get-web-acl --scope REGIONAL --region "$REGION" --profile "$PROFILE" --name "$acl_name" --id "$acl_id" 2>&1)
+    
+    # Check if the command failed
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error retrieving Web ACL: $acl_name ($acl_id)${NC}" >&2
+        echo "$acl_details" >&2
+        continue
+    fi
+    
+    # Extract the full WebACL object and store it
+    # This captures ALL WebACL data: Id, Name, ARN, Description, Scope, DefaultAction, Rules (with full details), VisibilityConfig, Capacity, etc.
+    webacl_full=$(echo "$acl_details" | jq '.WebACL')
+    
+    # Extract rules count for display
+    rules_count=$(echo "$webacl_full" | jq '.Rules | length')
+    if [ "$rules_count" -eq 0 ]; then
+        echo -e "${YELLOW}No rules found for this Web ACL.${NC}"
+        # Store the full WebACL even if it has no rules (includes all metadata)
+        jq --argjson webacl "$webacl_full" '.results += [$webacl]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        continue
+    fi
+    
+    echo -e "${BLUE}RULES (Name | Priority | Type | Details | Action | Status):${NC}"
+    # Display summary for each rule (full rule objects are already in webacl_full)
     for i in $(seq 0 $((rules_count-1))); do
-        rule=$(echo "$acl_details" | jq ".WebACL.Rules[$i]")
+        rule=$(echo "$webacl_full" | jq ".Rules[$i]")
         rule_name=$(echo "$rule" | jq -r '.Name')
+        rule_priority=$(echo "$rule" | jq -r '.Priority // "N/A"')
         rule_id=$(echo "$rule" | jq -r '.RuleId // "N/A"')
-        rule_status=$(echo "$rule" | jq -r '.VisibilityConfig.SampledRequestsEnabled // empty')
-        if [ -z "$rule_status" ]; then
-            rule_status=$(echo "$rule" | jq -r '.Action | keys[0] // "N/A"')
-        fi
-        enabled=$(echo "$rule" | jq -r '.VisibilityConfig.Enabled // .VisibilityConfig.SampledRequestsEnabled // empty')
+        enabled=$(echo "$rule" | jq -r '.VisibilityConfig.Enabled // false')
         if [ "$enabled" = "true" ]; then
             rule_status="Enabled"
-        elif [ "$enabled" = "false" ]; then
+        else
             rule_status="Disabled"
         fi
-        # Determine rule type and details
+        
+        # Determine rule type and details for display
         if echo "$rule" | jq -e '.Statement.RateBasedStatement' > /dev/null; then
             rule_type="Rate-Based"
             rate_limit=$(echo "$rule" | jq -r '.Statement.RateBasedStatement.Limit')
-            rule_action=$(echo "$rule" | jq -r '.Action | keys[0]')
+            rule_action=$(echo "$rule" | jq -r '.Action | keys[0] // "N/A"')
             details="Rate Limit: $rate_limit req/5min"
         elif echo "$rule" | jq -e '.Statement.ManagedRuleGroupStatement' > /dev/null; then
             vendor=$(echo "$rule" | jq -r '.Statement.ManagedRuleGroupStatement.VendorName')
@@ -85,16 +109,21 @@ while IFS=$'\t' read -r acl_id acl_name; do
             rule_type="Managed ($vendor)"
             details="Group: $name"
             rule_action=$(echo "$rule" | jq -r '.OverrideAction | keys[0] // "None"')
+        elif echo "$rule" | jq -e '.Statement.RuleGroupReferenceStatement' > /dev/null; then
+            rule_type="Rule Group Reference"
+            arn=$(echo "$rule" | jq -r '.Statement.RuleGroupReferenceStatement.ARN')
+            details="ARN: $arn"
+            rule_action=$(echo "$rule" | jq -r '.OverrideAction | keys[0] // "None"')
         else
             rule_type="Regular"
-            details="N/A"
+            details="Custom Rule"
             rule_action=$(echo "$rule" | jq -r '.Action | keys[0] // "N/A"')
         fi
-        echo -e "| $rule_name | $rule_type | $details | $rule_action | $rule_status |"
-        rules_json=$(echo "$rules_json" | jq --arg id "$rule_id" --arg name "$rule_name" --arg type "$rule_type" --arg details "$details" --arg action "$rule_action" --arg status "$rule_status" '. += [{"RuleId": $id, "RuleName": $name, "RuleType": $type, "Details": $details, "Action": $action, "Status": $status}]')
+        echo -e "| $rule_name | $rule_priority | $rule_type | $details | $rule_action | $rule_status |"
     done
-    acl_data=$(echo "$acl_data" | jq --argjson rules "$rules_json" '.Rules = $rules')
-    jq --argjson data "$acl_data" '.results += [$data]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    
+    # Store the complete WebACL object with ALL its data (including full rule objects with all fields)
+    jq --argjson webacl "$webacl_full" '.results += [$webacl]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     echo ""
 done <<< "$web_acls"
 
