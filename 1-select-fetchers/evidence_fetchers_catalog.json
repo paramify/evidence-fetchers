@@ -159,6 +159,24 @@
             ],
             "validationRules": []
           },
+          "cloudtrail_configuration": {
+            "script_file": "fetchers/aws/cloudtrail_configuration.sh",
+            "name": "CloudTrail Configuration",
+            "description": "Evidence for CloudTrail configuration showing audit event logging setup in AWS account/region",
+            "id": "EVD-CLOUDTRAIL-CONFIG",
+            "instructions": "Script: cloudtrail_configuration.sh. Commands executed: aws cloudtrail list-trails, aws cloudtrail get-trail, aws cloudtrail get-trail-status",
+            "dependencies": [
+              "aws-cli"
+            ],
+            "tags": [
+              "cloudtrail",
+              "audit",
+              "logging",
+              "compliance",
+              "aws"
+            ],
+            "validationRules": []
+          },
           "database_high_availability": {
             "script_file": "fetchers/aws/database_high_availability.sh",
             "name": "Database High Availability",
