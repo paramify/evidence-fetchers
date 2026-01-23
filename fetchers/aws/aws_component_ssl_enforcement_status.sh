@@ -27,19 +27,33 @@ CSV_FILE="$4"
 COMPONENT="aws_component_ssl_enforcement"
 OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
 
-# Initialize JSON file
-echo '{
-  "metadata": {
-    "region": "'"$REGION"'",
-    "profile": "'"$PROFILE"'",
-    "datetime": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
-  },
-  "results": {
-    "s3": [],
-    "rds": []
-  },
-  "summary": {}
-}' > "$OUTPUT_JSON"
+# Get caller identity for metadata
+CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
+ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
+ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
+DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Initialize JSON file with metadata
+jq -n \
+  --arg profile "$PROFILE" \
+  --arg region "$REGION" \
+  --arg datetime "$DATETIME" \
+  --arg account_id "$ACCOUNT_ID" \
+  --arg arn "$ARN" \
+  '{
+    "metadata": {
+      "profile": $profile,
+      "region": $region,
+      "datetime": $datetime,
+      "account_id": $account_id,
+      "arn": $arn
+    },
+    "results": {
+      "s3": [],
+      "rds": []
+    },
+    "summary": {}
+  }' > "$OUTPUT_JSON"
 
 # 1. S3 Bucket SSL Enforcement
 s3_buckets=$(aws s3api list-buckets --profile "$PROFILE" --region "$REGION" | jq -r '.Buckets[].Name')

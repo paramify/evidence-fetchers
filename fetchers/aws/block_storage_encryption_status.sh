@@ -32,8 +32,11 @@ CSV_FILE="$4"
 total_storage=0
 encrypted_storage=0
 
-# Create results object
-results_json=$(jq -n '{results: {}}')
+# Get caller identity for metadata
+CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
+ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
+ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
+DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Check EBS encryption default settings
 ebs_encryption_default=$(aws ec2 get-ebs-encryption-by-default --profile "$PROFILE" --region "$REGION" --query "EbsEncryptionByDefault" --output text)
@@ -93,8 +96,13 @@ for fs in $(aws efs describe-file-systems --profile "$PROFILE" --region "$REGION
     fi
 done
 
-# Combine results
+# Combine results with metadata
 results_json=$(jq -n \
+    --arg profile "$PROFILE" \
+    --arg region "$REGION" \
+    --arg datetime "$DATETIME" \
+    --arg account_id "$ACCOUNT_ID" \
+    --arg arn "$ARN" \
     --argjson ebs "[$(IFS=,; echo "${ebs_results[*]}")]" \
     --argjson efs "[$(IFS=,; echo "${efs_results[*]}")]" \
     --arg total "$total_storage" \
@@ -103,6 +111,13 @@ results_json=$(jq -n \
     --arg ebs_default "$ebs_encryption_default" \
     --arg ebs_kms "$ebs_default_kms_key" \
     '{
+        metadata: {
+            profile: $profile,
+            region: $region,
+            datetime: $datetime,
+            account_id: $account_id,
+            arn: $arn
+        },
         results: {
             ebs_default_settings: {
                 encryption_enabled_by_default: ($ebs_default == "true"),

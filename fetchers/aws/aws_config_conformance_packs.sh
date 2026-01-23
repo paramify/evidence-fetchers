@@ -33,8 +33,29 @@ OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-# Initialize output files
-echo '{"results": {}}' > "$OUTPUT_JSON"
+# Get caller identity for metadata
+CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
+ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
+ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
+DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Initialize output files with metadata
+jq -n \
+  --arg profile "$PROFILE" \
+  --arg region "$REGION" \
+  --arg datetime "$DATETIME" \
+  --arg account_id "$ACCOUNT_ID" \
+  --arg arn "$ARN" \
+  '{
+    "metadata": {
+      "profile": $profile,
+      "region": $region,
+      "datetime": $datetime,
+      "account_id": $account_id,
+      "arn": $arn
+    },
+    "results": {}
+  }' > "$OUTPUT_JSON"
 echo "ConformancePack,Status,Compliant,NonCompliant,NotApplicable" > "$OUTPUT_CSV"
 
 # Function to make API calls with retries

@@ -38,8 +38,11 @@ mkdir -p "$(dirname "$CSV_FILE")"
 total_keys=0
 rotated_keys=0
 
-# Create results object
-results_json=$(jq -n '{results: {}}')
+# Get caller identity for metadata
+CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
+ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
+ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
+DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Check AWS Config rule compliance
 config_rule_name="cmk-backing-key-rotation-enabled-conformance-pack-j3wepwlkw"
@@ -98,14 +101,26 @@ else
     percentage=$(( (rotated_keys * 100) / total_keys ))
 fi
 
-# Combine results
+# Combine results with metadata
 results_json=$(jq -n \
+    --arg profile "$PROFILE" \
+    --arg region "$REGION" \
+    --arg datetime "$DATETIME" \
+    --arg account_id "$ACCOUNT_ID" \
+    --arg arn "$ARN" \
     --argjson keys "[$(IFS=,; echo "${kms_results[*]}")]" \
     --argjson config "$config_compliance" \
     --arg total "$total_keys" \
     --arg rotated "$rotated_keys" \
     --arg percentage "$percentage" \
     '{
+        metadata: {
+            profile: $profile,
+            region: $region,
+            datetime: $datetime,
+            account_id: $account_id,
+            arn: $arn
+        },
         results: {
             kms_keys: {
                 object: $keys
