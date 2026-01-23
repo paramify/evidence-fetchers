@@ -191,7 +191,33 @@ jq --arg total "$total_users" \
        "completion_rate": ($rate|tonumber)
    }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
 
+# Per-module training summary
+module_summary=$(jq '
+    .results.enrollments
+    | group_by(.module_name)
+    | map({
+        module: .[0].module_name,
+        assigned: length,
+        passed: map(select(.status == "Passed")) | length,
+        completion_rate:
+        (if length > 0
+            then (map(select(.status == "Passed")) | length * 100 / length)
+            else 0
+            end)
+    })
+    | map({
+        (.module): {
+        assigned: .assigned,
+        passed: .passed,
+        completion_rate: .completion_rate
+        }
+    })
+    | add
+' "$UNIQUE_JSON")
 
+jq --argjson module_summary "$module_summary" '
+  .results.summary.training_module_summary = $module_summary
+' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
 
 
 
@@ -202,5 +228,9 @@ echo -e "Completed Training: $completed_training"
 echo -e "In Progress: $in_progress"
 echo -e "Not Started: $not_started"
 echo -e "Completion Rate: ${completion_rate}%"
-
-exit 0 
+echo -e "\n${GREEN}Per-Module Training Summary:${NC}"
+echo "$module_summary" | jq -r '
+  to_entries[]
+  | "\(.key): assigned=\(.value.assigned), passed=\(.value.passed), completion=\(.value.completion_rate)%"
+'
+exit 0
