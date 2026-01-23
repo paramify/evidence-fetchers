@@ -56,32 +56,58 @@ fi
 
 # Process each Web ACL
 while IFS=$'\t' read -r acl_id acl_name; do
-    echo -e "${BLUE}========== WEB ACL: $acl_name ($acl_id) ==========${NC}"
+    # Extract ID from ARN if necessary (ARN format: arn:partition:wafv2:region:account:scope/webacl/name/id)
+    # The ID is the last segment after the final slash
+    if [[ "$acl_id" == arn:* ]]; then
+        acl_id=$(echo "$acl_id" | awk -F'/' '{print $NF}')
+    fi
     
-    # Initialize ACL data
-    acl_data=$(jq -n --arg id "$acl_id" --arg name "$acl_name" '{"WebACLId": $id, "WebACLName": $name, "Rules": []}')
+    # Skip if we don't have both ID and name
+    if [ -z "$acl_id" ] || [ -z "$acl_name" ]; then
+        echo -e "${YELLOW}Skipping invalid entry: id='$acl_id', name='$acl_name'${NC}" >&2
+        continue
+    fi
+    
+    echo -e "${BLUE}========== WEB ACL: $acl_name ($acl_id) ==========${NC}"
     
     # Get detailed ACL configuration
     echo -e "${GREEN}Retrieving detailed configuration...${NC}"
-    acl_details=$(aws wafv2 get-web-acl --scope REGIONAL --region "$REGION" --profile "$PROFILE" --name "$acl_name" --id "$acl_id")
+    acl_details=$(aws wafv2 get-web-acl --scope REGIONAL --region "$REGION" --profile "$PROFILE" --name "$acl_name" --id "$acl_id" 2>&1)
     
-    # Extract rules from the ACL
-    rules=$(echo "$acl_details" | jq -r '.WebACL.Rules[]')
-    
-    if [ -z "$rules" ]; then
-        echo -e "${YELLOW}No rules found for this Web ACL.${NC}"
-        # Add empty Web ACL to results
-        jq --argjson data "$acl_data" '.results += [$data]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    # Check if the command failed
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error retrieving Web ACL: $acl_name ($acl_id)${NC}" >&2
+        echo "$acl_details" >&2
         continue
     fi
+    
+    # Extract the full WebACL object
+    webacl_full=$(echo "$acl_details" | jq '.WebACL')
+    
+    # Extract rules for processing
+    rules_count=$(echo "$webacl_full" | jq '.Rules | length')
+    
+    if [ "$rules_count" -eq 0 ]; then
+        echo -e "${YELLOW}No rules found for this Web ACL.${NC}"
+        # Store the full WebACL even if it has no rules
+        jq --argjson webacl "$webacl_full" '.results += [$webacl]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        continue
+    fi
+    
+    # Initialize ACL data with ALL WebACL metadata (we'll filter rules but keep all other fields)
+    # Start with the full WebACL object, then we'll replace Rules with filtered DoS-related rules
+    acl_data=$(echo "$webacl_full" | jq '.')
     
     # Process each rule in the Web ACL
     echo -e "${BLUE}RULES (Name | Type | Rate Limit | Action):${NC}"
     
-    # Loop through each rule using jq
-    echo "$acl_details" | jq -c '.WebACL.Rules[]' | while read -r rule; do
+    # Process rules - need to avoid subshell issue, so use a different approach
+    rules_json="[]"
+    for i in $(seq 0 $((rules_count-1))); do
+        rule=$(echo "$webacl_full" | jq ".Rules[$i]")
         rule_name=$(echo "$rule" | jq -r '.Name')
         rule_id=$(echo "$rule" | jq -r '.RuleId // "N/A"')
+        rule_priority=$(echo "$rule" | jq -r '.Priority // "N/A"')
         
         # Determine rule type and extract DoS protection relevant details
         if echo "$rule" | jq -e '.Statement.RateBasedStatement' > /dev/null; then
@@ -94,10 +120,8 @@ while IFS=$'\t' read -r acl_id acl_name; do
             # Add to CSV
             echo "$COMPONENT,$acl_id,$acl_name,$rule_id,$rule_name,$rule_type,$rate_limit,$rule_action" >> "$OUTPUT_CSV"
             
-            # Add rule to ACL data
-            acl_data=$(echo "$acl_data" | jq --arg id "$rule_id" --arg name "$rule_name" --arg type "$rule_type" \
-                --arg limit "$rate_limit" --arg action "$rule_action" \
-                '.Rules += [{"RuleId": $id, "RuleName": $name, "RuleType": $type, "RateLimit": ($limit|tonumber), "Action": $action}]')
+            # Add full rule to JSON (capture complete rule object)
+            rules_json=$(echo "$rules_json" | jq --argjson rule "$rule" '. += [$rule]')
             
         elif echo "$rule" | jq -e '.Statement.ManagedRuleGroupStatement' > /dev/null; then
             vendor=$(echo "$rule" | jq -r '.Statement.ManagedRuleGroupStatement.VendorName')
@@ -112,10 +136,8 @@ while IFS=$'\t' read -r acl_id acl_name; do
                 # Add to CSV
                 echo "$COMPONENT,$acl_id,$acl_name,$rule_id,$rule_name,$rule_type: $name,Managed,$action" >> "$OUTPUT_CSV"
                 
-                # Add rule to ACL data
-                acl_data=$(echo "$acl_data" | jq --arg id "$rule_id" --arg name "$rule_name" --arg type "$rule_type: $name" \
-                    --arg action "$action" \
-                    '.Rules += [{"RuleId": $id, "RuleName": $name, "RuleType": $type, "RateLimit": "Managed", "Action": $action}]')
+                # Add full rule to JSON
+                rules_json=$(echo "$rules_json" | jq --argjson rule "$rule" '. += [$rule]')
             else
                 echo -e "| $rule_name | $rule_type: $name | N/A | Override: $(echo "$rule" | jq -r '.OverrideAction | keys[0] // "None"') |"
             fi
@@ -126,7 +148,10 @@ while IFS=$'\t' read -r acl_id acl_name; do
         fi
     done
     
-    # Add ACL data to results
+    # Replace Rules in ACL data with only DoS-related rules (but keep all other WebACL fields)
+    acl_data=$(echo "$acl_data" | jq --argjson rules "$rules_json" '.Rules = $rules')
+    
+    # Add ACL data to results (includes ALL WebACL metadata + complete DoS-related rule objects)
     jq --argjson data "$acl_data" '.results += [$data]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
     echo ""
