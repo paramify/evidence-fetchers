@@ -745,12 +745,12 @@
         "name": "KnowBe4",
         "description": "KnowBe4 security awareness training evidence collection scripts",
         "scripts": {
-          "role_specific_training": {
-            "script_file": "fetchers/knowbe4/role_specific_training.sh",
-            "name": "Role Specific Training",
+          "high_risk_training": {
+            "script_file": "fetchers/knowbe4/high_risk_training.sh",
+            "name": "Role Specific Training for High Risk Users",
             "description": "Evidence for role-specific training compliance and completion status",
-            "id": "EVD-ROLE-SPECIFIC-TRAINING",
-            "instructions": "Script: role_specific_training.sh. Commands executed: KnowBe4 API calls for role-specific training data",
+            "id": "EVD-HIGH-RISK-TRAINING",
+            "instructions": "Script: high_risk_training.sh. Commands executed: KnowBe4 API calls for role-specific training data",
             "dependencies": [
               "curl",
               "jq"
@@ -769,6 +769,42 @@
             "description": "Evidence for security awareness training compliance and user completion status",
             "id": "EVD-SECURITY-AWARENESS-TRAINING",
             "instructions": "Script: security_awareness_training.sh. Commands executed: KnowBe4 API calls for user training data and enrollments",
+            "dependencies": [
+              "curl",
+              "jq"
+            ],
+            "tags": [
+              "training",
+              "security-awareness",
+              "compliance",
+              "knowbe4"
+            ],
+            "validationRules": []
+          },
+          "developer_specific_training": {
+            "script_file": "fetchers/knowbe4/developer_specific_training.sh",
+            "name": "Developer Specific Training",
+            "description": "Evidence for developer specific security awareness training compliance and user completion status",
+            "id": "EVD-DEVELOPER-SPECIFIC-TRAINING",
+            "instructions": "Script: developer_specific_training.sh. Commands executed: KnowBe4 API calls for user training data and enrollments",
+            "dependencies": [
+              "curl",
+              "jq"
+            ],
+            "tags": [
+              "training",
+              "security-awareness",
+              "compliance",
+              "knowbe4"
+            ],
+            "validationRules": []
+          },
+          "module_based_summary": {
+            "script_file": "fetchers/knowbe4/module_based_summary.sh",
+            "name": "Module Based Summary",
+            "description": "Evidence for security awareness training summarized at the module level",
+            "id": "EVD-MODULE-BASED-SUMMARY",
+            "instructions": "Script: module_based_summary.sh. Commands executed: KnowBe4 API calls for user training data and enrollments",
             "dependencies": [
               "curl",
               "jq"
