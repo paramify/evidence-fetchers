@@ -55,6 +55,12 @@ OUTPUT_DIR="$3"
 COMPONENT="security_awareness_training"
 UNIQUE_JSON="$OUTPUT_DIR/$COMPONENT.json"
 
+# Exact Security Awareness campaign name
+SECURITY_AWARENESS_CAMPAIGN="Initial Security Awareness Training"
+
+# Date 1 year ago for tracking retraining
+ONE_YEAR_AGO=$(date -d "1 year ago" +%s)
+
 # ANSI color codes for better output readability
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -68,17 +74,18 @@ echo '{
         "users": [],
         "enrollments": [],
         "user_training_status": {},
+        "user_retraining_required": {},
         "summary": {
             "total_users": 0,
             "completed_training": 0,
             "in_progress": 0,
+            "past_due": 0,
             "not_started": 0,
+            "needs_retraining": 0,
             "completion_rate": 0
         }
     }
 }' > "$UNIQUE_JSON"
-
-
 
 # Check for KnowBe4 API key
 if [ -z "$KNOWBE4_API_KEY" ]; then
@@ -115,9 +122,39 @@ make_api_call() {
     return 0
 }
 
+# Function to fetch all pages from a paginated KnowBe4 endpoint
+make_paginated_api_call() {
+    local endpoint="$1"
+    local page=1
+    local all_results="[]"
+    local separator
+
+    if [[ "$endpoint" == *\?* ]]; then
+        separator="&"
+    else
+        separator="?"
+    fi
+
+    while true; do
+        response=$(make_api_call "${endpoint}${separator}page=${page}")
+
+        count=$(echo "$response" | jq 'length')
+        if [ "$count" -eq 0 ]; then
+            break
+        fi
+
+        all_results=$(jq -s '.[0] + .[1]' \
+            <(echo "$all_results") <(echo "$response"))
+
+        page=$((page + 1))
+    done
+
+    echo "$all_results"
+}
+
 # Get all users
 echo -e "${BLUE}Fetching users from KnowBe4...${NC}"
-users_response=$(make_api_call "users")
+users_response=$(make_paginated_api_call "users")
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to fetch users${NC}" >&2
     exit 1
@@ -125,11 +162,16 @@ fi
 
 # Get all training enrollments
 echo -e "${BLUE}Fetching training enrollments...${NC}"
-enrollments_response=$(make_api_call "training/enrollments?exclude_archived_users=true&include_campaign_id=true")
+enrollments_response=$(make_paginated_api_call "training/enrollments?exclude_archived_users=true&include_campaign_id=true")
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to fetch enrollments${NC}" >&2
     exit 1
 fi
+
+# Filter enrollments to Initial Security Awareness Training only
+security_awareness_enrollments=$(echo "$enrollments_response" | jq -c \
+  --arg campaign "$SECURITY_AWARENESS_CAMPAIGN" \
+  '[.[] | select(.campaign_name == $campaign)]')
 
 # Process each user
 echo "$users_response" | jq -c '.[] | select(.status == "active")' | while read -r user; do
@@ -140,30 +182,56 @@ echo "$users_response" | jq -c '.[] | select(.status == "active")' | while read 
     minimal_user=$(echo "$user" | jq '{id: .id, email: .email, status: .status}')
     jq --argjson user "$minimal_user" '.results.users += [$user]' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
     
-    # Get user's enrollments
-    user_enrollments=$(echo "$enrollments_response" | jq -c --arg user_id "$user_id" '.[] | select(.user.id == ($user_id|tonumber))')
-    
+    # Get user's enrollments for this campaign
+    user_enrollments=$(echo "$security_awareness_enrollments" | jq -c \
+        --arg user_id "$user_id" \
+        '[.[] | select(.user.id == ($user_id|tonumber))]')
+
     # Initialize user's training status
     user_status="not_started"
-    if [ -n "$user_enrollments" ]; then
-        # Add enrollments to the results
-        echo "$user_enrollments" | while read -r enrollment; do
-            jq --argjson enrollment "$enrollment" '.results.enrollments += [$enrollment]' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
-        done
-        
-        # Check if user has completed any training
-        if echo "$enrollments_response" | jq -e --arg user_id "$user_id" '.[] | select(.user.id == ($user_id|tonumber) and .status == "Passed")' >/dev/null 2>&1; then
+    needs_retraining=false
+
+    if echo "$user_enrollments" | jq -e 'type=="array" and length > 0' >/dev/null; then
+
+        # Add enrollments to results
+        while read -r enrollment; do
+            jq --argjson enrollment "$enrollment" \
+            '.results.enrollments += [$enrollment]' \
+            "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+        done < <(echo "$user_enrollments" | jq -c '.[]')
+
+        # Find most recent Passed completion
+        latest_passed_date=$(echo "$user_enrollments" | jq -r '
+        [ .[] | select(.status == "Passed") | .completion_date ]
+        | max // empty
+        ')
+
+        if [ -n "$latest_passed_date" ]; then
             user_status="completed"
-        elif echo "$enrollments_response" | jq -e --arg user_id "$user_id" '.[] | select(.user.id == ($user_id|tonumber) and .status == "In Progress")' >/dev/null 2>&1; then
+
+            completed_epoch=$(date -d "$latest_passed_date" +%s 2>/dev/null)
+            if [ -n "$completed_epoch" ] && [ "$completed_epoch" -lt "$ONE_YEAR_AGO" ]; then
+                needs_retraining=true
+            fi
+
+        elif echo "$user_enrollments" | jq -e 'any(.status == "In Progress")' >/dev/null; then
             user_status="in_progress"
+
+        elif echo "$user_enrollments" | jq -e 'any(.status == "Past Due")' >/dev/null; then
+            user_status="past_due"
         fi
     fi
-    
+
+
+
     # Update user's training status
     jq --arg email "$user_email" \
-       --arg status "$user_status" \
-       '.results.user_training_status[$email] = $status' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
-    
+        --arg status "$user_status" \
+        --argjson retrain "$needs_retraining" \
+        '
+        .results.user_training_status[$email] = $status |
+        .results.user_retraining_required[$email] = $retrain
+        ' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON" 
 
 done
 
@@ -171,7 +239,9 @@ done
 total_users=$(jq '.results.users | length' "$UNIQUE_JSON")
 completed_training=$(jq '.results.user_training_status | to_entries | map(select(.value == "completed")) | length' "$UNIQUE_JSON")
 in_progress=$(jq '.results.user_training_status | to_entries | map(select(.value == "in_progress")) | length' "$UNIQUE_JSON")
+past_due=$(jq '.results.user_training_status | to_entries | map(select(.value == "past_due")) | length' "$UNIQUE_JSON")
 not_started=$(jq '.results.user_training_status | to_entries | map(select(.value == "not_started")) | length' "$UNIQUE_JSON")
+needs_retraining=$(jq '.results.user_retraining_required | to_entries | map(select(.value == true)) | length' "$UNIQUE_JSON")
 completion_rate=0
 if [ "$total_users" -gt 0 ]; then
     completion_rate=$((completed_training * 100 / total_users))
@@ -181,56 +251,28 @@ fi
 jq --arg total "$total_users" \
    --arg completed "$completed_training" \
    --arg in_progress "$in_progress" \
+   --arg past_due "$past_due" \
    --arg not_started "$not_started" \
+   --arg needs_retraining "$needs_retraining" \
    --arg rate "$completion_rate" \
    '.results.summary = {
        "total_users": ($total|tonumber),
        "completed_training": ($completed|tonumber),
        "in_progress": ($in_progress|tonumber),
+       "past_due": ($past_due|tonumber),
        "not_started": ($not_started|tonumber),
+       "needs_retraining": ($needs_retraining|tonumber),
        "completion_rate": ($rate|tonumber)
    }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
-
-# Per-module training summary
-module_summary=$(jq '
-    .results.enrollments
-    | group_by(.module_name)
-    | map({
-        module: .[0].module_name,
-        assigned: length,
-        passed: map(select(.status == "Passed")) | length,
-        completion_rate:
-        (if length > 0
-            then (map(select(.status == "Passed")) | length * 100 / length)
-            else 0
-            end)
-    })
-    | map({
-        (.module): {
-        assigned: .assigned,
-        passed: .passed,
-        completion_rate: .completion_rate
-        }
-    })
-    | add
-' "$UNIQUE_JSON")
-
-jq --argjson module_summary "$module_summary" '
-  .results.summary.training_module_summary = $module_summary
-' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
-
-
 
 # Generate summary
 echo -e "\n${GREEN}Validation Summary:${NC}"
 echo -e "Total Active Users: $total_users"
 echo -e "Completed Training: $completed_training"
 echo -e "In Progress: $in_progress"
+echo -e "Past Due: $past_due"
 echo -e "Not Started: $not_started"
+echo -e "Needs Retraining (>1 year): $needs_retraining"
 echo -e "Completion Rate: ${completion_rate}%"
-echo -e "\n${GREEN}Per-Module Training Summary:${NC}"
-echo "$module_summary" | jq -r '
-  to_entries[]
-  | "\(.key): assigned=\(.value.assigned), passed=\(.value.passed), completion=\(.value.completion_rate)%"
-'
+
 exit 0
