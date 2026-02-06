@@ -30,7 +30,8 @@
               "AWS GovCloud Availability Zones"
             ],
             "controls": [
-              "CNA-06"
+              "CNA-06",
+              "RPL-03"
             ]
           },
           "aws_component_ssl_enforcement": {
@@ -80,7 +81,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "SVC-04"
+            ]
           },
           "aws_config_monitoring": {
             "script_file": "fetchers/aws/aws_config_monitoring.sh",
@@ -156,7 +159,10 @@
               "\"Encrypted\":\\s*true"
             ],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "SVC-02",
+              "SVC-05"
+            ]
           },
           "cloudwatch_high_availability": {
             "script_file": "fetchers/aws/cloudwatch_high_availability.sh",
@@ -175,7 +181,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "cloudtrail_configuration": {
             "script_file": "fetchers/aws/cloudtrail_configuration.sh",
@@ -195,7 +204,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "database_high_availability": {
             "script_file": "fetchers/aws/database_high_availability.sh",
@@ -235,7 +247,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "efs_high_availability": {
             "script_file": "fetchers/aws/efs_high_availability.sh",
@@ -254,7 +269,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "eks_high_availability": {
             "script_file": "fetchers/aws/eks_high_availability.sh",
@@ -312,7 +330,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "iam_identity_center": {
             "script_file": "fetchers/aws/iam_identity_center.sh",
@@ -331,7 +352,12 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05"
+            ]
           },
           "iam_policies": {
             "script_file": "fetchers/aws/iam_policies.sh",
@@ -350,7 +376,13 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05",
+              "SVC-04"
+            ]
           },
           "iam_roles": {
             "script_file": "fetchers/aws/iam_roles.sh",
@@ -369,7 +401,12 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05"
+            ]
           },
           "iam_users_groups": {
             "script_file": "fetchers/aws/iam_users_groups.sh",
@@ -389,7 +426,13 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05",
+              "SVC-04"
+            ]
           },
           "kms_key_rotation": {
             "script_file": "fetchers/aws/kms_key_rotation.sh",
@@ -429,7 +472,13 @@
               "\"encrypted\":\\s*true"
             ],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-02",
+              "CNA-03",
+              "SVC-02",
+              "SVC-05",
+              "SVC-09"
+            ]
           },
           "load_balancer_high_availability": {
             "script_file": "fetchers/aws/load_balancer_high_availability.sh",
@@ -447,7 +496,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "network_resilience_high_availability": {
             "script_file": "fetchers/aws/network_resilience_high_availability.sh",
@@ -528,7 +580,10 @@
               "\"ApplyServerSideEncryptionByDefault\""
             ],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "security_groups": {
             "script_file": "fetchers/aws/security_groups.sh",
@@ -547,7 +602,13 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-01",
+              "CNA-02",
+              "CNA-03",
+              "CNA-05",
+              "SVC-02"
+            ]
           },
           "waf_all_rules": {
             "script_file": "fetchers/aws/waf_all_rules.sh",
@@ -566,7 +627,14 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-01",
+              "CNA-02",
+              "CNA-03",
+              "CNA-05",
+              "CNA-06",
+              "CNA-07"
+            ]
           },
           "waf_dos_rules": {
             "script_file": "fetchers/aws/waf_DoS_rules.sh",
@@ -684,7 +752,9 @@
           }
         ],
         "solution_capabilities": [],
-        "controls": []
+        "controls": [
+          "MLA-05"
+        ]
       },
       "sentinelone_cloud_detection_rules": {
         "script_file": "fetchers/sentinelone/sentinelone_cloud_detection_rules.py",
@@ -715,7 +785,11 @@
           }
         ],
         "solution_capabilities": [],
-        "controls": []
+        "controls": [
+          "IAM-06",
+          "MLA-01",
+          "MLA-02"
+        ]
       },
       "sentinelone_activities": {
         "script_file": "fetchers/sentinelone/sentinelone_activities.py",
@@ -745,7 +819,9 @@
           }
         ],
         "solution_capabilities": [],
-        "controls": []
+        "controls": [
+          "MLA-02"
+        ]
       }
     }
   },
@@ -844,7 +920,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CED-01"
+            ]
           },
           "security_awareness_training": {
             "script_file": "fetchers/knowbe4/security_awareness_training.sh",
@@ -957,7 +1035,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-03"
+            ]
           },
           "okta_non_user_accounts_authentication": {
             "script_file": "fetchers/okta/okta_non_user_accounts_authentication.py",
@@ -979,7 +1059,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-04"
+            ]
           },
           "okta_just_in_time_authorization": {
             "script_file": "fetchers/okta/okta_just_in_time_authorization.py",
@@ -1001,7 +1083,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-05"
+            ]
           },
           "okta_least_privilege": {
             "script_file": "fetchers/okta/okta_least_privilege.py",
@@ -1022,7 +1106,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-06"
+            ]
           },
           "okta_suspicious_activity_management": {
             "script_file": "fetchers/okta/okta_suspicious_activity_management.py",
@@ -1112,7 +1198,14 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CMT-01",
+              "CMT-02",
+              "CMT-03",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04"
+            ]
           },
           "gitlab_merge_request_summary": {
             "script_file": "fetchers/gitlab/gitlab_merge_request_summary.py",
@@ -1214,7 +1307,15 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CMT-02",
+              "CNA-04",
+              "CNA-07",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04",
+              "SVC-05"
+            ]
           },
           "checkov_kubernetes": {
             "script_file": "fetchers/checkov/checkov_kubernetes.sh",
