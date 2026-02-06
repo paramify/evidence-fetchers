@@ -63,7 +63,10 @@
               }
             ],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-02",
+              "CNA-03"
+            ]
           },
           "aws_config_conformance_packs": {
             "script_file": "fetchers/aws/aws_config_conformance_packs.sh",
@@ -101,7 +104,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "SVC-04"
+            ]
           },
           "backup_recovery_high_availability": {
             "script_file": "fetchers/aws/backup_recovery_high_availability.sh",
@@ -119,7 +124,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "backup_validation": {
             "script_file": "fetchers/aws/backup_validation.sh",
@@ -205,8 +213,10 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": [
-              "CNA-06",
-              "RPL-03"
+              "IAM-06",
+              "MLA-01",
+              "MLA-02",
+              "MLA-07"
             ]
           },
           "database_high_availability": {
@@ -227,7 +237,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "detect_new_aws_resource": {
             "script_file": "fetchers/aws/detect_new_aws_resource.sh",
@@ -291,7 +304,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "eks_least_privilege": {
             "script_file": "fetchers/aws/eks_least_privilege.sh",
@@ -451,7 +467,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "SVC-06"
+            ]
           },
           "load_balancer_encryption_status": {
             "script_file": "fetchers/aws/load_balancer_encryption_status.sh",
@@ -518,7 +536,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "rds_encryption_status": {
             "script_file": "fetchers/aws/rds_encryption_status.sh",
@@ -539,7 +560,10 @@
               "\"StorageEncrypted\":\\s*true"
             ],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "SVC-02",
+              "SVC-05"
+            ]
           },
           "route53_high_availability": {
             "script_file": "fetchers/aws/route53_high_availability.sh",
@@ -558,7 +582,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "s3_encryption_status": {
             "script_file": "fetchers/aws/s3_encryption_status.sh",
@@ -581,8 +608,8 @@
             ],
             "solution_capabilities": [],
             "controls": [
-              "CNA-06",
-              "RPL-03"
+              "SVC-02",
+              "SVC-05"
             ]
           },
           "security_groups": {
@@ -653,7 +680,14 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CNA-01",
+              "CNA-02",
+              "CNA-03",
+              "CNA-05",
+              "CNA-06",
+              "CNA-07"
+            ]
           }
         }
       },
@@ -722,7 +756,9 @@
           }
         ],
         "solution_capabilities": [],
-        "controls": []
+        "controls": [
+          "MLA-05"
+        ]
       },
       "sentinelone_agents": {
         "script_file": "fetchers/sentinelone/sentinelone_agents.py",
@@ -921,7 +957,7 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": [
-              "CED-01"
+              "CED-02"
             ]
           },
           "security_awareness_training": {
@@ -942,7 +978,9 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CED-01"
+            ]
           },
           "developer_specific_training": {
             "script_file": "fetchers/knowbe4/developer_specific_training.sh",
@@ -1014,7 +1052,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "IAM-01",
+              "IAM-05"
+            ]
           },
           "okta_passwordless_authentication": {
             "script_file": "fetchers/okta/okta_passwordless_authentication.py",
@@ -1060,7 +1101,7 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": [
-              "IAM-04"
+              "IAM-03"
             ]
           },
           "okta_just_in_time_authorization": {
@@ -1084,7 +1125,7 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": [
-              "IAM-05"
+              "IAM-04"
             ]
           },
           "okta_least_privilege": {
@@ -1107,7 +1148,7 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": [
-              "IAM-06"
+              "IAM-05"
             ]
           },
           "okta_suspicious_activity_management": {
@@ -1128,7 +1169,11 @@
               "monitoring",
               "behavior-detection"
             ],
-            "validation_rules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": [
+              "IAM-06"
+            ]
           },
           "okta_automated_account_management": {
             "script_file": "fetchers/okta/okta_automated_account_management.py",
@@ -1178,7 +1223,14 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CMT-01",
+              "CMT-03",
+              "PIY-04",
+              "VDR-01",
+              "VDR-AY-05",
+              "VDR-AY-06"
+            ]
           },
           "gitlab_project_summary": {
             "script_file": "fetchers/gitlab/gitlab_project_summary.py",
@@ -1224,7 +1276,14 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CMT-01",
+              "CMT-02",
+              "CMT-03",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04"
+            ]
           }
         }
       },
@@ -1338,7 +1397,15 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [
+              "CMT-02",
+              "CNA-04",
+              "CNA-07",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04",
+              "SVC-05"
+            ]
           }
         }
       }
