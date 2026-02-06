@@ -2645,6 +2645,23 @@ class OktaIAMEvidenceFetcher:
         
         # Get all active users and check their last login
         active_users = self.client.list_users(filter_query='status eq "ACTIVE"')
+        
+        # Identify service accounts (API-only accounts that don't login)
+        print("  → Identifying service accounts (API-only accounts)...")
+        service_account_ids = set()
+        try:
+            api_tokens = self.client.list_api_tokens()
+            for token in api_tokens:
+                user_id = token.get("userId")
+                if user_id:
+                    service_account_ids.add(user_id)
+        except Exception as e:
+            # If API tokens endpoint isn't available (requires Super Admin), log but continue
+            print(f"    ⚠️  Could not fetch API tokens (may require Super Admin): {e}")
+        
+        # Separate user accounts from service accounts
+        user_accounts = [u for u in active_users if u["id"] not in service_account_ids]
+        service_accounts = [u for u in active_users if u["id"] in service_account_ids]
         inactive_users_30 = []
         inactive_users_60 = []
         inactive_users_90 = []
@@ -2787,7 +2804,7 @@ class OktaIAMEvidenceFetcher:
         deactivation_rate_30d = len([e for e in deactivation_events if e.get("published", "") >= since])
         deactivation_rate_90d = len(deactivation_events)
         
-        # Calculate last activity distribution
+        # Calculate last activity distribution (excluding service accounts)
         last_activity_distribution = {
             "active_last_7_days": 0,
             "active_last_30_days": 0,
@@ -2795,7 +2812,7 @@ class OktaIAMEvidenceFetcher:
             "inactive_90_plus_days": 0
         }
         
-        for user in active_users:
+        for user in user_accounts:  # Only count user accounts, not service accounts
             last_login = user.get("lastLogin")
             if last_login:
                 try:
@@ -2823,10 +2840,11 @@ class OktaIAMEvidenceFetcher:
                 except Exception:
                     pass
         
-        # Calculate account health metrics
-        total_active = len(active_users)
+        # Calculate account health metrics (excluding service accounts)
+        # Service accounts use API tokens and don't login, so they shouldn't affect health percentage
+        total_active_user_accounts = len(user_accounts)
         active_recently = last_activity_distribution["active_last_7_days"] + last_activity_distribution["active_last_30_days"]
-        health_percentage = round((active_recently / total_active * 100), 1) if total_active > 0 else 0
+        health_percentage = round((active_recently / total_active_user_accounts * 100), 1) if total_active_user_accounts > 0 else 0
         
         evidence["data"]["inactive_users"] = {
             "never_logged_in": never_logged_in,
@@ -2838,7 +2856,7 @@ class OktaIAMEvidenceFetcher:
             "inactive_60_days_count": len(inactive_users_60),
             "inactive_90_days_count": len(inactive_users_90),
             "average_inactive_days": avg_inactive_days,
-            "total_users_with_login_history": len(all_inactive_times) + (total_active - len(never_logged_in) - len(inactive_users_30) - len(inactive_users_60) - len(inactive_users_90))
+            "total_users_with_login_history": len(all_inactive_times) + (total_active_user_accounts - len(never_logged_in) - len(inactive_users_30) - len(inactive_users_60) - len(inactive_users_90))
         }
         
         evidence["data"]["account_age_distribution"] = account_ages
@@ -2857,10 +2875,12 @@ class OktaIAMEvidenceFetcher:
         }
         evidence["data"]["last_activity_distribution"] = last_activity_distribution
         evidence["data"]["account_health_metrics"] = {
-            "total_active_accounts": total_active,
+            "total_active_user_accounts": total_active_user_accounts,
+            "total_active_accounts_including_service": len(active_users),
+            "service_accounts_count": len(service_accounts),
             "accounts_active_recently": active_recently,
             "account_health_percentage": health_percentage,
-            "note": "Percentage of active accounts that have logged in within the last 30 days"
+            "note": "Percentage of active user accounts (excluding service/API-only accounts) that have logged in within the last 30 days. Service accounts are excluded because they use API tokens and don't login."
         }
 
         # 8. Integration inventory (HR systems, directories)
@@ -3033,10 +3053,12 @@ class OktaIAMEvidenceFetcher:
             "account_management_overview": {
                 "total_users": len(all_users),
                 "total_users_details": total_users_list,
-                "active_accounts": status_counts.get("ACTIVE", 0),
+                "active_accounts": total_active_user_accounts,  # Excludes service accounts
+                "active_accounts_including_service": len(active_users),  # Includes all active accounts
+                "service_accounts_count": len(service_accounts),
                 "active_accounts_details": active_users_list,
                 "account_health_percentage": health_percentage,
-                "note": "Account health shows percentage of active accounts with recent login activity (within 30 days)"
+                "note": "Account health shows percentage of active user accounts (excluding service/API-only accounts) with recent login activity (within 30 days). Service accounts are excluded because they use API tokens and don't login."
             },
             "account_lifecycle_monitoring": {
                 "account_age_distribution": account_ages,
@@ -3063,10 +3085,12 @@ class OktaIAMEvidenceFetcher:
         print(f"      \"account_management_overview\": {{")
         print(f"        \"total_users\": {len(all_users)},")
         print(f"        \"total_users_details\": {json.dumps(total_users_list)},")
-        print(f"        \"active_accounts\": {status_counts.get('ACTIVE', 0)},")
+        print(f"        \"active_accounts\": {total_active_user_accounts},")
+        print(f"        \"active_accounts_including_service\": {len(active_users)},")
+        print(f"        \"service_accounts_count\": {len(service_accounts)},")
         print(f"        \"active_accounts_details\": {json.dumps(active_users_list)},")
         print(f"        \"account_health_percentage\": {health_percentage},")
-        print(f"        \"note\": \"Account health shows percentage of active accounts with recent login activity (within 30 days)\"")
+        print(f"        \"note\": \"Account health shows percentage of active user accounts (excluding service/API-only accounts) with recent login activity (within 30 days)\"")
         print(f"      }},")
         print(f"      \"account_lifecycle_monitoring\": {{")
         print(f"        \"account_age_distribution\": {json.dumps(account_ages)},")
