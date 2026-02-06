@@ -1,0 +1,164 @@
+# Paramify Evidence Catalog
+[![Compliance Status](https://img.shields.io/badge/Coverage-84%25_Automated-green)]() [![Fetcher Count](https://img.shields.io/badge/Active_Fetchers-42_Scripts-blue)]() [![Validation](https://img.shields.io/badge/Validation-Verified-blue)]()
+
+Welcome to the **Central Evidence Catalog**.
+
+This repository contains the automated scripts ("fetchers") used to validate your security posture against **FedRAMP 20x Key Security Indicators (KSIs)**. This dashboard maps every technical KSI directly to its specific evidence source using the latest available fetchers.
+
+### 📊 Compliance Summary
+| Status | Count | Percentage | Definition |
+| :--- | :--- | :--- | :--- |
+|  **Automated** | **42** | **84%** | Validated by a script in this repo. |
+|  **Manual** | **8** | **16%** | Validated by pass or fail questionnaire.|
+---
+
+## CED Family (Cybersecurity Education)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`CED-01`** | Security Awareness Training | [security_awareness_training.sh](fetchers/knowbe4/security_awareness_training.sh) | Automated |
+| **`CED-02`** | Role Specific Training (High Risk) | [high_risk_training.sh](fetchers/knowbe4/high_risk_training.sh) | Automated |
+| **`CED-03`** | Development and Engineering Training | [developer_specific_training.sh](fetchers/knowbe4/developer_specific_training.sh) | Automated |
+| **`CED-04`** | Response and Recovery Training | - | Manual |
+
+## CMT Family (Change Management)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`CMT-01`** | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](fetchers/gitlab/gitlab_merge_request_summary.py) | Automated |
+| | GitLab CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | Automated |
+| **`CMT-02`** | Checkov Terraform Security | [checkov_terraform.sh](fetchers/checkov/checkov_terraform.sh) | Automated |
+| | Checkov Kubernetes Security | [checkov_kubernetes.sh](fetchers/checkov/checkov_kubernetes.sh) | Automated |
+| | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](fetchers/gitlab/gitlab_merge_request_summary.py) | Automated |
+| | GitLab Project Summary | [gitlab_project_summary.py](fetchers/gitlab/gitlab_project_summary.py) | Automated |
+| **`CMT-03`** | GitLab CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | Automated |
+| **`CMT-04`** | Reviewing Change Procedures | - | Manual |
+
+## CNA Family (Cloud Native Architecture)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`CNA-01`** | Security Groups | [security_groups.sh](fetchers/aws/security_groups.sh) | Automated |
+| | WAF All Rules | [waf_all_rules.sh](fetchers/aws/waf_all_rules.sh) | Automated |
+| | WAF DoS Rules | [waf_DoS_rules.sh](fetchers/aws/waf_DoS_rules.sh) | Automated |
+| **`CNA-02`** | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](fetchers/aws/load_balancer_encryption_status.sh) | Automated |
+| | AWS Component SSL Enforcement | [aws_component_ssl_enforcement_status.sh](fetchers/aws/aws_component_ssl_enforcement_status.sh) | Automated |
+| | Security Groups | [security_groups.sh](fetchers/aws/security_groups.sh) | Automated |
+| **`CNA-03`** | WAF All Rules | [waf_all_rules.sh](fetchers/aws/waf_all_rules.sh) | Automated |
+| | AWS Component SSL Enforcement | [aws_component_ssl_enforcement_status.sh](fetchers/aws/aws_component_ssl_enforcement_status.sh) | Automated |
+| **`CNA-04`** | Checkov Terraform Security | [checkov_terraform.sh](fetchers/checkov/checkov_terraform.sh) | Automated |
+| | Checkov Kubernetes Security | [checkov_kubernetes.sh](fetchers/checkov/checkov_kubernetes.sh) | Automated |
+| **`CNA-05`** | WAF All Rules | [waf_all_rules.sh](fetchers/aws/waf_all_rules.sh) | Automated |
+| | WAF DoS Rules | [waf_DoS_rules.sh](fetchers/aws/waf_DoS_rules.sh) | Automated |
+| **`CNA-06`** | Auto Scaling High Availability | [auto_scaling_high_availability.sh](fetchers/aws/auto_scaling_high_availability.sh) | Automated |
+| | Database High Availability | [database_high_availability.sh](fetchers/aws/database_high_availability.sh) | Automated |
+| | EKS High Availability | [eks_high_availability.sh](fetchers/aws/eks_high_availability.sh) | Automated |
+| | EFS High Availability | [efs_high_availability.sh](fetchers/aws/efs_high_availability.sh) | Automated |
+| | Load Balancer High Availability | [load_balancer_high_availability.sh](fetchers/aws/load_balancer_high_availability.sh) | Automated |
+| | Network Resilience High Availability | [network_resilience_high_availability.sh](fetchers/aws/network_resilience_high_availability.sh) | Automated |
+| | Route 53 High Availability | [route53_high_availability.sh](fetchers/aws/route53_high_availability.sh) | Automated |
+| **`CNA-07`** | WAF All Rules | [waf_all_rules.sh](fetchers/aws/waf_all_rules.sh) | Automated |
+| | Checkov Terraform Security | [checkov_terraform.sh](fetchers/checkov/checkov_terraform.sh) | Automated |
+| **`CNA-08`** | Enforcing Intended State | [aws_config_conformance_packs.sh](fetchers/aws/aws_config_conformance_packs.sh) | Automated |
+
+## IAM Family (Identity & Access)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`IAM-01`** | Okta Phishing Resistant MFA | [okta_phishing_resistant_mfa.py](fetchers/okta/okta_phishing_resistant_mfa.py) | Automated |
+| | IAM Identity Center | [iam_identity_center.sh](fetchers/aws/iam_identity_center.sh) | Automated |
+| | IAM Roles | [iam_roles.sh](fetchers/aws/iam_roles.sh) | Automated |
+| | IAM Users and Groups | [iam_users_groups.sh](fetchers/aws/iam_users_groups.sh) | Automated |
+| **`IAM-02`** | Adopting Passwordless Methods | [okta_passwordless_authentication.py](fetchers/okta/okta_passwordless_authentication.py) | Automated |
+| **`IAM-03`** | Okta Non-User Accounts | [okta_non_user_accounts_authentication.py](fetchers/okta/okta_non_user_accounts_authentication.py) | Automated |
+| | IAM Identity Center | [iam_identity_center.sh](fetchers/aws/iam_identity_center.sh) | Automated |
+| | IAM Roles | [iam_roles.sh](fetchers/aws/iam_roles.sh) | Automated |
+| **`IAM-04`** | Okta Just-in-Time Authorization | [okta_just_in_time_authorization.py](fetchers/okta/okta_just_in_time_authorization.py) | Automated |
+| | IAM Identity Center | [iam_identity_center.sh](fetchers/aws/iam_identity_center.sh) | Automated |
+| | IAM Roles | [iam_roles.sh](fetchers/aws/iam_roles.sh) | Automated |
+| **`IAM-05`** | Okta Least Privilege | [okta_least_privilege.py](fetchers/okta/okta_least_privilege.py) | Automated |
+| | IAM Identity Center | [iam_identity_center.sh](fetchers/aws/iam_identity_center.sh) | Automated |
+| | EKS Least Privilege | [eks_least_privilege.sh](fetchers/aws/eks_least_privilege.sh) | Automated |
+| | IAM Users and Groups | [iam_users_groups.sh](fetchers/aws/iam_users_groups.sh) | Automated |
+| **`IAM-06`** | Okta Suspicious Activity | [okta_suspicious_activity_management.py](fetchers/okta/okta_suspicious_activity_management.py) | Automated |
+| | CloudTrail Configuration | [cloudtrail_configuration.sh](fetchers/aws/cloudtrail_configuration.sh) | Automated |
+| | SentinelOne Cloud Detection Rules | [sentinelone_cloud_detection_rules.py](fetchers/sentinelone/sentinelone_cloud_detection_rules.py) | Automated |
+| **`IAM-07`** | Automated Account Management | [okta_automated_account_management.py](fetchers/okta/okta_automated_account_management.py) | Automated |
+
+## INR Family (Incident Response)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`INR-01`** | Reviewing Incident Response Procedures | - | Manual |
+| **`INR-02`** | Reviewing Past Incidents | [sentinelone_activities.py](fetchers/sentinelone/sentinelone_activities.py) | Automated |
+| **`INR-03`** | Generating After Action Reports | - | Manual |
+
+## MLA Family (Monitoring & Logging)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`MLA-01`** | Operating SIEM Capability | [sentinelone_cloud_detection_rules.py](fetchers/sentinelone/sentinelone_cloud_detection_rules.py) | Automated |
+| | CloudTrail Configuration | [cloudtrail_configuration.sh](fetchers/aws/cloudtrail_configuration.sh) | Automated |
+| **`MLA-02`** | Reviewing Logs | [sentinelone_activities.py](fetchers/sentinelone/sentinelone_activities.py) | Automated |
+| | CloudTrail Configuration | [cloudtrail_configuration.sh](fetchers/aws/cloudtrail_configuration.sh) | Automated |
+| **`MLA-05`** | Evaluating Configurations | [sentinelone_xdr_assets.py](fetchers/sentinelone/sentinelone_xdr_assets.py) | Automated |
+| | SentinelOne Agents | [sentinelone_agents.py](fetchers/sentinelone/sentinelone_agents.py) | Automated |
+| | GitLab Project Summary | [gitlab_project_summary.py](fetchers/gitlab/gitlab_project_summary.py) | Automated |
+| | Checkov Terraform Security | [checkov_terraform.sh](fetchers/checkov/checkov_terraform.sh) | Automated |
+| **`MLA-07`** | Logging Event Types | [cloudwatch_high_availability.sh](fetchers/aws/cloudwatch_high_availability.sh) | Automated |
+| | CloudTrail Configuration | [cloudtrail_configuration.sh](fetchers/aws/cloudtrail_configuration.sh) | Automated |
+| **`MLA-08`** | Authorizing Log Access | [iam_policies.sh](fetchers/aws/iam_policies.sh) | Automated |
+
+## PIY Family (Policy)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`PIY-01`** | Generating Inventories | [detect_new_aws_resource.sh](fetchers/aws/detect_new_aws_resource.sh) | Automated |
+| | EKS Pod Inventory | [eks_pod_inventory.sh](fetchers/k8s/eks_pod_inventory.sh) | Automated |
+| | GitLab Project Summary | [gitlab_project_summary.py](fetchers/gitlab/gitlab_project_summary.py) | Automated |
+| | Rippling Current Employees | [rippling_current_employees.py](fetchers/rippling/rippling_current_employees.py) | Automated |
+| | Rippling All Employees | [rippling_all_employees.py](fetchers/rippling/rippling_all_employees.py) | Automated |
+| **`PIY-03`** | Reviewing Vulnerability Disclosures | - | Manual |
+| **`PIY-04`** | GitLab CI/CD Pipeline Config | [gitlab_ci_cd_pipeline_config.py](fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | Automated |
+| **`PIY-06`** | Reviewing Investments in Security | - | Manual |
+| **`PIY-08`** | Reviewing Executive Support | - | Manual |
+
+## RPL Family (Resilience)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`RPL-01`** | Reviewing Recovery Objectives | [backup_validation.sh](fetchers/aws/backup_validation.sh) | Automated |
+| **`RPL-02`** | Aligning Recovery Plan | [backup_recovery_high_availability.sh](fetchers/aws/backup_recovery_high_availability.sh) | Automated |
+| **`RPL-03`** | RDS Database High Availability | [database_high_availability.sh](fetchers/aws/database_high_availability.sh) | Automated |
+| | Backup Recovery High Availability | [backup_recovery_high_availability.sh](fetchers/aws/backup_recovery_high_availability.sh) | Automated |
+| | EFS High Availability | [efs_high_availability.sh](fetchers/aws/efs_high_availability.sh) | Automated |
+| | EKS High Availability | [eks_high_availability.sh](fetchers/aws/eks_high_availability.sh) | Automated |
+| | Load Balancer High Availability | [load_balancer_high_availability.sh](fetchers/aws/load_balancer_high_availability.sh) | Automated |
+| | Network Resilience High Availability | [network_resilience_high_availability.sh](fetchers/aws/network_resilience_high_availability.sh) | Automated |
+| | Route 53 High Availability | [route53_high_availability.sh](fetchers/aws/route53_high_availability.sh) | Automated |
+| | CloudWatch High Availability | [cloudwatch_high_availability.sh](fetchers/aws/cloudwatch_high_availability.sh) | Automated |
+| **`RPL-04`** | Testing Recovery Capabilities | [backup_validation.sh](fetchers/aws/backup_validation.sh) | Automated |
+
+## SCR Family (Supply Chain Risk)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`SCR-MIT`** | Mitigating Supply Chain Risk | [checkov_terraform.sh](fetchers/checkov/checkov_terraform.sh) | Automated |
+| **`SCR-MON`** | Monitoring Supply Chain Risk | [guard_duty.sh](fetchers/aws/guard_duty.sh) | Automated |
+
+## SVC Family (Service Config)
+| KSI ID | Evidence Title | Fetcher Script | Status |
+| :--- | :--- | :--- | :--- |
+| **`SVC-01`** | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](fetchers/gitlab/gitlab_merge_request_summary.py) | Automated |
+| | GitLab Project Summary | [gitlab_project_summary.py](fetchers/gitlab/gitlab_project_summary.py) | Automated |
+| | Checkov Terraform Security | [checkov_terraform.sh](fetchers/checkov/checkov_terraform.sh) | Automated |
+| | Checkov Kubernetes Security | [checkov_kubernetes.sh](fetchers/checkov/checkov_kubernetes.sh) | Automated |
+| **`SVC-02`** | Block Storage Encryption Status | [block_storage_encryption_status.sh](fetchers/aws/block_storage_encryption_status.sh) | Automated |
+| | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](fetchers/aws/load_balancer_encryption_status.sh) | Automated |
+| | RDS Encryption | [rds_encryption_status.sh](fetchers/aws/rds_encryption_status.sh) | Automated |
+| | S3 Encryption | [s3_encryption_status.sh](fetchers/aws/s3_encryption_status.sh) | Automated |
+| **`SVC-04`** | AWS Config Monitoring | [aws_config_monitoring.sh](fetchers/aws/aws_config_monitoring.sh) | Automated |
+| | AWS Config Conformance Packs | [aws_config_conformance_packs.sh](fetchers/aws/aws_config_conformance_packs.sh) | Automated |
+| | IAM Policies | [iam_policies.sh](fetchers/aws/iam_policies.sh) | Automated |
+| | Checkov Terraform Security | [checkov_terraform.sh](fetchers/checkov/checkov_terraform.sh) | Automated |
+| **`SVC-05`** | Authorized Cryptographic Modules | [block_storage_encryption_status.sh](fetchers/aws/block_storage_encryption_status.sh) | Automated |
+| | RDS Encryption | [rds_encryption_status.sh](fetchers/aws/rds_encryption_status.sh) | Automated |
+| | S3 Encryption | [s3_encryption_status.sh](fetchers/aws/s3_encryption_status.sh) | Automated |
+| **`SVC-06`** | KMS Key Rotation | [kms_key_rotation.sh](fetchers/aws/kms_key_rotation.sh) | Automated |
+| **`SVC-08`** | Preventing Residual Risk | [s3_encryption_status.sh](fetchers/aws/s3_encryption_status.sh) | Automated |
+| **`SVC-09`** | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](fetchers/aws/load_balancer_encryption_status.sh) | Automated |
+| **`SVC-10`** | Removing Unwanted Data | - | Manual |
+
+---
+*Generated by Paramify*
