@@ -848,7 +848,7 @@
         "description": "SentinelOne-specific evidence collection scripts and fetchers for users, agents, XDR assets, cloud detection rules, and activities.",
         "access_method": "SentinelOne API via API Token",
         "access_method_description": "The evidence fetcher scripts use the SentinelOne REST API which requires SENTINELONE_API_URL and SENTINELONE_API_TOKEN environment variables. Authentication uses Api Token authorization header.",
-        "logo": "",
+        "logo": "fetchers/logos/sentinelone.svg",
         "scripts": {
           "sentinelone_user_config": {
             "script_file": "fetchers/sentinelone/sentinelone_user_config.py",
@@ -1031,7 +1031,7 @@
         "description": "Kubernetes and EKS-specific evidence collection scripts",
         "access_method": "kubectl CLI",
         "access_method_description": "The evidence fetcher scripts use kubectl which must be installed and configured for your Kubernetes cluster. For EKS clusters, use 'aws eks update-kubeconfig' to configure kubectl.",
-        "logo": "",
+        "logo": "fetchers/logos/kubernetes.svg",
         "scripts": {
           "eks_microservice_segmentation": {
             "script_file": "fetchers/k8s/eks_microservice_segmentation.sh",
@@ -1101,7 +1101,7 @@
         "description": "KnowBe4 security awareness training evidence collection scripts",
         "access_method": "KnowBe4 API via API Token",
         "access_method_description": "The evidence fetcher scripts use the KnowBe4 REST API which requires KNOWBE4_API_KEY environment variable. Note: KnowBe4 API access is only available for Platinum and Diamond customers. Authentication uses Bearer token authorization.",
-        "logo": "",
+        "logo": "fetchers/logos/knowbe4.svg",
         "scripts": {
           "high_risk_training": {
             "script_file": "fetchers/knowbe4/high_risk_training.sh",
@@ -1201,7 +1201,7 @@
         "description": "Okta identity and access management evidence collection scripts",
         "access_method": "Okta API via API Token",
         "access_method_description": "The evidence fetcher scripts use the Okta REST API which requires OKTA_API_TOKEN and OKTA_ORG_URL environment variables. Authentication uses API Token authorization header.",
-        "logo": "",
+        "logo": "fetchers/logos/okta.svg",
         "scripts": {
           "okta_phishing_resistant_mfa": {
             "script_file": "fetchers/okta/okta_phishing_resistant_mfa.py",
@@ -1416,7 +1416,7 @@
         "description": "GitLab evidence collection scripts",
         "access_method": "GitLab API via Access Token",
         "access_method_description": "The evidence fetcher scripts use the GitLab REST API which requires project access toekns: GITLAB_PROJECT_*_API_ACCESS_TOKEN and GITLAB_PROJECT_*_URL environment variables for multi-project support. Authentication uses Bearer token with Project Access Tokens scoped to individual projects. Read permissions are required.",
-        "logo": "",
+        "logo": "fetchers/logos/gitlab.svg",
         "scripts": {
           "gitlab_ci_cd_pipeline_config": {
             "script_file": "fetchers/gitlab/gitlab_ci_cd_pipeline_config.py",
@@ -1517,7 +1517,7 @@
         "description": "Rippling HR evidence collection scripts",
         "access_method": "Rippling API via Bearer Token",
         "access_method_description": "The evidence fetcher scripts use the Rippling REST API which requires RIPPLING_API_TOKEN environment variable. Authentication uses Bearer token authorization.",
-        "logo": "",
+        "logo": "fetchers/logos/rippling.svg",
         "scripts": {
           "rippling_current_employees": {
             "script_file": "fetchers/rippling/rippling_current_employees.py",
@@ -1568,7 +1568,7 @@
         "description": "Infrastructure as Code security compliance scanning with Checkov",
         "access_method": "Checkov CLI with optional GitLab API",
         "access_method_description": "The evidence fetcher scripts use Checkov CLI tool which must be installed via 'pip install checkov'. For GitLab repository scanning, GitLab API access tokens are required (GITLAB_PROJECT_*_API_ACCESS_TOKEN). For local or URL-based scanning, no additional authentication is needed.",
-        "logo": "",
+        "logo": "fetchers/logos/checkov.png",
         "scripts": {
           "checkov_terraform": {
             "script_file": "fetchers/checkov/checkov_terraform.sh",
