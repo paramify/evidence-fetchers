@@ -27,7 +27,10 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [
-              "AWS GovCloud Availability Zones"
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
             ],
             "controls": [
               "CNA-06",
@@ -62,7 +65,11 @@
                 "logic": "IF rds_total == rds_ssl_enforced THEN PASS"
               }
             ],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Denial Of Service Protection: Amazon Web Application Firewall",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
             "controls": [
               "CNA-02",
               "CNA-03"
@@ -83,7 +90,11 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Configuration Checks: CIS L2"
+            ],
             "controls": [
               "SVC-04"
             ]
@@ -103,7 +114,11 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Configuration Checks: CIS L2"
+            ],
             "controls": [
               "SVC-04"
             ]
@@ -123,7 +138,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -166,7 +186,11 @@
             "validation_rules": [
               "\"Encrypted\":\\s*true"
             ],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
             "controls": [
               "SVC-02",
               "SVC-05"
@@ -188,7 +212,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -211,7 +240,9 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Audit Logging Criteria: Amazon CloudTrail"
+            ],
             "controls": [
               "IAM-06",
               "MLA-01",
@@ -236,7 +267,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -259,7 +295,14 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Contingency Plan Test",
+              "Denial Of Service Protection: Amazon Web Application Firewall",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -281,7 +324,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -303,7 +351,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -345,7 +398,9 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -367,7 +422,22 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
             "controls": [
               "IAM-01",
               "IAM-03",
@@ -391,7 +461,22 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
             "controls": [
               "IAM-01",
               "IAM-03",
@@ -416,7 +501,22 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
             "controls": [
               "IAM-01",
               "IAM-03",
@@ -441,7 +541,22 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
             "controls": [
               "IAM-01",
               "IAM-03",
@@ -466,7 +581,9 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Cryptographic Key Management: Amazon Key Management Service (KMS)"
+            ],
             "controls": [
               "SVC-06"
             ]
@@ -489,7 +606,12 @@
             "validation_rules": [
               "\"encrypted\":\\s*true"
             ],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Denial Of Service Protection: Amazon Web Application Firewall",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
             "controls": [
               "CNA-02",
               "CNA-03",
@@ -513,7 +635,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -535,7 +662,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -559,7 +691,11 @@
             "validation_rules": [
               "\"StorageEncrypted\":\\s*true"
             ],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
             "controls": [
               "SVC-02",
               "SVC-05"
@@ -581,7 +717,12 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
             "controls": [
               "CNA-06",
               "RPL-03"
@@ -606,7 +747,11 @@
               "\"ServerSideEncryptionConfiguration\"",
               "\"ApplyServerSideEncryptionByDefault\""
             ],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
             "controls": [
               "SVC-02",
               "SVC-05"
@@ -628,7 +773,10 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Policy Enforcement Point Exceptions",
+              "Policy Enforcement Points: Amazon Security Groups"
+            ],
             "controls": [
               "CNA-01",
               "CNA-02",
@@ -653,7 +801,9 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Denial Of Service Protection: Amazon Web Application Firewall"
+            ],
             "controls": [
               "CNA-01",
               "CNA-02",
@@ -679,7 +829,9 @@
               "aws"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Denial Of Service Protection: Amazon Web Application Firewall"
+            ],
             "controls": [
               "CNA-01",
               "CNA-02",
@@ -699,168 +851,181 @@
         "logo": "",
         "scripts": {
           "sentinelone_user_config": {
-        "script_file": "fetchers/sentinelone/sentinelone_user_config.py",
-        "name": "SentinelOne User Config",
-        "description": "Retrieve SentinelOne user records and produce summary analysis (admin counts, 2FA, last login).",
-        "id": "EVD-S1-USER",
-        "instructions": "Script: userfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/users using ApiToken authorization, pages with cursor, and writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "users",
-          "iam",
-          "sentinelone"
-        ],
-        "validation_rules": [
-          {
-            "id": 1,
-            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
-            "logic": "IF record_count >= 0 THEN PASS (ensures script returned numeric count)"
+            "script_file": "fetchers/sentinelone/sentinelone_user_config.py",
+            "name": "SentinelOne User Config",
+            "description": "Retrieve SentinelOne user records and produce summary analysis (admin counts, 2FA, last login).",
+            "id": "EVD-S1-USER",
+            "instructions": "Script: userfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/users using ApiToken authorization, pages with cursor, and writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "users",
+              "iam",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+                "logic": "IF record_count >= 0 THEN PASS (ensures script returned numeric count)"
+              },
+              {
+                "id": 2,
+                "regex": "\"admin_user_count\":\\s*(?P<admin_user_count>\\d+)",
+                "logic": "IF admin_user_count <= record_count THEN PASS"
+              }
+            ],
+            "solution_capabilities": [],
+            "controls": []
           },
-          {
-            "id": 2,
-            "regex": "\"admin_user_count\":\\s*(?P<admin_user_count>\\d+)",
-            "logic": "IF admin_user_count <= record_count THEN PASS"
+          "sentinelone_xdr_assets": {
+            "script_file": "fetchers/sentinelone/sentinelone_xdr_assets.py",
+            "name": "SentinelOne XDR Assets",
+            "description": "Retrieve XDR asset inventory (containers, images, cloud resources) and summary counts.",
+            "id": "EVD-S1-XDR-ASSET",
+            "instructions": "Script: xdrassetfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/xdr/assets, supports cursor pagination, summarizes infectionStatus and assetStatus, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "assets",
+              "xdr",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+                "logic": "IF record_count >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"healthy_infection_status_count\":\\s*(?P<healthy>\\d+)",
+                "logic": "IF healthy <= record_count THEN PASS"
+              }
+            ],
+            "solution_capabilities": [
+              "Independent Security Assessment",
+              "Vulnerability Assessments"
+            ],
+            "controls": [
+              "MLA-05"
+            ]
+          },
+          "sentinelone_agents": {
+            "script_file": "fetchers/sentinelone/sentinelone_agents.py",
+            "name": "SentinelOne Agents",
+            "description": "Retrieve agents information, containerized workload counts, cloud provider metadata, and optional agent counts endpoint.",
+            "id": "EVD-S1-AGENT",
+            "instructions": "Script: agentfetcher.py. Calls /web/api/v2.1/agents (and /web/api/v2.1/agents/count), pages with cursor, collects cluster names and container/pod counts, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "agents",
+              "endpoints",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+                "logic": "IF record_count >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"reported_agent_count\":\\s*(?P<reported>\\d+)",
+                "logic": "IF reported_agent_count is null or reported_agent_count >= 0 THEN PASS (optional count may be missing)"
+              }
+            ],
+            "solution_capabilities": [
+              "Independent Security Assessment",
+              "Vulnerability Assessments"
+            ],
+            "controls": [
+              "MLA-05"
+            ]
+          },
+          "sentinelone_cloud_detection_rules": {
+            "script_file": "fetchers/sentinelone/sentinelone_cloud_detection_rules.py",
+            "name": "SentinelOne Cloud Detection Rules",
+            "description": "Retrieve custom cloud detection rules, last alert times and update timestamps.",
+            "id": "EVD-S1-CLOUD-RULE",
+            "instructions": "Script: clouddetectionrules.py. Calls /web/api/v2.1/cloud-detection/rules with cursor pagination, extracts lastAlertTime and updatedAt fields, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "detection",
+              "rules",
+              "cloud",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"total_custom_detection_rules\":\\s*(?P<total>\\d+)",
+                "logic": "IF total >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"rules_never_triggered_count\":\\s*(?P<never_triggered>\\d+)",
+                "logic": "IF never_triggered <= total THEN PASS"
+              }
+            ],
+            "solution_capabilities": [
+              "Centralized Security Event Correlation (SIEM): SentinelOne",
+              "Security Event Notifications: SentinelOne",
+              "Suspicious Activity Response: SentinelOne"
+            ],
+            "controls": [
+              "IAM-06",
+              "MLA-01",
+              "MLA-02"
+            ]
+          },
+          "sentinelone_activities": {
+            "script_file": "fetchers/sentinelone/sentinelone_activities.py",
+            "name": "SentinelOne Activities",
+            "description": "Retrieve SentinelOne activity events for a set of activity types (FedRAMP list) and summarize activity types and descriptions.",
+            "id": "EVD-S1-ACTIVITY",
+            "instructions": "Script: activityfetcher.py. Calls /web/api/v2.1/activities with activityTypes filter (cursor pagination), aggregates activityType counts and primary descriptions, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "activities",
+              "audit",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"total_activities_collected\":\\s*(?P<total>\\d+)",
+                "logic": "IF total >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"activity_type\":\\s*\\{(?P<types>[\\s\\S]*?)\\}",
+                "logic": "IF activity_type object exists THEN PASS"
+              }
+            ],
+            "solution_capabilities": [
+              "Monitored Event Types",
+              "Security Event Notifications: SentinelOne"
+            ],
+            "controls": [
+              "MLA-02"
+            ]
           }
-        ],
-        "solution_capabilities": [],
-        "controls": []
+        }
       },
-      "sentinelone_xdr_assets": {
-        "script_file": "fetchers/sentinelone/sentinelone_xdr_assets.py",
-        "name": "SentinelOne XDR Assets",
-        "description": "Retrieve XDR asset inventory (containers, images, cloud resources) and summary counts.",
-        "id": "EVD-S1-XDR-ASSET",
-        "instructions": "Script: xdrassetfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/xdr/assets, supports cursor pagination, summarizes infectionStatus and assetStatus, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "assets",
-          "xdr",
-          "sentinelone"
-        ],
-        "validation_rules": [
-          {
-            "id": 1,
-            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
-            "logic": "IF record_count >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"healthy_infection_status_count\":\\s*(?P<healthy>\\d+)",
-            "logic": "IF healthy <= record_count THEN PASS"
-          }
-        ],
-        "solution_capabilities": [],
-        "controls": [
-          "MLA-05"
-        ]
-      },
-      "sentinelone_agents": {
-        "script_file": "fetchers/sentinelone/sentinelone_agents.py",
-        "name": "SentinelOne Agents",
-        "description": "Retrieve agents information, containerized workload counts, cloud provider metadata, and optional agent counts endpoint.",
-        "id": "EVD-S1-AGENT",
-        "instructions": "Script: agentfetcher.py. Calls /web/api/v2.1/agents (and /web/api/v2.1/agents/count), pages with cursor, collects cluster names and container/pod counts, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "agents",
-          "endpoints",
-          "sentinelone"
-        ],
-        "validation_rules": [
-          {
-            "id": 1,
-            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
-            "logic": "IF record_count >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"reported_agent_count\":\\s*(?P<reported>\\d+)",
-            "logic": "IF reported_agent_count is null or reported_agent_count >= 0 THEN PASS (optional count may be missing)"
-          }
-        ],
-        "solution_capabilities": [],
-        "controls": [
-          "MLA-05"
-        ]
-      },
-      "sentinelone_cloud_detection_rules": {
-        "script_file": "fetchers/sentinelone/sentinelone_cloud_detection_rules.py",
-        "name": "SentinelOne Cloud Detection Rules",
-        "description": "Retrieve custom cloud detection rules, last alert times and update timestamps.",
-        "id": "EVD-S1-CLOUD-RULE",
-        "instructions": "Script: clouddetectionrules.py. Calls /web/api/v2.1/cloud-detection/rules with cursor pagination, extracts lastAlertTime and updatedAt fields, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "detection",
-          "rules",
-          "cloud",
-          "sentinelone"
-        ],
-        "validation_rules": [
-          {
-            "id": 1,
-            "regex": "\"total_custom_detection_rules\":\\s*(?P<total>\\d+)",
-            "logic": "IF total >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"rules_never_triggered_count\":\\s*(?P<never_triggered>\\d+)",
-            "logic": "IF never_triggered <= total THEN PASS"
-          }
-        ],
-        "solution_capabilities": [],
-        "controls": [
-          "IAM-06",
-          "MLA-01",
-          "MLA-02"
-        ]
-      },
-      "sentinelone_activities": {
-        "script_file": "fetchers/sentinelone/sentinelone_activities.py",
-        "name": "SentinelOne Activities",
-        "description": "Retrieve SentinelOne activity events for a set of activity types (FedRAMP list) and summarize activity types and descriptions.",
-        "id": "EVD-S1-ACTIVITY",
-        "instructions": "Script: activityfetcher.py. Calls /web/api/v2.1/activities with activityTypes filter (cursor pagination), aggregates activityType counts and primary descriptions, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "activities",
-          "audit",
-          "sentinelone"
-        ],
-        "validation_rules": [
-          {
-            "id": 1,
-            "regex": "\"total_activities_collected\":\\s*(?P<total>\\d+)",
-            "logic": "IF total >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"activity_type\":\\s*\\{(?P<types>[\\s\\S]*?)\\}",
-            "logic": "IF activity_type object exists THEN PASS"
-          }
-        ],
-        "solution_capabilities": [],
-        "controls": [
-          "MLA-02"
-        ]
-      }
-    }
-  },
       "k8s": {
         "name": "Kubernetes",
         "description": "Kubernetes and EKS-specific evidence collection scripts",
@@ -955,7 +1120,9 @@
               "knowbe4"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Role Based Security Training"
+            ],
             "controls": [
               "CED-02"
             ]
@@ -977,7 +1144,10 @@
               "knowbe4"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Practical Security Training Exercises",
+              "Security Awareness Training"
+            ],
             "controls": [
               "CED-01"
             ]
@@ -999,7 +1169,9 @@
               "knowbe4"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Developer Specific Training"
+            ],
             "controls": []
           },
           "module_based_summary": {
@@ -1051,7 +1223,15 @@
               "security-key"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Least Privilege: Okta",
+              "Multifactor Authentication: Okta IDaaS",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
             "controls": [
               "IAM-01",
               "IAM-05"
@@ -1075,7 +1255,12 @@
               "security-key"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
             "controls": [
               "IAM-03"
             ]
@@ -1099,7 +1284,12 @@
               "oauth"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
             "controls": [
               "IAM-03"
             ]
@@ -1123,7 +1313,17 @@
               "groups"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Just-in-Time Authorization: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
             "controls": [
               "IAM-04"
             ]
@@ -1146,7 +1346,15 @@
               "admins"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Least Privilege: Okta",
+              "Multifactor Authentication: Okta IDaaS",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
             "controls": [
               "IAM-05"
             ]
@@ -1170,7 +1378,9 @@
               "behavior-detection"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Suspicious Activity: Okta"
+            ],
             "controls": [
               "IAM-06"
             ]
@@ -1194,7 +1404,9 @@
               "automation"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Automated Account Management: Okta"
+            ],
             "controls": []
           }
         }
@@ -1222,7 +1434,12 @@
               "testing"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Change Request",
+              "Input Validation",
+              "Security Lifecycle",
+              "Software Development Lifecycle Process"
+            ],
             "controls": [
               "CMT-01",
               "CMT-03",
@@ -1249,7 +1466,11 @@
               "yaml"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Change Request",
+              "Software Development Lifecycle Process"
+            ],
             "controls": [
               "CMT-01",
               "CMT-02",
@@ -1275,7 +1496,11 @@
               "reviews"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Change Request",
+              "Software Development Lifecycle Process"
+            ],
             "controls": [
               "CMT-01",
               "CMT-02",
@@ -1365,7 +1590,13 @@
               "infrastructure"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Code and Configuration Evaluation",
+              "Configuration Checks: CIS L2"
+            ],
             "controls": [
               "CMT-02",
               "CNA-04",
@@ -1396,7 +1627,13 @@
               "manifests"
             ],
             "validation_rules": [],
-            "solution_capabilities": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Code and Configuration Evaluation",
+              "Configuration Checks: CIS L2"
+            ],
             "controls": [
               "CMT-02",
               "CNA-04",
