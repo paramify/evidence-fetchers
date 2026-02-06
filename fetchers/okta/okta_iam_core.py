@@ -2875,7 +2875,7 @@ class OktaIAMEvidenceFetcher:
         }
         evidence["data"]["last_activity_distribution"] = last_activity_distribution
         evidence["data"]["account_health_metrics"] = {
-            "total_active_accounts": total_active_user_accounts,
+            "total_active_user_accounts": total_active_user_accounts,
             "total_active_accounts_including_service": len(active_users),
             "service_accounts_count": len(service_accounts),
             "accounts_active_recently": active_recently,
