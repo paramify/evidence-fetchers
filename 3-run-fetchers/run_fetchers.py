@@ -300,15 +300,38 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
     """Run a single fetcher script."""
     print(f"Running {script_name}...")
     
-    # Determine script path - use script_file from catalog if available
+    # Determine script path - use script_file from script_data if available
+    script_path: Optional[Path] = None
+    
     if "script_file" in script_data:
         script_path = Path(script_data["script_file"])
     else:
-        # Fallback to constructing from script name
-        service = script_data.get('service', 'aws').lower()
-        script_path = Path("fetchers") / service / f"{script_name}.sh"
-        if not script_path.exists():
-            script_path = Path("fetchers") / service / f"{script_name}.py"
+        # Try to load from catalog to get the script_file (mirrors run_fetcher_instance logic)
+        catalog_path = Path("1-select-fetchers/evidence_fetchers_catalog.json")
+        if catalog_path.exists():
+            try:
+                catalog = load_json_file(str(catalog_path))
+                # Support both new catalog structure (evidence_fetchers_catalog.categories)
+                # and legacy structure (evidence_fetchers)
+                if "evidence_fetchers_catalog" in catalog and "categories" in catalog["evidence_fetchers_catalog"]:
+                    for category_name, category_data in catalog["evidence_fetchers_catalog"]["categories"].items():
+                        if "scripts" in category_data and script_name in category_data["scripts"]:
+                            if "script_file" in category_data["scripts"][script_name]:
+                                script_path = Path(category_data["scripts"][script_name]["script_file"])
+                                break
+                if script_path is None and "evidence_fetchers" in catalog and script_name in catalog["evidence_fetchers"]:
+                    if "script_file" in catalog["evidence_fetchers"][script_name]:
+                        script_path = Path(catalog["evidence_fetchers"][script_name]["script_file"])
+            except Exception:
+                # If catalog loading or parsing fails, fall back to constructed paths
+                pass
+        
+        # Fallback to constructing from script name if catalog lookup failed
+        if script_path is None or not script_path.exists():
+            service = script_data.get('service', 'aws').lower()
+            script_path = Path("fetchers") / service / f"{script_name}.sh"
+            if not script_path.exists():
+                script_path = Path("fetchers") / service / f"{script_name}.py"
     
     if not script_path.exists():
         print(f"  ✗ Script not found: {script_path}")

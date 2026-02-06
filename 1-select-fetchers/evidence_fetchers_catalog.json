@@ -1,13 +1,8 @@
 {
   "evidence_fetchers_catalog": {
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "Complete catalog of all available evidence fetcher scripts",
-    "last_updated": "2025-01-15",
-    "metadata": {
-      "version": "1.0.0",
-      "description": "Complete catalog of all available evidence fetcher scripts",
-      "last_updated": "2025-01-15"
-    },
+    "last_updated": "2025-02-06",
     "categories": {
       "aws": {
         "name": "Amazon Web Services",
