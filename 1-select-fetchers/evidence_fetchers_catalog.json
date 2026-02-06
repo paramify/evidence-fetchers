@@ -1,12 +1,15 @@
 {
   "evidence_fetchers_catalog": {
     "version": "0.1.0",
-    "description": "Complete catalog of all available evidence fetcher scripts",
+    "description": "Catalog of all available evidence fetcher scripts",
     "last_updated": "2025-02-06",
     "categories": {
       "aws": {
         "name": "Amazon Web Services",
         "description": "AWS-specific evidence collection scripts",
+        "access_method": "AWS CLI via AWS SSO/read-only IAM role",
+        "access_method_description": "The evidence fetcher scripts use AWS CLI which must be installed and configured with a read-only AWS SSO/read-only IAM role.",
+        "logo": "fetchers/logos/aws.svg",
         "scripts": {
           "auto_scaling_high_availability": {
             "script_file": "fetchers/aws/auto_scaling_high_availability.sh",
@@ -22,7 +25,13 @@
               "autoscaling",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones"
+            ],
+            "controls": [
+              "CNA-06"
+            ]
           },
           "aws_component_ssl_enforcement": {
             "script_file": "fetchers/aws/aws_component_ssl_enforcement_status.sh",
@@ -40,7 +49,7 @@
               "rds",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               {
                 "id": 1,
                 "regex": "\"s3_total\":\\s*(?P<s3_total>\\d+)[\\s\\S]*?\"s3_ssl_enforced\":\\s*(?P<s3_ssl_enforced>\\d+)",
@@ -51,7 +60,9 @@
                 "regex": "\"rds_total\":\\s*(?P<rds_total>\\d+)[\\s\\S]*?\"rds_ssl_enforced\":\\s*(?P<rds_ssl_enforced>\\d+)",
                 "logic": "IF rds_total == rds_ssl_enforced THEN PASS"
               }
-            ]
+            ],
+            "solution_capabilities": [],
+            "controls": []
           },
           "aws_config_conformance_packs": {
             "script_file": "fetchers/aws/aws_config_conformance_packs.sh",
@@ -67,7 +78,9 @@
               "compliance",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "aws_config_monitoring": {
             "script_file": "fetchers/aws/aws_config_monitoring.sh",
@@ -83,7 +96,9 @@
               "monitoring",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "backup_recovery_high_availability": {
             "script_file": "fetchers/aws/backup_recovery_high_availability.sh",
@@ -99,7 +114,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "backup_validation": {
             "script_file": "fetchers/aws/backup_validation.sh",
@@ -115,7 +132,9 @@
               "validation",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "block_storage_encryption_status": {
             "script_file": "fetchers/aws/block_storage_encryption_status.sh",
@@ -133,9 +152,11 @@
               "efs",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"Encrypted\":\\s*true"
-            ]
+            ],
+            "solution_capabilities": [],
+            "controls": []
           },
           "cloudwatch_high_availability": {
             "script_file": "fetchers/aws/cloudwatch_high_availability.sh",
@@ -152,7 +173,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "cloudtrail_configuration": {
             "script_file": "fetchers/aws/cloudtrail_configuration.sh",
@@ -170,7 +193,9 @@
               "compliance",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "database_high_availability": {
             "script_file": "fetchers/aws/database_high_availability.sh",
@@ -188,7 +213,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "detect_new_aws_resource": {
             "script_file": "fetchers/aws/detect_new_aws_resource.sh",
@@ -206,7 +233,9 @@
               "sns",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "efs_high_availability": {
             "script_file": "fetchers/aws/efs_high_availability.sh",
@@ -223,7 +252,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "eks_high_availability": {
             "script_file": "fetchers/aws/eks_high_availability.sh",
@@ -240,7 +271,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "eks_least_privilege": {
             "script_file": "fetchers/aws/eks_least_privilege.sh",
@@ -258,7 +291,9 @@
               "rbac",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "guard_duty": {
             "script_file": "fetchers/aws/guard_duty.sh",
@@ -275,7 +310,9 @@
               "guardduty",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "iam_identity_center": {
             "script_file": "fetchers/aws/iam_identity_center.sh",
@@ -292,7 +329,9 @@
               "sso",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "iam_policies": {
             "script_file": "fetchers/aws/iam_policies.sh",
@@ -309,7 +348,9 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "iam_roles": {
             "script_file": "fetchers/aws/iam_roles.sh",
@@ -326,7 +367,9 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "iam_users_groups": {
             "script_file": "fetchers/aws/iam_users_groups.sh",
@@ -344,7 +387,9 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "kms_key_rotation": {
             "script_file": "fetchers/aws/kms_key_rotation.sh",
@@ -361,7 +406,9 @@
               "key-rotation",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "load_balancer_encryption_status": {
             "script_file": "fetchers/aws/load_balancer_encryption_status.sh",
@@ -378,9 +425,11 @@
               "ssl",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"encrypted\":\\s*true"
-            ]
+            ],
+            "solution_capabilities": [],
+            "controls": []
           },
           "load_balancer_high_availability": {
             "script_file": "fetchers/aws/load_balancer_high_availability.sh",
@@ -396,7 +445,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "network_resilience_high_availability": {
             "script_file": "fetchers/aws/network_resilience_high_availability.sh",
@@ -413,7 +464,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "rds_encryption_status": {
             "script_file": "fetchers/aws/rds_encryption_status.sh",
@@ -430,9 +483,11 @@
               "database",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"StorageEncrypted\":\\s*true"
-            ]
+            ],
+            "solution_capabilities": [],
+            "controls": []
           },
           "route53_high_availability": {
             "script_file": "fetchers/aws/route53_high_availability.sh",
@@ -449,7 +504,9 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "s3_encryption_status": {
             "script_file": "fetchers/aws/s3_encryption_status.sh",
@@ -466,10 +523,12 @@
               "storage",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"ServerSideEncryptionConfiguration\"",
               "\"ApplyServerSideEncryptionByDefault\""
-            ]
+            ],
+            "solution_capabilities": [],
+            "controls": []
           },
           "security_groups": {
             "script_file": "fetchers/aws/security_groups.sh",
@@ -486,7 +545,9 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "waf_all_rules": {
             "script_file": "fetchers/aws/waf_all_rules.sh",
@@ -503,7 +564,9 @@
               "web-application-firewall",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "waf_dos_rules": {
             "script_file": "fetchers/aws/waf_DoS_rules.sh",
@@ -520,15 +583,20 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
-  "sentinelone": {
-    "name": "SentinelOne",
-    "description": "SentinelOne-specific evidence collection scripts and fetchers for users, agents, XDR assets, cloud detection rules, and activities.",
-    "scripts": {
-      "sentinelone_user_config": {
+      "sentinelone": {
+        "name": "SentinelOne",
+        "description": "SentinelOne-specific evidence collection scripts and fetchers for users, agents, XDR assets, cloud detection rules, and activities.",
+        "access_method": "SentinelOne API via API Token",
+        "access_method_description": "The evidence fetcher scripts use the SentinelOne REST API which requires SENTINELONE_API_URL and SENTINELONE_API_TOKEN environment variables. Authentication uses Api Token authorization header.",
+        "logo": "",
+        "scripts": {
+          "sentinelone_user_config": {
         "script_file": "fetchers/sentinelone/sentinelone_user_config.py",
         "name": "SentinelOne User Config",
         "description": "Retrieve SentinelOne user records and produce summary analysis (admin counts, 2FA, last login).",
@@ -543,7 +611,7 @@
           "iam",
           "sentinelone"
         ],
-        "validationRules": [
+        "validation_rules": [
           {
             "id": 1,
             "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
@@ -554,9 +622,10 @@
             "regex": "\"admin_user_count\":\\s*(?P<admin_user_count>\\d+)",
             "logic": "IF admin_user_count <= record_count THEN PASS"
           }
-        ]
+        ],
+        "solution_capabilities": [],
+        "controls": []
       },
-
       "sentinelone_xdr_assets": {
         "script_file": "fetchers/sentinelone/sentinelone_xdr_assets.py",
         "name": "SentinelOne XDR Assets",
@@ -572,7 +641,7 @@
           "xdr",
           "sentinelone"
         ],
-        "validationRules": [
+        "validation_rules": [
           {
             "id": 1,
             "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
@@ -583,9 +652,10 @@
             "regex": "\"healthy_infection_status_count\":\\s*(?P<healthy>\\d+)",
             "logic": "IF healthy <= record_count THEN PASS"
           }
-        ]
+        ],
+        "solution_capabilities": [],
+        "controls": []
       },
-
       "sentinelone_agents": {
         "script_file": "fetchers/sentinelone/sentinelone_agents.py",
         "name": "SentinelOne Agents",
@@ -601,7 +671,7 @@
           "endpoints",
           "sentinelone"
         ],
-        "validationRules": [
+        "validation_rules": [
           {
             "id": 1,
             "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
@@ -612,9 +682,10 @@
             "regex": "\"reported_agent_count\":\\s*(?P<reported>\\d+)",
             "logic": "IF reported_agent_count is null or reported_agent_count >= 0 THEN PASS (optional count may be missing)"
           }
-        ]
+        ],
+        "solution_capabilities": [],
+        "controls": []
       },
-
       "sentinelone_cloud_detection_rules": {
         "script_file": "fetchers/sentinelone/sentinelone_cloud_detection_rules.py",
         "name": "SentinelOne Cloud Detection Rules",
@@ -631,7 +702,7 @@
           "cloud",
           "sentinelone"
         ],
-        "validationRules": [
+        "validation_rules": [
           {
             "id": 1,
             "regex": "\"total_custom_detection_rules\":\\s*(?P<total>\\d+)",
@@ -642,9 +713,10 @@
             "regex": "\"rules_never_triggered_count\":\\s*(?P<never_triggered>\\d+)",
             "logic": "IF never_triggered <= total THEN PASS"
           }
-        ]
+        ],
+        "solution_capabilities": [],
+        "controls": []
       },
-
       "sentinelone_activities": {
         "script_file": "fetchers/sentinelone/sentinelone_activities.py",
         "name": "SentinelOne Activities",
@@ -660,7 +732,7 @@
           "audit",
           "sentinelone"
         ],
-        "validationRules": [
+        "validation_rules": [
           {
             "id": 1,
             "regex": "\"total_activities_collected\":\\s*(?P<total>\\d+)",
@@ -671,13 +743,18 @@
             "regex": "\"activity_type\":\\s*\\{(?P<types>[\\s\\S]*?)\\}",
             "logic": "IF activity_type object exists THEN PASS"
           }
-        ]
+        ],
+        "solution_capabilities": [],
+        "controls": []
       }
     }
   },
       "k8s": {
         "name": "Kubernetes",
         "description": "Kubernetes and EKS-specific evidence collection scripts",
+        "access_method": "kubectl CLI",
+        "access_method_description": "The evidence fetcher scripts use kubectl which must be installed and configured for your Kubernetes cluster. For EKS clusters, use 'aws eks update-kubeconfig' to configure kubectl.",
+        "logo": "",
         "scripts": {
           "eks_microservice_segmentation": {
             "script_file": "fetchers/k8s/eks_microservice_segmentation.sh",
@@ -696,7 +773,9 @@
               "segmentation",
               "network-policies"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "eks_pod_inventory": {
             "script_file": "fetchers/k8s/eks_pod_inventory.sh",
@@ -714,7 +793,9 @@
               "inventory",
               "security"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "kubectl_security": {
             "script_file": "fetchers/k8s/kubectl_security.sh",
@@ -732,13 +813,18 @@
               "clusterroles",
               "network-policies"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "knowbe4": {
         "name": "KnowBe4",
         "description": "KnowBe4 security awareness training evidence collection scripts",
+        "access_method": "KnowBe4 API via API Token",
+        "access_method_description": "The evidence fetcher scripts use the KnowBe4 REST API which requires KNOWBE4_API_KEY environment variable. Note: KnowBe4 API access is only available for Platinum and Diamond customers. Authentication uses Bearer token authorization.",
+        "logo": "",
         "scripts": {
           "high_risk_training": {
             "script_file": "fetchers/knowbe4/high_risk_training.sh",
@@ -756,7 +842,9 @@
               "role-based",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "security_awareness_training": {
             "script_file": "fetchers/knowbe4/security_awareness_training.sh",
@@ -774,7 +862,9 @@
               "compliance",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "developer_specific_training": {
             "script_file": "fetchers/knowbe4/developer_specific_training.sh",
@@ -792,7 +882,9 @@
               "compliance",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "module_based_summary": {
             "script_file": "fetchers/knowbe4/module_based_summary.sh",
@@ -810,13 +902,18 @@
               "compliance",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "okta": {
         "name": "Okta",
         "description": "Okta identity and access management evidence collection scripts",
+        "access_method": "Okta API via API Token",
+        "access_method_description": "The evidence fetcher scripts use the Okta REST API which requires OKTA_API_TOKEN and OKTA_ORG_URL environment variables. Authentication uses API Token authorization header.",
+        "logo": "",
         "scripts": {
           "okta_phishing_resistant_mfa": {
             "script_file": "fetchers/okta/okta_phishing_resistant_mfa.py",
@@ -837,7 +934,9 @@
               "webauthn",
               "security-key"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "okta_passwordless_authentication": {
             "script_file": "fetchers/okta/okta_passwordless_authentication.py",
@@ -856,7 +955,9 @@
               "passwordless",
               "security-key"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "okta_non_user_accounts_authentication": {
             "script_file": "fetchers/okta/okta_non_user_accounts_authentication.py",
@@ -876,7 +977,9 @@
               "api-tokens",
               "oauth"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "okta_just_in_time_authorization": {
             "script_file": "fetchers/okta/okta_just_in_time_authorization.py",
@@ -896,7 +999,9 @@
               "conditional-access",
               "groups"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "okta_least_privilege": {
             "script_file": "fetchers/okta/okta_least_privilege.py",
@@ -915,7 +1020,9 @@
               "least-privilege",
               "admins"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "okta_suspicious_activity_management": {
             "script_file": "fetchers/okta/okta_suspicious_activity_management.py",
@@ -935,7 +1042,7 @@
               "monitoring",
               "behavior-detection"
             ],
-            "validationRules": []
+            "validation_rules": []
           },
           "okta_automated_account_management": {
             "script_file": "fetchers/okta/okta_automated_account_management.py",
@@ -955,13 +1062,18 @@
               "lifecycle",
               "automation"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "gitlab": {
         "name": "GitLab",
         "description": "GitLab evidence collection scripts",
+        "access_method": "GitLab API via Access Token",
+        "access_method_description": "The evidence fetcher scripts use the GitLab REST API which requires project access toekns: GITLAB_PROJECT_*_API_ACCESS_TOKEN and GITLAB_PROJECT_*_URL environment variables for multi-project support. Authentication uses Bearer token with Project Access Tokens scoped to individual projects. Read permissions are required.",
+        "logo": "",
         "scripts": {
           "gitlab_ci_cd_pipeline_config": {
             "script_file": "fetchers/gitlab/gitlab_ci_cd_pipeline_config.py",
@@ -978,7 +1090,9 @@
               "security-scanning",
               "testing"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "gitlab_project_summary": {
             "script_file": "fetchers/gitlab/gitlab_project_summary.py",
@@ -996,7 +1110,9 @@
               "docker",
               "yaml"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "gitlab_merge_request_summary": {
             "script_file": "fetchers/gitlab/gitlab_merge_request_summary.py",
@@ -1013,13 +1129,18 @@
               "approvals",
               "reviews"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "rippling": {
         "name": "Rippling",
         "description": "Rippling HR evidence collection scripts",
+        "access_method": "Rippling API via Bearer Token",
+        "access_method_description": "The evidence fetcher scripts use the Rippling REST API which requires RIPPLING_API_TOKEN environment variable. Authentication uses Bearer token authorization.",
+        "logo": "",
         "scripts": {
           "rippling_current_employees": {
             "script_file": "fetchers/rippling/rippling_current_employees.py",
@@ -1038,7 +1159,9 @@
               "current",
               "completeness"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "rippling_all_employees": {
             "script_file": "fetchers/rippling/rippling_all_employees.py",
@@ -1057,13 +1180,18 @@
               "terminated",
               "completeness"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "checkov": {
         "name": "Checkov Security Scanning",
         "description": "Infrastructure as Code security compliance scanning with Checkov",
+        "access_method": "Checkov CLI with optional GitLab API",
+        "access_method_description": "The evidence fetcher scripts use Checkov CLI tool which must be installed via 'pip install checkov'. For GitLab repository scanning, GitLab API access tokens are required (GITLAB_PROJECT_*_API_ACCESS_TOKEN). For local or URL-based scanning, no additional authentication is needed.",
+        "logo": "",
         "scripts": {
           "checkov_terraform": {
             "script_file": "fetchers/checkov/checkov_terraform.sh",
@@ -1084,7 +1212,9 @@
               "iac",
               "infrastructure"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "checkov_kubernetes": {
             "script_file": "fetchers/checkov/checkov_kubernetes.sh",
@@ -1105,7 +1235,9 @@
               "k8s",
               "manifests"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       }
