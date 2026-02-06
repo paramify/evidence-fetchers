@@ -55,8 +55,13 @@ fi
 OUTPUT_DIR="$3"
 
 # Component identifier
-COMPONENT="role_specific_training"
+COMPONENT="high_risk_training"
 UNIQUE_JSON="$OUTPUT_DIR/$COMPONENT.json"
+
+# Role specific Campaigns
+ROLE_SPECIFIC_CAMPAIGNS=(
+  "Privileged Users Training (Before CloudOps Access)"
+)
 
 # ANSI color codes for better output readability
 GREEN='\033[0;32m'
@@ -77,6 +82,7 @@ echo '{
             "total_high_risk_users": 0,
             "completed_training": 0,
             "in_progress": 0,
+            "past_due": 0,
             "not_started": 0,
             "completion_rate": 0,
             "total_campaigns": 0,
@@ -84,8 +90,6 @@ echo '{
         }
     }
 }' > "$UNIQUE_JSON"
-
-
 
 # Check for KnowBe4 API key
 if [ -z "$KNOWBE4_API_KEY" ]; then
@@ -115,13 +119,44 @@ make_api_call() {
         echo "{}"
         return 1
     fi
+
     echo "$response"
     return 0
 }
 
+# Function to fetch all pages from a paginated KnowBe4 endpoint
+make_paginated_api_call() {
+    local endpoint="$1"
+    local page=1
+    local all_results="[]"
+    local separator
+
+    if [[ "$endpoint" == *\?* ]]; then
+        separator="&"
+    else
+        separator="?"
+    fi
+
+    while true; do
+        response=$(make_api_call "${endpoint}${separator}page=${page}")
+
+        count=$(echo "$response" | jq 'length')
+        if [ "$count" -eq 0 ]; then
+            break
+        fi
+
+        all_results=$(jq -s '.[0] + .[1]' \
+            <(echo "$all_results") <(echo "$response"))
+
+        page=$((page + 1))
+    done
+
+    echo "$all_results"
+}
+
 # Fetch all users
 echo -e "${BLUE}Fetching users from KnowBe4...${NC}"
-users_response=$(make_api_call "users")
+users_response=$(make_paginated_api_call "users")
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to fetch users${NC}" >&2
     exit 1
@@ -129,7 +164,7 @@ fi
 
 # Fetch all training campaigns
 echo -e "${BLUE}Fetching training campaigns...${NC}"
-campaigns_response=$(make_api_call "training/campaigns")
+campaigns_response=$(make_paginated_api_call "training/campaigns")
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to fetch campaigns${NC}" >&2
     exit 1
@@ -137,7 +172,7 @@ fi
 
 # Fetch all training enrollments
 echo -e "${BLUE}Fetching training enrollments...${NC}"
-enrollments_response=$(make_api_call "training/enrollments?exclude_archived_users=true&include_campaign_id=true")
+enrollments_response=$(make_paginated_api_call "training/enrollments?exclude_archived_users=true&include_campaign_id=true")
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to fetch enrollments${NC}" >&2
     exit 1
@@ -145,15 +180,20 @@ fi
 
 # Fetch all groups
 echo -e "${BLUE}Fetching groups...${NC}"
-groups_response=$(make_api_call "groups")
+groups_response=$(make_paginated_api_call "groups")
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to fetch groups${NC}" >&2
     exit 1
 fi
 
-# Store role-specific campaigns (filter for relevant campaign names)
-echo "$campaigns_response" | jq -c '.[] | select(.name | contains("role-specific") or contains("Privileged") or contains("Cloud") or contains("DevOps"))' | while read -r campaign; do
-    jq --argjson campaign "$campaign" '.results.role_specific_campaigns += [$campaign]' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+# Store role-specific campaigns (exact match from ROLE_SPECIFIC_CAMPAIGNS)
+for campaign_name in "${ROLE_SPECIFIC_CAMPAIGNS[@]}"; do
+    echo "$campaigns_response" | jq -c --arg name "$campaign_name" \
+      '.[] | select(.name == $name)' | while read -r campaign; do
+        jq --argjson campaign "$campaign" \
+          '.results.role_specific_campaigns += [$campaign]' \
+          "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+    done
 done
 
 # Identify high-risk groups and users
@@ -184,23 +224,38 @@ done < <(echo "$groups_response" | jq -c '.[]')
 for user_email in "${high_risk_users[@]}"; do
     user=$(echo "$users_response" | jq -c --arg email "$user_email" '.[] | select(.email == $email)')
     user_id=$(echo "$user" | jq -r '.id')
-    # Get user's enrollments for role-specific campaigns as a JSON array
-    user_enrollments=$(echo "$enrollments_response" | jq -c --arg user_id "$user_id" '.[] | select(.user.id == ($user_id|tonumber) and (.campaign_name | contains("role-specific") or contains("Privileged") or contains("Cloud") or contains("DevOps")))' | jq -s '.')
-    # Initialize user's training status
+
+    # Get user's enrollments for role-specific campaigns
+    campaign_filter=$(printf ' or .campaign_name == "%s"' "${ROLE_SPECIFIC_CAMPAIGNS[@]}")
+    campaign_filter=${campaign_filter# or }
+
+    user_enrollments=$(echo "$enrollments_response" | jq -c \
+    --arg user_id "$user_id" \
+    ".[] | select(
+        .user.id == (\$user_id|tonumber)
+        and ( $campaign_filter )
+    )" | jq -s '.')
+
+    # Determine user's training status
     user_status="not_started"
     if [ "$user_enrollments" != "[]" ]; then
         # Add enrollments to the results, removing policy_acknowledged
         echo "$user_enrollments" | jq -c '.[]' | while read -r enrollment; do
             clean_enrollment=$(echo "$enrollment" | jq 'del(.policy_acknowledged)')
-            jq --argjson enrollment "$clean_enrollment" '.results.enrollments += [$enrollment]' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+            jq --argjson enrollment "$clean_enrollment" \
+            '.results.enrollments += [$enrollment]' \
+            "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
         done
-        # Check if user has completed any role-specific training
-        if echo "$user_enrollments" | jq -e 'any(.status == "Passed")' >/dev/null 2>&1; then
+        
+        if echo "$user_enrollments" | jq -e 'all(.status == "Passed")' >/dev/null 2>&1; then
             user_status="completed"
+        elif echo "$user_enrollments" | jq -e 'any(.status == "Past Due")' >/dev/null 2>&1; then
+            user_status="past_due"
         elif echo "$user_enrollments" | jq -e 'any(.status == "In Progress")' >/dev/null 2>&1; then
             user_status="in_progress"
         fi
     fi
+
     # Update user's training status
     jq --arg email "$user_email" \
        --arg status "$user_status" \
@@ -212,6 +267,7 @@ done
 total_high_risk_users=$(jq '.results.high_risk_users | length' "$UNIQUE_JSON")
 completed_training=$(jq '.results.user_training_status | to_entries | map(select(.value == "completed")) | length' "$UNIQUE_JSON")
 in_progress=$(jq '.results.user_training_status | to_entries | map(select(.value == "in_progress")) | length' "$UNIQUE_JSON")
+past_due=$(jq '.results.user_training_status | to_entries | map(select(.value == "past_due")) | length' "$UNIQUE_JSON")
 not_started=$(jq '.results.user_training_status | to_entries | map(select(.value == "not_started")) | length' "$UNIQUE_JSON")
 total_campaigns=$(jq '.results.role_specific_campaigns | length' "$UNIQUE_JSON")
 total_groups=$(jq '.results.high_risk_groups | length' "$UNIQUE_JSON")
@@ -224,6 +280,7 @@ fi
 jq --arg total "$total_high_risk_users" \
    --arg completed "$completed_training" \
    --arg in_progress "$in_progress" \
+   --arg past_due "$past_due" \
    --arg not_started "$not_started" \
    --arg rate "$completion_rate" \
    --arg campaigns "$total_campaigns" \
@@ -232,15 +289,12 @@ jq --arg total "$total_high_risk_users" \
        "total_high_risk_users": ($total|tonumber),
        "completed_training": ($completed|tonumber),
        "in_progress": ($in_progress|tonumber),
+       "past_due": ($past_due|tonumber),
        "not_started": ($not_started|tonumber),
        "completion_rate": ($rate|tonumber),
        "total_campaigns": ($campaigns|tonumber),
        "total_groups": ($groups|tonumber)
    }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
-
-
-
-
 
 # Generate summary
 echo -e "\n${GREEN}Validation Summary:${NC}"
@@ -249,6 +303,7 @@ echo -e "Total High-Risk Users: $total_high_risk_users"
 echo -e "Total Role-Specific Campaigns: $total_campaigns"
 echo -e "Completed Training: $completed_training"
 echo -e "In Progress: $in_progress"
+echo -e "Past Due: $past_due"
 echo -e "Not Started: $not_started"
 echo -e "Completion Rate: ${completion_rate}%"
 
