@@ -224,15 +224,24 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     if "script_file" in script_data:
         script_path = Path(script_data["script_file"])
     else:
-        # Try to load from catalog
+        # Try to load from catalog to get the script_file (mirrors run_fetcher_script logic)
         catalog_path = Path("1-select-fetchers/evidence_fetchers_catalog.json")
         if catalog_path.exists():
             try:
                 catalog = load_json_file(str(catalog_path))
-                if "evidence_fetchers" in catalog and script_name in catalog["evidence_fetchers"]:
+                # Support both new catalog structure (evidence_fetchers_catalog.categories)
+                # and legacy structure (evidence_fetchers)
+                if "evidence_fetchers_catalog" in catalog and "categories" in catalog["evidence_fetchers_catalog"]:
+                    for category_name, category_data in catalog["evidence_fetchers_catalog"]["categories"].items():
+                        if "scripts" in category_data and script_name in category_data["scripts"]:
+                            if "script_file" in category_data["scripts"][script_name]:
+                                script_path = Path(category_data["scripts"][script_name]["script_file"])
+                                break
+                if script_path is None and "evidence_fetchers" in catalog and script_name in catalog["evidence_fetchers"]:
                     if "script_file" in catalog["evidence_fetchers"][script_name]:
                         script_path = Path(catalog["evidence_fetchers"][script_name]["script_file"])
-            except:
+            except Exception:
+                # If catalog loading or parsing fails, fall back to constructed paths
                 pass
         
         # Fallback to constructing from script name

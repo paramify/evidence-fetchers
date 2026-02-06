@@ -160,7 +160,7 @@ def generate_evidence_sets(catalog: dict, customer_config: dict) -> dict:
                 "description": script_info["description"],
                 "service": category_name.upper(),
                 "instructions": script_info["instructions"],
-                "validationRules": script_info["validationRules"],
+                "validationRules": script_info.get("validation_rules", []),
                 # "expected_outcome" field removed
             }
             

@@ -144,7 +144,7 @@ def generate_evidence_sets(catalog: Dict[str, Any], customer_config: Dict[str, A
             script_info = category_scripts[script_name]
             
             # Process validation rules and escape regex patterns
-            processed_validation_rules = process_validation_rules(script_info.get("validationRules", []))
+            processed_validation_rules = process_validation_rules(script_info.get("validation_rules", []))
             
             # Convert instructions to rich text format
             rich_text_instructions = convert_instructions_to_rich_text(
