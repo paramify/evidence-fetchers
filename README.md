@@ -29,18 +29,35 @@ python main.py
 - **Paramify Integration**: Automatic upload of evidence sets and evidence files
 - **Timestamped Storage**: All evidence stored in organized, timestamped directories
 
+## Supported Services
+
+<div align="center">
+
+<img src="fetchers/logos/aws.svg" alt="AWS" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/sentinelone.svg" alt="SentinelOne" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/kubernetes.svg" alt="Kubernetes" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/knowbe4.svg" alt="KnowBe4" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/okta.svg" alt="Okta" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/gitlab.svg" alt="GitLab" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/rippling.svg" alt="Rippling" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/checkov.png" alt="Checkov" width="40" height="40" style="margin: 5px;">
+
+</div>
+
 ## Directory Structure
 
 ```
 evidence-fetchers/
-├── main.py                    # Main menu system
-├── fetchers/                  # Evidence fetcher scripts
+├── main.py                   # Main menu system
+├── fetchers/                 # Evidence fetcher scripts
 │   ├── aws/                  # AWS scripts (29 available)
-│   ├── gitlab/               # GitLab scripts (3 available)
+│   ├── sentinelone/          # SentinelOne scripts (5 available)
 │   ├── k8s/                  # Kubernetes scripts (3 available)
-│   ├── knowbe4/              # KnowBe4 scripts (2 available)
-│   ├── okta/                 # Okta scripts (9 available)
-│   └── rippling/             # Rippling scripts (2 available)
+│   ├── knowbe4/              # KnowBe4 scripts (4 available)
+│   ├── okta/                 # Okta scripts (7 available)
+│   ├── gitlab/               # GitLab scripts (3 available)
+│   ├── rippling/             # Rippling scripts (2 available)
+│   └── checkov/              # Checkov scripts (2 available)
 ├── 0-prerequisites/          # Setup and dependencies
 ├── 1-select-fetchers/        # Fetcher selection
 ├── 2-create-evidence-sets/   # Create evidence sets in Paramify
@@ -66,7 +83,7 @@ AWS_REGION=us-east-1
 KNOWBE4_API_KEY=your_knowbe4_api_key
 OKTA_API_TOKEN=your_okta_api_token
 OKTA_ORG_URL=https://your-org.okta.com
-RIPPLING_API_TOKEN=your_rippling_api_token
+
 ```
 
 ## Dependencies
