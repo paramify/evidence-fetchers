@@ -47,6 +47,7 @@ CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json
 ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
 ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
 DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+NOW_EPOCH=$(date -u +%s)
 
 # Initialize JSON file with metadata
 jq -n \
@@ -82,7 +83,20 @@ if [ $? -eq 0 ] && [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
         backup_retention=$(echo "$instance" | jq -r '.BackupRetentionPeriod')
         backup_window=$(echo "$instance" | jq -r '.PreferredBackupWindow')
         backup_target=$(echo "$instance" | jq -r '.BackupTarget // "region"')
+        
+        # Calculate time that has elapsed since latest restorable point
         latest_restorable=$(echo "$instance" | jq -r '.LatestRestorableTime // "N/A"')
+        latest_restorable_age_seconds=""
+        latest_restorable_age_hours=""
+
+        if [ "$latest_restorable" != "N/A" ] && [ "$latest_restorable" != "null" ]; then
+            latest_epoch=$(date -u -d "$latest_restorable" +%s 2>/dev/null)
+            if [ -n "$latest_epoch" ]; then
+                latest_restorable_age_seconds=$((NOW_EPOCH - latest_epoch))
+                latest_restorable_age_hours=$(awk "BEGIN { printf \"%.2f\", $latest_restorable_age_seconds/3600 }")
+            fi
+        fi
+
         storage_encrypted=$(echo "$instance" | jq -r '.StorageEncrypted')
         deletion_protection=$(echo "$instance" | jq -r '.DeletionProtection')
         kms_key_id=$(echo "$instance" | jq -r '.KmsKeyId // "N/A"')
@@ -112,12 +126,28 @@ if [ $? -eq 0 ] && [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
            --arg window "$backup_window" \
            --arg target "$backup_target" \
            --arg latest "$latest_restorable" \
+           --arg age_seconds "$latest_restorable_age_seconds" \
+           --arg age_hours "$latest_restorable_age_hours" \
            --arg replication "$cross_region_replication" \
            --arg destination "$replication_destination" \
            --arg encrypted "$storage_encrypted" \
            --arg protection "$deletion_protection" \
            --arg kms "$kms_key_id" \
-           '.results += [{"Type": "RDS_Backup", "InstanceId": $instance.DBInstanceIdentifier, "BackupEnabled": ($enabled == "true"), "BackupRetentionPeriod": ($retention|tonumber), "BackupWindow": $window, "BackupTarget": $target, "LatestRestorableTime": $latest, "CrossRegionReplication": ($replication == "true"), "ReplicationDestination": $destination, "StorageEncrypted": ($encrypted == "true"), "DeletionProtection": ($protection == "true"), "KmsKeyId": $kms, "InstanceInfo": $instance}]' \
+           '.results += [{"Type": "RDS_Backup",
+               "InstanceId": $instance.DBInstanceIdentifier,
+               "BackupEnabled": ($enabled == "true"),
+               "BackupRetentionPeriod": ($retention|tonumber),
+               "BackupWindow": $window, "BackupTarget": $target,
+               "LatestRestorableTime": $latest,
+               "LatestRestorableAgeSeconds": ($age_seconds | tonumber?),
+               "LatestRestorableAgeHours": ($age_hours | tonumber?),
+               "CrossRegionReplication": ($replication == "true"),
+               "ReplicationDestination": $destination,
+               "StorageEncrypted": ($encrypted == "true"),
+               "DeletionProtection": ($protection == "true"),
+               "KmsKeyId": $kms,
+               "InstanceInfo": $instance
+            }]' \
            "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
         
     done
@@ -130,11 +160,25 @@ echo -e "${BLUE}2. Validating S3 Backup Configurations...${NC}"
 
 # Get S3 buckets
 s3_buckets=$(aws s3api list-buckets --profile "$PROFILE" --query 'Buckets[*].Name' --output json 2>/dev/null)
+## DEBUG STATEMENTS ##
+echo -e "${YELLOW}Buckets returned by list-buckets:${NC}"
+echo "$s3_buckets" | jq -r '.[]'
+## Specify which buckets you want to include
+buckets_to_include=("aws-cloudtrail-logs-214149890209-afa71cbe"
+    "paramify-gov-prod-s3"
+    "paramify-terraform-state"
+    "paramify-alb-access-logs"
+    "guard-duty-findings-214149890209"
+    "config-bucket-214149890209-us-gov-west-1"
+    "s3-access-logs-bucket-214149890209-us-gov-west-1"
+    "vpc-flow-log-storage-bucket"
+)
 
 if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
     echo -e "${GREEN}Found $(echo "$s3_buckets" | jq -r 'length') S3 buckets${NC}"
     echo "$s3_buckets" | jq -r '.[]' | while read -r bucket_name; do
-        if [ -n "$bucket_name" ]; then
+        
+        if [ -n "$bucket_name" ] && [[ " ${buckets_to_include[@]} " =~ " ${bucket_name} " ]]; then
             echo -e "${BLUE}Processing S3 bucket: $bucket_name${NC}"
             
             # Get bucket versioning status
@@ -186,7 +230,8 @@ if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
                --arg e_enabled "$encryption_enabled" \
                '.results += [{"Type": "S3_Backup", "BucketName": $bucket, "VersioningEnabled": ($v_enabled == "true"), "ReplicationEnabled": ($r_enabled == "true"), "ReplicationDestination": $r_destination, "EncryptionEnabled": ($e_enabled == "true"), "VersioningInfo": $versioning, "ReplicationInfo": $replication, "EncryptionInfo": $encryption}]' \
                "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
-            
+        else
+            echo -e "${YELLOW}Skipping bucket: $bucket_name${NC}"
         fi
     done
 else
