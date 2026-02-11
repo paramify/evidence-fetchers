@@ -49,6 +49,14 @@ ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
 DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 NOW_EPOCH=$(date -u +%s)
 
+## Set an environmental variable for specific s3 buckets to include (Space separated string)
+if [ -n "$BUCKETS_TO_INCLUDE" ]; then
+    buckets_to_include=($BUCKETS_TO_INCLUDE)
+else
+    buckets_to_include=() # If empty, all available buckets will be included in the output
+fi
+
+
 # Initialize JSON file with metadata
 jq -n \
   --arg profile "$PROFILE" \
@@ -78,7 +86,7 @@ rds_instances=$(aws rds describe-db-instances --profile "$PROFILE" --query 'DBIn
 
 if [ $? -eq 0 ] && [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
     echo -e "${GREEN}Found $(echo "$rds_instances" | jq -r 'length') RDS instances${NC}"
-    echo "$rds_instances" | jq -c '.[]' | while read -r instance; do
+    while read -r instance; do
         instance_id=$(echo "$instance" | jq -r '.DBInstanceIdentifier')
         backup_retention=$(echo "$instance" | jq -r '.BackupRetentionPeriod')
         backup_window=$(echo "$instance" | jq -r '.PreferredBackupWindow')
@@ -150,7 +158,7 @@ if [ $? -eq 0 ] && [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
             }]' \
            "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
         
-    done
+    done < <(echo "$rds_instances" | jq -c '.[]')
 else
     echo -e "${YELLOW}No RDS instances found${NC}"
 fi
@@ -163,42 +171,41 @@ s3_buckets=$(aws s3api list-buckets --profile "$PROFILE" --query 'Buckets[*].Nam
 ## DEBUG STATEMENTS ##
 echo -e "${YELLOW}Buckets returned by list-buckets:${NC}"
 echo "$s3_buckets" | jq -r '.[]'
-## Specify which buckets you want to include
-buckets_to_include=("aws-cloudtrail-logs-214149890209-afa71cbe"
-    "paramify-gov-prod-s3"
-    "paramify-terraform-state"
-    "paramify-alb-access-logs"
-    "guard-duty-findings-214149890209"
-    "config-bucket-214149890209-us-gov-west-1"
-    "s3-access-logs-bucket-214149890209-us-gov-west-1"
-    "vpc-flow-log-storage-bucket"
-)
 
 if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
     echo -e "${GREEN}Found $(echo "$s3_buckets" | jq -r 'length') S3 buckets${NC}"
-    echo "$s3_buckets" | jq -r '.[]' | while read -r bucket_name; do
-        
-        if [ -n "$bucket_name" ] && [[ " ${buckets_to_include[@]} " =~ " ${bucket_name} " ]]; then
+    while read -r bucket_name; do
+
+        if [ ${#buckets_to_include[@]} -eq 0 ] || [[ " ${buckets_to_include[@]} " =~ " ${bucket_name} " ]]; then
             echo -e "${BLUE}Processing S3 bucket: $bucket_name${NC}"
             
             # Get bucket versioning status
             versioning_status=$(aws s3api get-bucket-versioning \
                 --profile "$PROFILE" \
                 --bucket "$bucket_name" \
-                --output json 2>/dev/null || echo '{"Status": "NotEnabled"}')
+                --output json 2>/dev/null)
             
             # Get cross-region replication status
             replication_status=$(aws s3api get-bucket-replication \
                 --profile "$PROFILE" \
                 --bucket "$bucket_name" \
-                --output json 2>/dev/null || echo '{}')
+                --output json 2>/dev/null)
             
             # Get bucket encryption
             encryption_status=$(aws s3api get-bucket-encryption \
                 --profile "$PROFILE" \
                 --bucket "$bucket_name" \
-                --output json 2>/dev/null || echo '{}')
+                --output json 2>/dev/null)
             
+            # Ensure valid JSON
+            versioning_status=${versioning_status:-'{}'}
+            replication_status=${replication_status:-'{}'}
+            encryption_status=${encryption_status:-'{}'}
+            # DEBUG
+            echo "DEBUG versioning_status=$versioning_status"
+            echo "DEBUG replication_status=$replication_status"
+            echo "DEBUG encryption_status=$encryption_status"
+
             # Check if versioning is enabled
             versioning_enabled="false"
             if echo "$versioning_status" | jq -e '.Status == "Enabled"' > /dev/null; then
@@ -233,7 +240,7 @@ if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
         else
             echo -e "${YELLOW}Skipping bucket: $bucket_name${NC}"
         fi
-    done
+    done < <(echo "$s3_buckets" | jq -r '.[]')
 else
     echo -e "${YELLOW}No S3 buckets found${NC}"
 fi
@@ -354,4 +361,4 @@ echo -e "${BLUE}AWS Backup Vaults: $total_vaults vaults found${NC}"
 echo -e "${BLUE}Results saved to: $OUTPUT_JSON${NC}"
 echo -e "${BLUE}CSV summary saved to: $OUTPUT_CSV${NC}"
 
-exit 0 
+exit 0
