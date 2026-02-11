@@ -87,10 +87,17 @@ rds_instances=$(aws rds describe-db-instances --profile "$PROFILE" --query 'DBIn
 if [ $? -eq 0 ] && [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
     echo -e "${GREEN}Found $(echo "$rds_instances" | jq -r 'length') RDS instances${NC}"
     while read -r instance; do
+
+
         instance_id=$(echo "$instance" | jq -r '.DBInstanceIdentifier')
         backup_retention=$(echo "$instance" | jq -r '.BackupRetentionPeriod')
         backup_window=$(echo "$instance" | jq -r '.PreferredBackupWindow')
         backup_target=$(echo "$instance" | jq -r '.BackupTarget // "region"')
+
+        ## DEBUG Statements
+        echo -e "${YELLOW}DEBUG: Processing instance raw JSON:${NC} $instance"
+        instance_id=$(echo "$instance" | jq -r '.DBInstanceIdentifier')
+        echo -e "${YELLOW}DEBUG: Instance ID: $instance_id${NC}"
         
         # Calculate time that has elapsed since latest restorable point
         latest_restorable=$(echo "$instance" | jq -r '.LatestRestorableTime // "N/A"')
@@ -126,7 +133,8 @@ if [ $? -eq 0 ] && [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
             # Extract region from ARN (us-gov-east-1)
             replication_destination=$(echo "$replication_arns" | head -1 | sed 's/.*:\([^:]*\):.*$/\1/')
         fi
-        
+        ## DEBUG Statement ##
+        echo -e "${YELLOW}DEBUG: JSON object being appended:${NC}"
         # Add to JSON
         jq --argjson instance "$instance" \
            --arg enabled "$backup_enabled" \
