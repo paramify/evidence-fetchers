@@ -33,14 +33,14 @@ python main.py
 
 <div align="center">
 
-<img src="fetchers/logos/aws.svg" alt="AWS" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/sentinelone.svg" alt="SentinelOne" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/kubernetes.svg" alt="Kubernetes" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/knowbe4.svg" alt="KnowBe4" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/okta.svg" alt="Okta" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/gitlab.svg" alt="GitLab" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/rippling.svg" alt="Rippling" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/checkov.png" alt="Checkov" width="56" height="56" style="margin: 20px;">
+<a href="fetchers/aws/"><img src="fetchers/logos/aws.svg" alt="AWS" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/sentinelone/"><img src="fetchers/logos/sentinelone.svg" alt="SentinelOne" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/k8s/"><img src="fetchers/logos/kubernetes.svg" alt="Kubernetes" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/knowbe4/"><img src="fetchers/logos/knowbe4.svg" alt="KnowBe4" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/okta/"><img src="fetchers/logos/okta.svg" alt="Okta" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/gitlab/"><img src="fetchers/logos/gitlab.svg" alt="GitLab" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/rippling/"><img src="fetchers/logos/rippling.svg" alt="Rippling" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/checkov/"><img src="fetchers/logos/checkov.png" alt="Checkov" width="56" height="56" style="margin: 20px;"></a>
 <img src="fetchers/logos/paramify.svg" alt="Paramify" width="56" height="56" style="margin: 20px;">
 
 </div>
@@ -51,11 +51,11 @@ More evidence fetchers and integrations are coming soon. To request a new fetche
 
 <div align="center">
 
-Planned Fetchers/Integrations
-
 <img src="fetchers/logos/wiz.svg" alt="Wiz" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/crowdstrike.png" alt="CrowdStrike" width="56" height="56" style="margin: 20px;">
+<img src="fetchers/logos/crowdstrike.svg" alt="CrowdStrike" width="56" height="56" style="margin: 20px;">
 <img src="fetchers/logos/qualys.svg" alt="Qualys" width="56" height="56" style="margin: 20px;">
+
+Planned Fetchers/Integrations
 
 </div>
 
