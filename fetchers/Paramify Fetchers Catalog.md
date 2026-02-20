@@ -1,5 +1,5 @@
 # Paramify Fetchers Catalog
-[![Compliance Status](https://img.shields.io/badge/Coverage-84%25_Automated-green)]() [![Fetcher Count](https://img.shields.io/badge/Active_Fetchers-42_Scripts-blue)]() 
+[![Fetcher Count](https://img.shields.io/badge/Active_Fetchers-42_Scripts-blue)]() [![Compliance Status](https://img.shields.io/badge/Coverage-84%25_Automated-green)]()
 
 Welcome to the **Paramify Fetchers Catalog**.
 

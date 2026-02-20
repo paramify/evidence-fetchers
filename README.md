@@ -24,23 +24,38 @@ python main.py
 
 ## Key Features
 
-- **Multi-Instance Support**: Run the same fetcher against multiple AWS regions or GitLab projects
 - **Evidence Sets**: Selectively choose which fetchers to run based on your needs
 - **Paramify Integration**: Automatic upload of evidence sets and evidence files
 - **Timestamped Storage**: All evidence stored in organized, timestamped directories
+- **Multi-Instance Support**: Run the same fetcher against multiple AWS regions or GitLab projects
 
 ## Supported Services
 
 <div align="center">
 
-<img src="fetchers/logos/aws.svg" alt="AWS" width="40" height="40" style="margin: 5px;">
-<img src="fetchers/logos/sentinelone.svg" alt="SentinelOne" width="40" height="40" style="margin: 5px;">
-<img src="fetchers/logos/kubernetes.svg" alt="Kubernetes" width="40" height="40" style="margin: 5px;">
-<img src="fetchers/logos/knowbe4.svg" alt="KnowBe4" width="40" height="40" style="margin: 5px;">
-<img src="fetchers/logos/okta.svg" alt="Okta" width="40" height="40" style="margin: 5px;">
-<img src="fetchers/logos/gitlab.svg" alt="GitLab" width="40" height="40" style="margin: 5px;">
-<img src="fetchers/logos/rippling.svg" alt="Rippling" width="40" height="40" style="margin: 5px;">
-<img src="fetchers/logos/checkov.png" alt="Checkov" width="40" height="40" style="margin: 5px;">
+<img src="fetchers/logos/aws.svg" alt="AWS" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/sentinelone.svg" alt="SentinelOne" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/kubernetes.svg" alt="Kubernetes" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/knowbe4.svg" alt="KnowBe4" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/okta.svg" alt="Okta" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/gitlab.svg" alt="GitLab" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/rippling.svg" alt="Rippling" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/checkov.png" alt="Checkov" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/paramify.svg" alt="Paramify" width="56" height="56" style="margin: 12px;">
+
+</div>
+
+## Coming Soon
+
+More evidence fetchers and integrations are coming soon. To request a new fetcher or upvote which services should be supported next, head to the [Paramify Community Feature Requests](https://support.paramify.com/hc/en-us/community/topics/31851789568275-Feature-Requests). Add a new request or comment and upvote existing ones to help prioritize what we build next.
+
+<div align="center">
+
+<img src="fetchers/logos/wiz.svg" alt="Wiz" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/Crowdstrike.png" alt="CrowdStrike" width="56" height="56" style="margin: 12px;">
+<img src="fetchers/logos/Qualys.svg" alt="Qualys" width="56" height="56" style="margin: 12px;">
+
+Planned Fetchers/Integrations
 
 </div>
 
