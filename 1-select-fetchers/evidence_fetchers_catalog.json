@@ -1,17 +1,15 @@
 {
   "evidence_fetchers_catalog": {
-    "version": "1.0.0",
-    "description": "Complete catalog of all available evidence fetcher scripts",
-    "last_updated": "2025-01-15",
-    "metadata": {
-      "version": "1.0.0",
-      "description": "Complete catalog of all available evidence fetcher scripts",
-      "last_updated": "2025-01-15"
-    },
+    "version": "0.1.0",
+    "description": "Catalog of all available evidence fetcher scripts",
+    "last_updated": "2025-02-06",
     "categories": {
       "aws": {
         "name": "Amazon Web Services",
         "description": "AWS-specific evidence collection scripts",
+        "access_method": "AWS CLI via AWS SSO/read-only IAM role",
+        "access_method_description": "The evidence fetcher scripts use AWS CLI which must be installed and configured with a read-only AWS SSO/read-only IAM role.",
+        "logo": "fetchers/logos/aws.svg",
         "scripts": {
           "auto_scaling_high_availability": {
             "script_file": "fetchers/aws/auto_scaling_high_availability.sh",
@@ -27,7 +25,17 @@
               "autoscaling",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "aws_component_ssl_enforcement": {
             "script_file": "fetchers/aws/aws_component_ssl_enforcement_status.sh",
@@ -45,7 +53,7 @@
               "rds",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               {
                 "id": 1,
                 "regex": "\"s3_total\":\\s*(?P<s3_total>\\d+)[\\s\\S]*?\"s3_ssl_enforced\":\\s*(?P<s3_ssl_enforced>\\d+)",
@@ -56,6 +64,15 @@
                 "regex": "\"rds_total\":\\s*(?P<rds_total>\\d+)[\\s\\S]*?\"rds_ssl_enforced\":\\s*(?P<rds_ssl_enforced>\\d+)",
                 "logic": "IF rds_total == rds_ssl_enforced THEN PASS"
               }
+            ],
+            "solution_capabilities": [
+              "Denial Of Service Protection: Amazon Web Application Firewall",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
+            "controls": [
+              "CNA-02",
+              "CNA-03"
             ]
           },
           "aws_config_conformance_packs": {
@@ -72,7 +89,15 @@
               "compliance",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Configuration Checks: CIS L2"
+            ],
+            "controls": [
+              "SVC-04"
+            ]
           },
           "aws_config_monitoring": {
             "script_file": "fetchers/aws/aws_config_monitoring.sh",
@@ -88,7 +113,15 @@
               "monitoring",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Configuration Checks: CIS L2"
+            ],
+            "controls": [
+              "SVC-04"
+            ]
           },
           "backup_recovery_high_availability": {
             "script_file": "fetchers/aws/backup_recovery_high_availability.sh",
@@ -104,7 +137,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "backup_validation": {
             "script_file": "fetchers/aws/backup_validation.sh",
@@ -120,7 +163,9 @@
               "validation",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "block_storage_encryption_status": {
             "script_file": "fetchers/aws/block_storage_encryption_status.sh",
@@ -138,8 +183,17 @@
               "efs",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"Encrypted\":\\s*true"
+            ],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
+            "controls": [
+              "SVC-02",
+              "SVC-05"
             ]
           },
           "cloudwatch_high_availability": {
@@ -157,7 +211,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "cloudtrail_configuration": {
             "script_file": "fetchers/aws/cloudtrail_configuration.sh",
@@ -175,7 +239,16 @@
               "compliance",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Audit Logging Criteria: Amazon CloudTrail"
+            ],
+            "controls": [
+              "IAM-06",
+              "MLA-01",
+              "MLA-02",
+              "MLA-07"
+            ]
           },
           "database_high_availability": {
             "script_file": "fetchers/aws/database_high_availability.sh",
@@ -193,7 +266,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "detect_new_aws_resource": {
             "script_file": "fetchers/aws/detect_new_aws_resource.sh",
@@ -211,7 +294,19 @@
               "sns",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Contingency Plan Test",
+              "Denial Of Service Protection: Amazon Web Application Firewall",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "efs_high_availability": {
             "script_file": "fetchers/aws/efs_high_availability.sh",
@@ -228,7 +323,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "eks_high_availability": {
             "script_file": "fetchers/aws/eks_high_availability.sh",
@@ -245,7 +350,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "eks_least_privilege": {
             "script_file": "fetchers/aws/eks_least_privilege.sh",
@@ -263,7 +378,9 @@
               "rbac",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "guard_duty": {
             "script_file": "fetchers/aws/guard_duty.sh",
@@ -280,7 +397,14 @@
               "guardduty",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "iam_identity_center": {
             "script_file": "fetchers/aws/iam_identity_center.sh",
@@ -297,7 +421,29 @@
               "sso",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05"
+            ]
           },
           "iam_policies": {
             "script_file": "fetchers/aws/iam_policies.sh",
@@ -314,7 +460,30 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05",
+              "SVC-04"
+            ]
           },
           "iam_roles": {
             "script_file": "fetchers/aws/iam_roles.sh",
@@ -331,7 +500,29 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05"
+            ]
           },
           "iam_users_groups": {
             "script_file": "fetchers/aws/iam_users_groups.sh",
@@ -349,7 +540,30 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Just-in-Time Authorization: Okta",
+              "Least Privilege: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Multifactor Authentication: Okta IDaaS",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
+            "controls": [
+              "IAM-01",
+              "IAM-03",
+              "IAM-04",
+              "IAM-05",
+              "SVC-04"
+            ]
           },
           "kms_key_rotation": {
             "script_file": "fetchers/aws/kms_key_rotation.sh",
@@ -366,7 +580,13 @@
               "key-rotation",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Cryptographic Key Management: Amazon Key Management Service (KMS)"
+            ],
+            "controls": [
+              "SVC-06"
+            ]
           },
           "load_balancer_encryption_status": {
             "script_file": "fetchers/aws/load_balancer_encryption_status.sh",
@@ -383,8 +603,21 @@
               "ssl",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"encrypted\":\\s*true"
+            ],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Denial Of Service Protection: Amazon Web Application Firewall",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
+            "controls": [
+              "CNA-02",
+              "CNA-03",
+              "SVC-02",
+              "SVC-05",
+              "SVC-09"
             ]
           },
           "load_balancer_high_availability": {
@@ -401,7 +634,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "network_resilience_high_availability": {
             "script_file": "fetchers/aws/network_resilience_high_availability.sh",
@@ -418,7 +661,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "rds_encryption_status": {
             "script_file": "fetchers/aws/rds_encryption_status.sh",
@@ -435,8 +688,17 @@
               "database",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"StorageEncrypted\":\\s*true"
+            ],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
+            "controls": [
+              "SVC-02",
+              "SVC-05"
             ]
           },
           "route53_high_availability": {
@@ -454,7 +716,17 @@
               "high-availability",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "AWS GovCloud Availability Zones",
+              "Backup Recovery: Amazon Simple Storage Service (S3)",
+              "Recovery Objectives",
+              "User-Level Data Backup Configuration: Amazon RDS (Postgres)"
+            ],
+            "controls": [
+              "CNA-06",
+              "RPL-03"
+            ]
           },
           "s3_encryption_status": {
             "script_file": "fetchers/aws/s3_encryption_status.sh",
@@ -471,9 +743,18 @@
               "storage",
               "aws"
             ],
-            "validationRules": [
+            "validation_rules": [
               "\"ServerSideEncryptionConfiguration\"",
               "\"ApplyServerSideEncryptionByDefault\""
+            ],
+            "solution_capabilities": [
+              "Authorized Cryptographic Modules",
+              "Protection of Data at Rest",
+              "Protection of Data in Transit"
+            ],
+            "controls": [
+              "SVC-02",
+              "SVC-05"
             ]
           },
           "security_groups": {
@@ -491,7 +772,18 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Policy Enforcement Point Exceptions",
+              "Policy Enforcement Points: Amazon Security Groups"
+            ],
+            "controls": [
+              "CNA-01",
+              "CNA-02",
+              "CNA-03",
+              "CNA-05",
+              "SVC-02"
+            ]
           },
           "waf_all_rules": {
             "script_file": "fetchers/aws/waf_all_rules.sh",
@@ -508,7 +800,18 @@
               "web-application-firewall",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Denial Of Service Protection: Amazon Web Application Firewall"
+            ],
+            "controls": [
+              "CNA-01",
+              "CNA-02",
+              "CNA-03",
+              "CNA-05",
+              "CNA-06",
+              "CNA-07"
+            ]
           },
           "waf_dos_rules": {
             "script_file": "fetchers/aws/waf_DoS_rules.sh",
@@ -525,164 +828,210 @@
               "security",
               "aws"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Denial Of Service Protection: Amazon Web Application Firewall"
+            ],
+            "controls": [
+              "CNA-01",
+              "CNA-02",
+              "CNA-03",
+              "CNA-05",
+              "CNA-06",
+              "CNA-07"
+            ]
           }
         }
       },
-  "sentinelone": {
-    "name": "SentinelOne",
-    "description": "SentinelOne-specific evidence collection scripts and fetchers for users, agents, XDR assets, cloud detection rules, and activities.",
-    "scripts": {
-      "sentinelone_user_config": {
-        "script_file": "fetchers/sentinelone/sentinelone_user_config.py",
-        "name": "SentinelOne User Config",
-        "description": "Retrieve SentinelOne user records and produce summary analysis (admin counts, 2FA, last login).",
-        "id": "EVD-S1-USER",
-        "instructions": "Script: userfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/users using ApiToken authorization, pages with cursor, and writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "users",
-          "iam",
-          "sentinelone"
-        ],
-        "validationRules": [
-          {
-            "id": 1,
-            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
-            "logic": "IF record_count >= 0 THEN PASS (ensures script returned numeric count)"
+      "sentinelone": {
+        "name": "SentinelOne",
+        "description": "SentinelOne-specific evidence collection scripts and fetchers for users, agents, XDR assets, cloud detection rules, and activities.",
+        "access_method": "SentinelOne API via API Token",
+        "access_method_description": "The evidence fetcher scripts use the SentinelOne REST API which requires SENTINELONE_API_URL and SENTINELONE_API_TOKEN environment variables. Authentication uses Api Token authorization header.",
+        "logo": "fetchers/logos/sentinelone.svg",
+        "scripts": {
+          "sentinelone_user_config": {
+            "script_file": "fetchers/sentinelone/sentinelone_user_config.py",
+            "name": "SentinelOne User Config",
+            "description": "Retrieve SentinelOne user records and produce summary analysis (admin counts, 2FA, last login).",
+            "id": "EVD-S1-USER",
+            "instructions": "Script: userfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/users using ApiToken authorization, pages with cursor, and writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "users",
+              "iam",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+                "logic": "IF record_count >= 0 THEN PASS (ensures script returned numeric count)"
+              },
+              {
+                "id": 2,
+                "regex": "\"admin_user_count\":\\s*(?P<admin_user_count>\\d+)",
+                "logic": "IF admin_user_count <= record_count THEN PASS"
+              }
+            ],
+            "solution_capabilities": [],
+            "controls": []
           },
-          {
-            "id": 2,
-            "regex": "\"admin_user_count\":\\s*(?P<admin_user_count>\\d+)",
-            "logic": "IF admin_user_count <= record_count THEN PASS"
+          "sentinelone_xdr_assets": {
+            "script_file": "fetchers/sentinelone/sentinelone_xdr_assets.py",
+            "name": "SentinelOne XDR Assets",
+            "description": "Retrieve XDR asset inventory (containers, images, cloud resources) and summary counts.",
+            "id": "EVD-S1-XDR-ASSET",
+            "instructions": "Script: xdrassetfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/xdr/assets, supports cursor pagination, summarizes infectionStatus and assetStatus, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "assets",
+              "xdr",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+                "logic": "IF record_count >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"healthy_infection_status_count\":\\s*(?P<healthy>\\d+)",
+                "logic": "IF healthy <= record_count THEN PASS"
+              }
+            ],
+            "solution_capabilities": [
+              "Independent Security Assessment",
+              "Vulnerability Assessments"
+            ],
+            "controls": [
+              "MLA-05"
+            ]
+          },
+          "sentinelone_agents": {
+            "script_file": "fetchers/sentinelone/sentinelone_agents.py",
+            "name": "SentinelOne Agents",
+            "description": "Retrieve agents information, containerized workload counts, cloud provider metadata, and optional agent counts endpoint.",
+            "id": "EVD-S1-AGENT",
+            "instructions": "Script: agentfetcher.py. Calls /web/api/v2.1/agents (and /web/api/v2.1/agents/count), pages with cursor, collects cluster names and container/pod counts, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "agents",
+              "endpoints",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
+                "logic": "IF record_count >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"reported_agent_count\":\\s*(?P<reported>\\d+)",
+                "logic": "IF reported_agent_count is null or reported_agent_count >= 0 THEN PASS (optional count may be missing)"
+              }
+            ],
+            "solution_capabilities": [
+              "Independent Security Assessment",
+              "Vulnerability Assessments"
+            ],
+            "controls": [
+              "MLA-05"
+            ]
+          },
+          "sentinelone_cloud_detection_rules": {
+            "script_file": "fetchers/sentinelone/sentinelone_cloud_detection_rules.py",
+            "name": "SentinelOne Cloud Detection Rules",
+            "description": "Retrieve custom cloud detection rules, last alert times and update timestamps.",
+            "id": "EVD-S1-CLOUD-RULE",
+            "instructions": "Script: clouddetectionrules.py. Calls /web/api/v2.1/cloud-detection/rules with cursor pagination, extracts lastAlertTime and updatedAt fields, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "detection",
+              "rules",
+              "cloud",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"total_custom_detection_rules\":\\s*(?P<total>\\d+)",
+                "logic": "IF total >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"rules_never_triggered_count\":\\s*(?P<never_triggered>\\d+)",
+                "logic": "IF never_triggered <= total THEN PASS"
+              }
+            ],
+            "solution_capabilities": [
+              "Centralized Security Event Correlation (SIEM): SentinelOne",
+              "Security Event Notifications: SentinelOne",
+              "Suspicious Activity Response: SentinelOne"
+            ],
+            "controls": [
+              "IAM-06",
+              "MLA-01",
+              "MLA-02"
+            ]
+          },
+          "sentinelone_activities": {
+            "script_file": "fetchers/sentinelone/sentinelone_activities.py",
+            "name": "SentinelOne Activities",
+            "description": "Retrieve SentinelOne activity events for a set of activity types (FedRAMP list) and summarize activity types and descriptions.",
+            "id": "EVD-S1-ACTIVITY",
+            "instructions": "Script: activityfetcher.py. Calls /web/api/v2.1/activities with activityTypes filter (cursor pagination), aggregates activityType counts and primary descriptions, writes JSON and CSV summary.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "activities",
+              "audit",
+              "sentinelone"
+            ],
+            "validation_rules": [
+              {
+                "id": 1,
+                "regex": "\"total_activities_collected\":\\s*(?P<total>\\d+)",
+                "logic": "IF total >= 0 THEN PASS"
+              },
+              {
+                "id": 2,
+                "regex": "\"activity_type\":\\s*\\{(?P<types>[\\s\\S]*?)\\}",
+                "logic": "IF activity_type object exists THEN PASS"
+              }
+            ],
+            "solution_capabilities": [
+              "Monitored Event Types",
+              "Security Event Notifications: SentinelOne"
+            ],
+            "controls": [
+              "MLA-02"
+            ]
           }
-        ]
+        }
       },
-
-      "sentinelone_xdr_assets": {
-        "script_file": "fetchers/sentinelone/sentinelone_xdr_assets.py",
-        "name": "SentinelOne XDR Assets",
-        "description": "Retrieve XDR asset inventory (containers, images, cloud resources) and summary counts.",
-        "id": "EVD-S1-XDR-ASSET",
-        "instructions": "Script: xdrassetfetcher.py. Calls the SentinelOne API endpoint /web/api/v2.1/xdr/assets, supports cursor pagination, summarizes infectionStatus and assetStatus, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "assets",
-          "xdr",
-          "sentinelone"
-        ],
-        "validationRules": [
-          {
-            "id": 1,
-            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
-            "logic": "IF record_count >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"healthy_infection_status_count\":\\s*(?P<healthy>\\d+)",
-            "logic": "IF healthy <= record_count THEN PASS"
-          }
-        ]
-      },
-
-      "sentinelone_agents": {
-        "script_file": "fetchers/sentinelone/sentinelone_agents.py",
-        "name": "SentinelOne Agents",
-        "description": "Retrieve agents information, containerized workload counts, cloud provider metadata, and optional agent counts endpoint.",
-        "id": "EVD-S1-AGENT",
-        "instructions": "Script: agentfetcher.py. Calls /web/api/v2.1/agents (and /web/api/v2.1/agents/count), pages with cursor, collects cluster names and container/pod counts, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "agents",
-          "endpoints",
-          "sentinelone"
-        ],
-        "validationRules": [
-          {
-            "id": 1,
-            "regex": "\"record_count\":\\s*(?P<record_count>\\d+)",
-            "logic": "IF record_count >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"reported_agent_count\":\\s*(?P<reported>\\d+)",
-            "logic": "IF reported_agent_count is null or reported_agent_count >= 0 THEN PASS (optional count may be missing)"
-          }
-        ]
-      },
-
-      "sentinelone_cloud_detection_rules": {
-        "script_file": "fetchers/sentinelone/sentinelone_cloud_detection_rules.py",
-        "name": "SentinelOne Cloud Detection Rules",
-        "description": "Retrieve custom cloud detection rules, last alert times and update timestamps.",
-        "id": "EVD-S1-CLOUD-RULE",
-        "instructions": "Script: clouddetectionrules.py. Calls /web/api/v2.1/cloud-detection/rules with cursor pagination, extracts lastAlertTime and updatedAt fields, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "detection",
-          "rules",
-          "cloud",
-          "sentinelone"
-        ],
-        "validationRules": [
-          {
-            "id": 1,
-            "regex": "\"total_custom_detection_rules\":\\s*(?P<total>\\d+)",
-            "logic": "IF total >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"rules_never_triggered_count\":\\s*(?P<never_triggered>\\d+)",
-            "logic": "IF never_triggered <= total THEN PASS"
-          }
-        ]
-      },
-
-      "sentinelone_activities": {
-        "script_file": "fetchers/sentinelone/sentinelone_activities.py",
-        "name": "SentinelOne Activities",
-        "description": "Retrieve SentinelOne activity events for a set of activity types (FedRAMP list) and summarize activity types and descriptions.",
-        "id": "EVD-S1-ACTIVITY",
-        "instructions": "Script: activityfetcher.py. Calls /web/api/v2.1/activities with activityTypes filter (cursor pagination), aggregates activityType counts and primary descriptions, writes JSON and CSV summary.",
-        "dependencies": [
-          "python3",
-          "requests"
-        ],
-        "tags": [
-          "activities",
-          "audit",
-          "sentinelone"
-        ],
-        "validationRules": [
-          {
-            "id": 1,
-            "regex": "\"total_activities_collected\":\\s*(?P<total>\\d+)",
-            "logic": "IF total >= 0 THEN PASS"
-          },
-          {
-            "id": 2,
-            "regex": "\"activity_type\":\\s*\\{(?P<types>[\\s\\S]*?)\\}",
-            "logic": "IF activity_type object exists THEN PASS"
-          }
-        ]
-      }
-    }
-  },
       "k8s": {
         "name": "Kubernetes",
         "description": "Kubernetes and EKS-specific evidence collection scripts",
+        "access_method": "kubectl CLI",
+        "access_method_description": "The evidence fetcher scripts use kubectl which must be installed and configured for your Kubernetes cluster. For EKS clusters, use 'aws eks update-kubeconfig' to configure kubectl.",
+        "logo": "fetchers/logos/kubernetes.svg",
         "scripts": {
           "eks_microservice_segmentation": {
             "script_file": "fetchers/k8s/eks_microservice_segmentation.sh",
@@ -701,7 +1050,9 @@
               "segmentation",
               "network-policies"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "eks_pod_inventory": {
             "script_file": "fetchers/k8s/eks_pod_inventory.sh",
@@ -719,7 +1070,9 @@
               "inventory",
               "security"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "kubectl_security": {
             "script_file": "fetchers/k8s/kubectl_security.sh",
@@ -737,13 +1090,18 @@
               "clusterroles",
               "network-policies"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "knowbe4": {
         "name": "KnowBe4",
         "description": "KnowBe4 security awareness training evidence collection scripts",
+        "access_method": "KnowBe4 API via API Token",
+        "access_method_description": "The evidence fetcher scripts use the KnowBe4 REST API which requires KNOWBE4_API_KEY environment variable. Note: KnowBe4 API access is only available for Platinum and Diamond customers. Authentication uses Bearer token authorization.",
+        "logo": "fetchers/logos/knowbe4.svg",
         "scripts": {
           "high_risk_training": {
             "script_file": "fetchers/knowbe4/high_risk_training.sh",
@@ -761,7 +1119,13 @@
               "role-based",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Role Based Security Training"
+            ],
+            "controls": [
+              "CED-02"
+            ]
           },
           "security_awareness_training": {
             "script_file": "fetchers/knowbe4/security_awareness_training.sh",
@@ -779,7 +1143,14 @@
               "compliance",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Practical Security Training Exercises",
+              "Security Awareness Training"
+            ],
+            "controls": [
+              "CED-01"
+            ]
           },
           "developer_specific_training": {
             "script_file": "fetchers/knowbe4/developer_specific_training.sh",
@@ -797,7 +1168,11 @@
               "compliance",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Developer Specific Training"
+            ],
+            "controls": []
           },
           "module_based_summary": {
             "script_file": "fetchers/knowbe4/module_based_summary.sh",
@@ -815,13 +1190,18 @@
               "compliance",
               "knowbe4"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "okta": {
         "name": "Okta",
         "description": "Okta identity and access management evidence collection scripts",
+        "access_method": "Okta API via API Token",
+        "access_method_description": "The evidence fetcher scripts use the Okta REST API which requires OKTA_API_TOKEN and OKTA_ORG_URL environment variables. Authentication uses API Token authorization header.",
+        "logo": "fetchers/logos/okta.svg",
         "scripts": {
           "okta_phishing_resistant_mfa": {
             "script_file": "fetchers/okta/okta_phishing_resistant_mfa.py",
@@ -842,7 +1222,20 @@
               "webauthn",
               "security-key"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Least Privilege: Okta",
+              "Multifactor Authentication: Okta IDaaS",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
+            "controls": [
+              "IAM-01",
+              "IAM-05"
+            ]
           },
           "okta_passwordless_authentication": {
             "script_file": "fetchers/okta/okta_passwordless_authentication.py",
@@ -861,7 +1254,16 @@
               "passwordless",
               "security-key"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
+            "controls": [
+              "IAM-03"
+            ]
           },
           "okta_non_user_accounts_authentication": {
             "script_file": "fetchers/okta/okta_non_user_accounts_authentication.py",
@@ -881,7 +1283,16 @@
               "api-tokens",
               "oauth"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Non-User Accounts: Okta",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
+            "controls": [
+              "IAM-03"
+            ]
           },
           "okta_just_in_time_authorization": {
             "script_file": "fetchers/okta/okta_just_in_time_authorization.py",
@@ -901,7 +1312,21 @@
               "conditional-access",
               "groups"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Just-in-Time Authorization: Okta",
+              "Logical Access Review",
+              "Logical Access Revocation",
+              "Logical Access Role Permission Review",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Privileged Accounts",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)",
+              "Temporary Accounts"
+            ],
+            "controls": [
+              "IAM-04"
+            ]
           },
           "okta_least_privilege": {
             "script_file": "fetchers/okta/okta_least_privilege.py",
@@ -920,7 +1345,19 @@
               "least-privilege",
               "admins"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Administrative Session: Okta IDaaS to Identity Center",
+              "Authentication Required",
+              "Customer Session Termination",
+              "Least Privilege: Okta",
+              "Multifactor Authentication: Okta IDaaS",
+              "Privileged Access: Amazon Identity and Access Management (IAM)",
+              "Service Account Permissions: Amazon Identity and Access Management (IAM)"
+            ],
+            "controls": [
+              "IAM-05"
+            ]
           },
           "okta_suspicious_activity_management": {
             "script_file": "fetchers/okta/okta_suspicious_activity_management.py",
@@ -940,7 +1377,13 @@
               "monitoring",
               "behavior-detection"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Suspicious Activity: Okta"
+            ],
+            "controls": [
+              "IAM-06"
+            ]
           },
           "okta_automated_account_management": {
             "script_file": "fetchers/okta/okta_automated_account_management.py",
@@ -960,13 +1403,20 @@
               "lifecycle",
               "automation"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Automated Account Management: Okta"
+            ],
+            "controls": []
           }
         }
       },
       "gitlab": {
         "name": "GitLab",
         "description": "GitLab evidence collection scripts",
+        "access_method": "GitLab API via Access Token",
+        "access_method_description": "The evidence fetcher scripts use the GitLab REST API which requires project access toekns: GITLAB_PROJECT_*_API_ACCESS_TOKEN and GITLAB_PROJECT_*_URL environment variables for multi-project support. Authentication uses Bearer token with Project Access Tokens scoped to individual projects. Read permissions are required.",
+        "logo": "fetchers/logos/gitlab.svg",
         "scripts": {
           "gitlab_ci_cd_pipeline_config": {
             "script_file": "fetchers/gitlab/gitlab_ci_cd_pipeline_config.py",
@@ -983,7 +1433,21 @@
               "security-scanning",
               "testing"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Change Request",
+              "Input Validation",
+              "Security Lifecycle",
+              "Software Development Lifecycle Process"
+            ],
+            "controls": [
+              "CMT-01",
+              "CMT-03",
+              "PIY-04",
+              "VDR-01",
+              "VDR-AY-05",
+              "VDR-AY-06"
+            ]
           },
           "gitlab_project_summary": {
             "script_file": "fetchers/gitlab/gitlab_project_summary.py",
@@ -1001,7 +1465,20 @@
               "docker",
               "yaml"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Change Request",
+              "Software Development Lifecycle Process"
+            ],
+            "controls": [
+              "CMT-01",
+              "CMT-02",
+              "CMT-03",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04"
+            ]
           },
           "gitlab_merge_request_summary": {
             "script_file": "fetchers/gitlab/gitlab_merge_request_summary.py",
@@ -1018,13 +1495,29 @@
               "approvals",
               "reviews"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Change Request",
+              "Software Development Lifecycle Process"
+            ],
+            "controls": [
+              "CMT-01",
+              "CMT-02",
+              "CMT-03",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04"
+            ]
           }
         }
       },
       "rippling": {
         "name": "Rippling",
         "description": "Rippling HR evidence collection scripts",
+        "access_method": "Rippling API via Bearer Token",
+        "access_method_description": "The evidence fetcher scripts use the Rippling REST API which requires RIPPLING_API_TOKEN environment variable. Authentication uses Bearer token authorization.",
+        "logo": "fetchers/logos/rippling.svg",
         "scripts": {
           "rippling_current_employees": {
             "script_file": "fetchers/rippling/rippling_current_employees.py",
@@ -1043,7 +1536,9 @@
               "current",
               "completeness"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           },
           "rippling_all_employees": {
             "script_file": "fetchers/rippling/rippling_all_employees.py",
@@ -1062,13 +1557,18 @@
               "terminated",
               "completeness"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
       "checkov": {
         "name": "Checkov Security Scanning",
         "description": "Infrastructure as Code security compliance scanning with Checkov",
+        "access_method": "Checkov CLI with optional GitLab API",
+        "access_method_description": "The evidence fetcher scripts use Checkov CLI tool which must be installed via 'pip install checkov'. For GitLab repository scanning, GitLab API access tokens are required (GITLAB_PROJECT_*_API_ACCESS_TOKEN). For local or URL-based scanning, no additional authentication is needed.",
+        "logo": "fetchers/logos/checkov.png",
         "scripts": {
           "checkov_terraform": {
             "script_file": "fetchers/checkov/checkov_terraform.sh",
@@ -1089,7 +1589,23 @@
               "iac",
               "infrastructure"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Code and Configuration Evaluation",
+              "Configuration Checks: CIS L2"
+            ],
+            "controls": [
+              "CMT-02",
+              "CNA-04",
+              "CNA-07",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04",
+              "SVC-05"
+            ]
           },
           "checkov_kubernetes": {
             "script_file": "fetchers/checkov/checkov_kubernetes.sh",
@@ -1110,7 +1626,23 @@
               "k8s",
               "manifests"
             ],
-            "validationRules": []
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Approved Software Enforcement",
+              "Baseline Configuration Exceptions",
+              "Baseline Configuration Standard",
+              "Code and Configuration Evaluation",
+              "Configuration Checks: CIS L2"
+            ],
+            "controls": [
+              "CMT-02",
+              "CNA-04",
+              "CNA-07",
+              "MLA-05",
+              "SVC-01",
+              "SVC-04",
+              "SVC-05"
+            ]
           }
         }
       }

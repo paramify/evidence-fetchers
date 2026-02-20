@@ -24,23 +24,55 @@ python main.py
 
 ## Key Features
 
-- **Multi-Instance Support**: Run the same fetcher against multiple AWS regions or GitLab projects
 - **Evidence Sets**: Selectively choose which fetchers to run based on your needs
 - **Paramify Integration**: Automatic upload of evidence sets and evidence files
 - **Timestamped Storage**: All evidence stored in organized, timestamped directories
+- **Multi-Instance Support**: Run the same fetcher against multiple AWS regions or GitLab projects
+
+## Supported Services
+
+<div align="center">
+
+<a href="fetchers/aws/"><img src="fetchers/logos/aws.svg" alt="AWS" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/sentinelone/"><img src="fetchers/logos/sentinelone.svg" alt="SentinelOne" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/k8s/"><img src="fetchers/logos/kubernetes.svg" alt="Kubernetes" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/knowbe4/"><img src="fetchers/logos/knowbe4.svg" alt="KnowBe4" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/okta/"><img src="fetchers/logos/okta.svg" alt="Okta" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/gitlab/"><img src="fetchers/logos/gitlab.svg" alt="GitLab" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/rippling/"><img src="fetchers/logos/rippling.svg" alt="Rippling" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/checkov/"><img src="fetchers/logos/checkov.png" alt="Checkov" width="56" height="56" style="margin: 20px;"></a>
+<img src="fetchers/logos/paramify.svg" alt="Paramify" width="56" height="56" style="margin: 20px;">
+
+</div>
+
+## Coming Soon
+
+More evidence fetchers and integrations are coming soon. To request a new fetcher or upvote which services should be supported next, head to the [Paramify Community Feature Requests](https://support.paramify.com/hc/en-us/community/topics/31851789568275-Feature-Requests). Add a new request or comment and upvote existing ones to help prioritize what we build next.
+
+<div align="center">
+
+<img src="fetchers/logos/wiz.jpeg" alt="Wiz" width="56" height="56" style="margin: 20px;">
+<img src="fetchers/logos/crowdstrike.svg" alt="CrowdStrike" width="56" height="56" style="margin: 20px;">
+<img src="fetchers/logos/qualys.svg" alt="Qualys" width="56" height="56" style="margin: 20px;">
+
+Planned Fetchers/Integrations
+
+</div>
 
 ## Directory Structure
 
 ```
 evidence-fetchers/
-├── main.py                    # Main menu system
-├── fetchers/                  # Evidence fetcher scripts
+├── main.py                   # Main menu system
+├── fetchers/                 # Evidence fetcher scripts
 │   ├── aws/                  # AWS scripts (29 available)
-│   ├── gitlab/               # GitLab scripts (3 available)
+│   ├── sentinelone/          # SentinelOne scripts (5 available)
 │   ├── k8s/                  # Kubernetes scripts (3 available)
-│   ├── knowbe4/              # KnowBe4 scripts (2 available)
-│   ├── okta/                 # Okta scripts (9 available)
-│   └── rippling/             # Rippling scripts (2 available)
+│   ├── knowbe4/              # KnowBe4 scripts (4 available)
+│   ├── okta/                 # Okta scripts (7 available)
+│   ├── gitlab/               # GitLab scripts (3 available)
+│   ├── rippling/             # Rippling scripts (2 available)
+│   └── checkov/              # Checkov scripts (2 available)
 ├── 0-prerequisites/          # Setup and dependencies
 ├── 1-select-fetchers/        # Fetcher selection
 ├── 2-create-evidence-sets/   # Create evidence sets in Paramify
@@ -66,7 +98,7 @@ AWS_REGION=us-east-1
 KNOWBE4_API_KEY=your_knowbe4_api_key
 OKTA_API_TOKEN=your_okta_api_token
 OKTA_ORG_URL=https://your-org.okta.com
-RIPPLING_API_TOKEN=your_rippling_api_token
+
 ```
 
 ## Dependencies

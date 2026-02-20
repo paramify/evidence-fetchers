@@ -64,11 +64,10 @@ def interactive_selection(catalog: dict) -> dict:
     print("=" * 40)
     print()
     
-    # Start with template
+    # Start with template (as a silent default baseline for interactive flow)
     template_path = "1-select-fetchers/customer_config_template.json"
     if os.path.exists(template_path):
         customer_config = load_json_file(template_path)
-        print(f"✓ Loaded template from {template_path}")
     else:
         print("✗ Template not found. Creating new configuration...")
         customer_config = {
@@ -161,7 +160,7 @@ def generate_evidence_sets(catalog: dict, customer_config: dict) -> dict:
                 "description": script_info["description"],
                 "service": category_name.upper(),
                 "instructions": script_info["instructions"],
-                "validationRules": script_info["validationRules"],
+                "validationRules": script_info.get("validation_rules", []),
                 # "expected_outcome" field removed
             }
             
