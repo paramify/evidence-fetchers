@@ -4,6 +4,10 @@ Run Fetchers
 
 This script executes the selected evidence fetcher scripts and stores evidence
 in timestamped directories. Optionally uploads evidence files to Paramify.
+
+Notes:
+- AWS-based fetchers require a valid AWS CLI session. If you are using AWS SSO,
+  run `aws sso login --profile <your-profile>` before running this script.
 """
 
 import json
@@ -79,6 +83,77 @@ def get_aws_region_from_cli(profile: str = None) -> str:
     except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
         pass
     return ""
+
+
+def check_aws_auth(profile: str = "", region: str = "") -> bool:
+    """Verify that the AWS CLI is authenticated for the given profile/region.
+
+    This is used to fail AWS-based fetchers early when the user has not
+    established an AWS session (for example, by running `aws sso login`).
+    """
+    cmd = ["aws", "sts", "get-caller-identity", "--output", "json"]
+
+    if profile:
+        cmd.extend(["--profile", profile])
+    if region:
+        cmd.extend(["--region", region])
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    except FileNotFoundError:
+        print("  ✗ AWS CLI not found on PATH.")
+        print("    Please install the AWS CLI and ensure it is available on your PATH.")
+        return False
+    except subprocess.TimeoutExpired:
+        print("  ✗ AWS authentication check timed out when calling STS.")
+        print("    Please verify network connectivity and your AWS CLI configuration.")
+        return False
+    except Exception as e:
+        print(f"  ✗ Unexpected error while checking AWS authentication: {e}")
+        return False
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        if stderr:
+            print(f"  ✗ AWS authentication failed for profile '{profile}' and region '{region}'.")
+            print(f"    AWS CLI error: {stderr}")
+        else:
+            print(f"  ✗ AWS authentication failed for profile '{profile}' and region '{region}'.")
+        print("    Ensure you have valid AWS credentials and, if using AWS SSO,")
+        print(f"    run 'aws sso login --profile {profile}' before running the fetchers.")
+        return False
+
+    return True
+
+
+def validate_aws_evidence(script_name: str, evidence_dir: Path) -> bool:
+    """Validate AWS evidence JSON to detect runs without real AWS identity.
+
+    If the evidence file exists and its metadata account_id/arn are \"unknown\",
+    we treat the run as failed due to missing AWS authentication.
+    """
+    evidence_path = evidence_dir / f"{script_name}.json"
+    if not evidence_path.exists():
+        return True
+
+    try:
+        with open(evidence_path, "r") as f:
+            data = json.load(f)
+    except Exception:
+        # If we cannot read/parse the file, do not guess; leave result unchanged.
+        return True
+
+    metadata = data.get("metadata", {})
+    account_id = metadata.get("account_id")
+    arn = metadata.get("arn")
+
+    if account_id == "unknown" or arn == "unknown":
+        print(f"  ✗ Evidence for '{script_name}' indicates unknown AWS identity (account_id/arn).")
+        print("    This typically means AWS CLI was not authenticated when the fetcher ran.")
+        print("    Please run 'aws sso login' for the appropriate profile and re-run the fetchers.")
+        return False
+
+    return True
 
 
 def create_evidence_directory():
@@ -208,7 +283,12 @@ def create_fetcher_instances(evidence_sets: Dict[str, Any], multi_config: Dict[s
     return instances
 
 
-def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: int) -> bool:
+def run_fetcher_instance(
+    instance: Dict[str, Any],
+    evidence_dir: Path,
+    timeout: int,
+    error_reasons: Optional[Dict[str, str]] = None,
+) -> bool:
     """Run a single fetcher instance with its specific configuration."""
     script_name = instance["script_name"]
     script_data = instance["script_data"]
@@ -262,6 +342,22 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     if not script_path.exists():
         print(f"  ✗ Script not found: {script_path}")
         return False
+
+    # Resolve AWS profile and region for this instance (used for both auth check and parameters)
+    profile = config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", ""))
+    region = config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", ""))
+
+    # For AWS-based instances, verify that the AWS CLI is authenticated before running
+    if provider == "aws":
+        if not check_aws_auth(profile, region):
+            print(f"  ✗ {instance_name} could not run due to missing or invalid AWS CLI authentication.")
+            print("    Please run 'aws sso login' for the appropriate profile and try again.")
+            if error_reasons is not None:
+                error_reasons[instance_name] = (
+                    "AWS authentication missing or invalid; "
+                    f"run 'aws sso login --profile {profile}' and re-run this fetcher."
+                )
+            return False
     
     # Prepare command
     if script_path.suffix == '.py':
@@ -271,8 +367,8 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     
     # Add common parameters - CSV disabled in favor of JSON
     cmd.extend([
-        config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", "")),  # profile
-        config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "")),  # region
+        profile,  # profile
+        region,   # region
         str(evidence_dir),  # output directory
         "/dev/null"  # CSV file disabled - JSON output preferred
     ])
@@ -287,6 +383,16 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         
         if result.returncode == 0:
+            # For AWS instances, validate the evidence metadata to catch \"unknown\" identities
+            if provider == "aws" and not validate_aws_evidence(script_name, evidence_dir):
+                print(f"  ✗ {instance_name} marked as failed due to invalid AWS identity in evidence.")
+                if error_reasons is not None:
+                    error_reasons[instance_name] = (
+                        "Evidence metadata shows unknown AWS identity; "
+                        "AWS CLI was likely not authenticated when this fetcher ran."
+                    )
+                return False
+
             print(f"  ✓ {instance_name} completed successfully")
             return True
         else:
@@ -303,9 +409,16 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
         return False
 
 
-def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
-                      aws_profile: str = None, aws_region: str = None, timeout: int = 300, 
-                      additional_flags: list = None) -> bool:
+def run_fetcher_script(
+    script_name: str,
+    script_data: dict,
+    evidence_dir: Path,
+    aws_profile: str = None,
+    aws_region: str = None,
+    timeout: int = 300,
+    additional_flags: list = None,
+    error_reasons: Optional[Dict[str, str]] = None,
+) -> bool:
     """Run a single fetcher script."""
     print(f"Running {script_name}...")
     
@@ -359,6 +472,19 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
     # If region is not set, try to get it from AWS CLI
     if not region:
         region = get_aws_region_from_cli(profile)
+
+    # For AWS-based fetchers, verify that the AWS CLI is authenticated before running
+    service = script_data.get('service', 'aws').lower()
+    if service == 'aws':
+        if not check_aws_auth(profile, region):
+            print(f"  ✗ {script_name} could not run due to missing or invalid AWS CLI authentication.")
+            print("    Please run 'aws sso login' for the appropriate profile and try again.")
+            if error_reasons is not None:
+                error_reasons[script_name] = (
+                    "AWS authentication missing or invalid; "
+                    f"run 'aws sso login --profile {profile}' and re-run this fetcher."
+                )
+            return False
     
     # Add common parameters - CSV disabled in favor of JSON
     cmd.extend([
@@ -377,6 +503,16 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         
         if result.returncode == 0:
+            # For AWS-based fetchers, validate the evidence metadata to catch \"unknown\" identities
+            if service == "aws" and not validate_aws_evidence(script_name, evidence_dir):
+                print(f"  ✗ {script_name} marked as failed due to invalid AWS identity in evidence.")
+                if error_reasons is not None:
+                    error_reasons[script_name] = (
+                        "Evidence metadata shows unknown AWS identity; "
+                        "AWS CLI was likely not authenticated when this fetcher ran."
+                    )
+                return False
+
             print(f"  ✓ {script_name} completed successfully")
             return True
         else:
@@ -393,13 +529,20 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
         return False
 
 
-def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict = None):
+def create_summary_file(
+    evidence_dir: Path,
+    results: dict,
+    instance_info: dict = None,
+    error_reasons: Optional[Dict[str, str]] = None,
+):
     """Create a summary file with execution results.
     
     Args:
         evidence_dir: Directory containing evidence files
         results: Dict mapping script_name/instance_name to success bool
         instance_info: Optional dict mapping instance_name to instance config (for resource extraction)
+        error_reasons: Optional dict mapping script_name/instance_name to a human-readable
+            error description (for example, missing AWS authentication)
     """
     timestamp = datetime.now().isoformat() + "Z"
     
@@ -476,6 +619,8 @@ def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict =
             "status": status,
             "evidence_file": evidence_file
         }
+        if error_reasons and script_name in error_reasons:
+            result_entry["error_reason"] = error_reasons[script_name]
         summary_results.append(result_entry)
     
     summary = {
@@ -562,6 +707,7 @@ def main():
     print()
     
     results = {}
+    error_reasons: Dict[str, str] = {}
     instance_info_map = {}  # Map instance_name to instance config
     
     # Get AWS profile and region for standard fetchers
@@ -576,7 +722,7 @@ def main():
     if instances:
         print("Running multi-instance fetchers...")
         for instance in instances:
-            success = run_fetcher_instance(instance, evidence_dir, timeout)
+            success = run_fetcher_instance(instance, evidence_dir, timeout, error_reasons)
             instance_name = instance['instance_name']
             results[instance_name] = success
             # Store instance info for resource extraction
@@ -616,11 +762,16 @@ def main():
                 print(f"  Using additional flags: {' '.join(additional_flags)}")
             
             success = run_fetcher_script(script_name, script_data, evidence_dir, 
-                                       aws_profile, aws_region, timeout, additional_flags)
+                                       aws_profile, aws_region, timeout, additional_flags, error_reasons)
             results[script_name] = success
     
     # Create summary
-    create_summary_file(evidence_dir, results, instance_info_map if instance_info_map else None)
+    create_summary_file(
+        evidence_dir,
+        results,
+        instance_info_map if instance_info_map else None,
+        error_reasons if error_reasons else None,
+    )
     
     # Show results
     print(f"\nExecution Summary:")
