@@ -33,6 +33,7 @@ PARAMIFY_UPLOAD_API_TOKEN=your_api_token_here
 ## Required Dependencies
 
 - **Python 3.x**: Python interpreter
+- **python-dotenv**: Python library (`dotenv`) for loading environment variables from the `.env` file
 - **AWS CLI**: AWS command line interface
 - **jq**: JSON processor
 - **curl**: HTTP client
