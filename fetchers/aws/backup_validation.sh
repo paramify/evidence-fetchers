@@ -20,16 +20,8 @@
 #
 # Output: Creates JSON with validation results
 
-# Required parameters
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="backup_validation"
@@ -307,6 +299,5 @@ echo -e "${BLUE}S3 Encryption Coverage: $s3_with_encryption/$total_s3 buckets wi
 echo -e "${BLUE}AWS Backup Vaults: $total_vaults vaults found${NC}"
 
 echo -e "${BLUE}Results saved to: $OUTPUT_JSON${NC}"
-echo -e "${BLUE}CSV summary saved to: $OUTPUT_CSV${NC}"
 
 exit 0 

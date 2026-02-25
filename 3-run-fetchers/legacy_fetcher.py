@@ -77,30 +77,28 @@ def run_provider_script(script_name: str, provider: str, profile: str = None, re
     script_path.chmod(0o755)
     
     try:
-        # Build command based on provider
-        if provider == "aws":
-            # AWS scripts expect: profile, region, output_dir, csv_file
-            # Pass /dev/null to disable CSV output
-            cmd = [str(script_path), profile, region, evidence_dir, "/dev/null"]
-        elif provider == "knowbe4":
-            # KnowBe4 scripts expect: output_dir only
-            cmd = [str(script_path), evidence_dir]
-        else:
-            # Other providers might have different parameter expectations
-            # For now, pass profile and evidence_dir as common parameters
-            cmd = [str(script_path)]
-            if profile:
-                cmd.extend(["--profile", profile])
-            if region:
-                cmd.extend(["--region", region])
-            cmd.extend(["--output-dir", evidence_dir])
-        
+        # All providers use the same named argument interface
+        cmd = [str(script_path)]
+        if profile:
+            cmd.extend(["--profile", profile])
+        if region:
+            cmd.extend(["--region", region])
+        cmd.extend(["--output-dir", evidence_dir])
+
+        # Set environment variables for the subprocess
+        env = os.environ.copy()
+        env["EVIDENCE_DIR"] = evidence_dir
+        if profile:
+            env["AWS_PROFILE"] = profile
+        if region:
+            env["AWS_DEFAULT_REGION"] = region
+
         # Run script with timeout if specified
         if timeout:
             print(f"  Timeout: {timeout} seconds")
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout)
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout, env=env)
         else:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
         
         # Check if JSON output was created
         json_file = Path(evidence_dir) / f"{script_name}.json"

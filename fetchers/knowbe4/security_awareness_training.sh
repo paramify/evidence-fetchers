@@ -43,13 +43,8 @@
 #
 # Output: Creates unique JSON file and appends to Training-and-Awareness files
 
-# Required parameters
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-OUTPUT_DIR="$3"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="security_awareness_training"

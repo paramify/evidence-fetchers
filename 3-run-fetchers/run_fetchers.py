@@ -269,17 +269,19 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     else:
         cmd = ["bash", str(script_path)]
     
-    # Add common parameters - CSV disabled in favor of JSON
+    # Pass configuration as named arguments
+    instance_profile = config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", ""))
+    instance_region = config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", ""))
     cmd.extend([
-        config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", "")),  # profile
-        config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "")),  # region
-        str(evidence_dir),  # output directory
-        "/dev/null"  # CSV file disabled - JSON output preferred
+        "--profile", instance_profile,
+        "--region", instance_region,
+        "--output-dir", str(evidence_dir),
     ])
-    
+
     try:
         # Set instance-specific environment variables
         env = os.environ.copy()
+        env["EVIDENCE_DIR"] = str(evidence_dir)
         for key, value in config.items():
             env[key] = value
         
@@ -303,9 +305,8 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
         return False
 
 
-def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
-                      aws_profile: str = None, aws_region: str = None, timeout: int = 300, 
-                      additional_flags: list = None) -> bool:
+def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
+                      aws_profile: str = None, aws_region: str = None, timeout: int = 300) -> bool:
     """Run a single fetcher script."""
     print(f"Running {script_name}...")
     
@@ -355,26 +356,29 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
     # Get AWS profile and region from environment or use defaults
     profile = aws_profile or os.environ.get("AWS_PROFILE", "")
     region = aws_region or os.environ.get("AWS_DEFAULT_REGION", "")
-    
+
     # If region is not set, try to get it from AWS CLI
     if not region:
         region = get_aws_region_from_cli(profile)
-    
-    # Add common parameters - CSV disabled in favor of JSON
+
+    # Pass configuration as named arguments
     cmd.extend([
-        profile,  # AWS profile
-        region,   # AWS region
-        str(evidence_dir),  # output directory
-        "/dev/null"  # CSV file disabled - JSON output preferred
+        "--profile", profile,
+        "--region", region,
+        "--output-dir", str(evidence_dir),
     ])
-    
-    # Add additional flags if provided
-    if additional_flags:
-        cmd.extend(additional_flags)
-    
+
     try:
+        # Set environment variables for the subprocess
+        env = os.environ.copy()
+        env["EVIDENCE_DIR"] = str(evidence_dir)
+        if profile:
+            env["AWS_PROFILE"] = profile
+        if region:
+            env["AWS_DEFAULT_REGION"] = region
+
         # Run the script
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         
         if result.returncode == 0:
             print(f"  ✓ {script_name} completed successfully")
@@ -549,7 +553,10 @@ def main():
     
     # Create evidence directory
     evidence_dir = create_evidence_directory()
-    
+
+    # Set EVIDENCE_DIR so fetchers can read it from the environment
+    os.environ["EVIDENCE_DIR"] = str(evidence_dir)
+
     # Run fetchers
     print(f"\nExecuting evidence fetchers...")
     print("-" * 40)
@@ -593,30 +600,9 @@ def main():
         
         for script_name in sorted(uncovered_fetchers):
             script_data = evidence_sets['evidence_sets'][script_name]
-            
-            # Get additional flags for this specific fetcher
-            additional_flags = []
-            
-            # Check for fetcher-specific flags in environment variables (new naming convention)
-            fetcher_flags_env = os.environ.get(f"{script_name.upper()}_FETCHER", "")
-            if fetcher_flags_env:
-                additional_flags.extend(fetcher_flags_env.split())
-            
-            # Check for legacy fetcher-specific flags in environment variables (backward compatibility)
-            legacy_fetcher_flags_env = os.environ.get(f"FETCHER_FLAGS_{script_name.upper()}", "")
-            if legacy_fetcher_flags_env:
-                additional_flags.extend(legacy_fetcher_flags_env.split())
-            
-            # Check for flags in script data
-            if "flags" in script_data:
-                additional_flags.extend(script_data["flags"])
-            
-            # Show additional flags if any
-            if additional_flags:
-                print(f"  Using additional flags: {' '.join(additional_flags)}")
-            
-            success = run_fetcher_script(script_name, script_data, evidence_dir, 
-                                       aws_profile, aws_region, timeout, additional_flags)
+
+            success = run_fetcher_script(script_name, script_data, evidence_dir,
+                                       aws_profile, aws_region, timeout)
             results[script_name] = success
     
     # Create summary

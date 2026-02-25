@@ -17,16 +17,8 @@
 #
 # Output: Creates JSON with IAM policy details and writes to CSV
 
-# Check if required parameters are provided
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="iam_policies"
@@ -108,8 +100,6 @@ echo "$policies" | jq -c '.[]' | while read -r policy; do
     # Add to JSON
     jq --argjson policy "$policy_info" '.results += [$policy]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
-    # Add to CSV
-    echo "$COMPONENT,policy,$policy_name,$(echo "$policy_info" | jq -r '.CreateDate'),$(echo "$policy_info" | jq -r '.UpdateDate')" >> "$OUTPUT_CSV"
 done
 
 exit 0 

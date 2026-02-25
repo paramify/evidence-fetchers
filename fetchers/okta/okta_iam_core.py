@@ -23,7 +23,8 @@ Environment variables required:
 - OKTA_ORG_URL: Your Okta org URL (e.g., https://yourorg.okta.com)
 
 Usage:
-    (Legacy) python okta_iam_evidence.py <profile> <region> <output_dir> [csv_file]
+    python okta_iam_core.py --check-only
+    (Or use dedicated KSI wrapper scripts, e.g. python okta_phishing_resistant_mfa.py)
 """
 
 import json

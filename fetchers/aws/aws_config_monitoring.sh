@@ -12,16 +12,8 @@
 #
 # Output: Creates unique JSON file and appends to System-Monitoring files
 
-# Check if required parameters are provided
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="aws_config_monitoring"
@@ -92,13 +84,10 @@ jq --argjson status "$recorder_status" \
 # Append results to CSV
 # Add configuration recorder status
 recording_status=$(echo "$recorder_status" | jq -r '.[0].recording // "false"')
-echo "$COMPONENT,configuration_recorder_recording,$recording_status" >> "$OUTPUT_CSV"
 
 # Add delivery channel status
 if [ "$(echo "$delivery_channels" | jq 'length')" -gt 0 ]; then
-    echo "$COMPONENT,delivery_channel,CONFIGURED" >> "$OUTPUT_CSV"
 else
-    echo "$COMPONENT,delivery_channel,NOT_CONFIGURED" >> "$OUTPUT_CSV"
 fi
 
 # Generate summary information
@@ -157,17 +146,6 @@ jq --argjson summary "$summary_json" '.results.summary = $summary.summary' "$UNI
 
 
 # Add summary to CSV
-echo "$COMPONENT,summary_recording_enabled,$recording_status" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_delivery_channels,$channel_count" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_recorder_count,$recorder_count" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_all_resources,$all_resources" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_global_resources,$global_resources" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_last_status,$last_status" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_last_error,$last_error" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_s3_bucket,$s3_bucket" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_sns_topic,$sns_topic" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_delivery_frequency,$delivery_freq" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_health_status,$(if [ "$recording_status" = "true" ] && [ "$channel_count" -gt 0 ]; then echo "HEALTHY"; else echo "REQUIRES_ATTENTION"; fi)" >> "$OUTPUT_CSV"
 
 # Generate console output
 echo -e "\n${GREEN}Validation Summary:${NC}"
