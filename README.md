@@ -1,3 +1,6 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/paramify/evidence-fetchers)
+[![CodeQL](https://github.com/paramify/evidence-fetchers/actions/workflows/codeql.yml/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/codeql.yml)
+
 # Evidence Fetchers
 
 Let's go fetch some evidence! And don't forget, screenshots are so 2012.
@@ -104,6 +107,7 @@ OKTA_ORG_URL=https://your-org.okta.com
 ## Dependencies
 
 - Python 3.x
+- dotenv (load env variables in python)
 - AWS CLI (for AWS scripts)
 - jq (JSON processor)
 - curl (HTTP client)
