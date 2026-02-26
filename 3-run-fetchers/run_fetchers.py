@@ -556,7 +556,7 @@ def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict =
                     evidence_file = str(matching_files[0][0])
         
         # Extract resource information from instance_name or instance_info
-        resource = "unknown"
+        resource = None
         if instance_info:
             # Try to get instance info for this script_name
             instance = instance_info.get(script_name)

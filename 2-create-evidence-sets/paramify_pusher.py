@@ -231,12 +231,15 @@ class ParamifyPusher:
         for result in summary["results"]:
             # Handle both "check" and "script" field names
             check_name = result.get("check") or result.get("script")
-            resource = result.get("resource", "unknown")
+            resource = result.get("resource")
             status = result["status"]
             evidence_file = result["evidence_file"]
             timestamp = summary["timestamp"]
-            
-            print(f"Processing: {check_name} for {resource} ({status})")
+
+            if resource:
+                print(f"Processing: {check_name} for {resource} ({status})")
+            else:
+                print(f"Processing: {check_name} ({status})")
             
             # Skip if no evidence file (failed scripts)
             if not evidence_file:
