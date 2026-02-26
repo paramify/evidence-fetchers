@@ -6,8 +6,10 @@ This script executes the selected evidence fetcher scripts and stores evidence
 in timestamped directories. Optionally uploads evidence files to Paramify.
 """
 
+import importlib
 import json
 import os
+import shutil
 import sys
 import subprocess
 import re
@@ -57,6 +59,107 @@ def check_prerequisites():
     
     print("✓ All prerequisites met")
     return True
+
+
+# Mapping from catalog dependency names to binary names and install instructions
+_DEPENDENCY_BINARY_MAP = {
+    "aws-cli": ("aws", "Install AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"),
+    "kubectl": ("kubectl", "Install kubectl: https://kubernetes.io/docs/tasks/tools/"),
+    "checkov": ("checkov", "pip install checkov"),
+    "curl": ("curl", "Install curl for your OS"),
+    "jq": ("jq", "Install jq: https://jqlang.github.io/jq/download/"),
+    "git": ("git", "Install git: https://git-scm.com/downloads"),
+}
+
+# Python package dependencies that need import-based checking
+_PYTHON_PACKAGE_DEPS = {
+    "requests": "pip install requests",
+    "python3": None,  # Skip — we're already running Python
+}
+
+
+def check_tool_dependencies(evidence_sets: dict) -> None:
+    """Check if required tool dependencies are available for selected fetchers.
+
+    Reads the catalog to find dependencies for each selected fetcher, then
+    checks whether the required binaries are on the PATH. Prints warnings
+    for any missing tools but does not block execution.
+    """
+    catalog_path = Path("1-select-fetchers/evidence_fetchers_catalog.json")
+    if not catalog_path.exists():
+        return  # Can't check without catalog
+
+    try:
+        catalog = load_json_file(str(catalog_path))
+    except SystemExit:
+        return  # load_json_file calls sys.exit on error; don't block here
+
+    # Build a map: dependency_name -> set of fetcher names that need it
+    dep_to_fetchers: Dict[str, set] = {}
+    selected_fetchers = set(evidence_sets.get("evidence_sets", {}).keys())
+
+    # Walk the catalog to find dependencies for selected fetchers
+    categories = {}
+    if "evidence_fetchers_catalog" in catalog and "categories" in catalog["evidence_fetchers_catalog"]:
+        categories = catalog["evidence_fetchers_catalog"]["categories"]
+    elif "evidence_fetchers" in catalog:
+        # Legacy flat structure
+        categories = {"_legacy": {"scripts": catalog["evidence_fetchers"]}}
+
+    for _cat_name, cat_data in categories.items():
+        scripts = cat_data.get("scripts", {})
+        for script_name, script_data in scripts.items():
+            if script_name not in selected_fetchers:
+                continue
+            for dep in script_data.get("dependencies", []):
+                dep_to_fetchers.setdefault(dep, set()).add(script_name)
+
+    if not dep_to_fetchers:
+        return
+
+    print("\nChecking tool dependencies for selected fetchers...")
+    missing_count = 0
+
+    for dep_name in sorted(dep_to_fetchers.keys()):
+        fetchers = dep_to_fetchers[dep_name]
+
+        # Skip python3 — we're already running Python
+        if dep_name == "python3":
+            continue
+
+        # Check Python packages via import
+        if dep_name in _PYTHON_PACKAGE_DEPS:
+            install_hint = _PYTHON_PACKAGE_DEPS[dep_name]
+            if install_hint is None:
+                continue
+            try:
+                importlib.import_module(dep_name)
+                print(f"  ✓ {dep_name}")
+            except ImportError:
+                missing_count += 1
+                print(f"  ✗ {dep_name} not found — {install_hint}")
+                print(f"    Required by: {', '.join(sorted(fetchers))}")
+            continue
+
+        # Check CLI tools via PATH lookup
+        if dep_name in _DEPENDENCY_BINARY_MAP:
+            binary, install_hint = _DEPENDENCY_BINARY_MAP[dep_name]
+        else:
+            # Unknown dependency — try the name directly as a binary
+            binary = dep_name
+            install_hint = f"Install {dep_name}"
+
+        if shutil.which(binary):
+            print(f"  ✓ {dep_name}" + (f" ({binary})" if binary != dep_name else ""))
+        else:
+            missing_count += 1
+            print(f"  ✗ {dep_name} not found — {install_hint}")
+            print(f"    Required by: {', '.join(sorted(fetchers))}")
+
+    if missing_count > 0:
+        print(f"\n  ⚠ {missing_count} missing {'dependency' if missing_count == 1 else 'dependencies'}. Affected fetchers will fail.")
+    else:
+        print("  ✓ All tool dependencies available")
 
 
 def load_evidence_sets():
@@ -514,7 +617,10 @@ def main():
     
     # Load evidence sets
     evidence_sets = load_evidence_sets()
-    
+
+    # Check tool dependencies for selected fetchers (warnings only)
+    check_tool_dependencies(evidence_sets)
+
     # Parse multi-instance configuration
     multi_config = parse_multi_instance_config()
     
