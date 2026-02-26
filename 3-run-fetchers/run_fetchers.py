@@ -195,13 +195,14 @@ def create_fetcher_instances(evidence_sets: Dict[str, Any], multi_config: Dict[s
                     "provider": "aws",
                     "config": {
                         "AWS_PROFILE": region["profile"],
-                        "AWS_REGION": region["region"]
+                        "AWS_DEFAULT_REGION": region["region"]
                     }
                 }
                 
-                # Add region-specific overrides
+                # Add region-specific overrides (use AWS_DEFAULT_REGION for region key)
                 for key, value in region["config"].items():
-                    instance["config"][f"AWS_{key.upper()}"] = value
+                    env_key = "AWS_DEFAULT_REGION" if key.upper() == "REGION" else f"AWS_{key.upper()}"
+                    instance["config"][env_key] = value
                 
                 instances.append(instance)
     
@@ -269,14 +270,14 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     else:
         cmd = ["bash", str(script_path)]
     
-    # Pass configuration as named arguments
+    # Pass configuration as named arguments (only when non-empty)
     instance_profile = config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", ""))
-    instance_region = config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", ""))
-    cmd.extend([
-        "--profile", instance_profile,
-        "--region", instance_region,
-        "--output-dir", str(evidence_dir),
-    ])
+    instance_region = config.get("AWS_DEFAULT_REGION", os.environ.get("AWS_DEFAULT_REGION", ""))
+    if instance_profile:
+        cmd.extend(["--profile", instance_profile])
+    if instance_region:
+        cmd.extend(["--region", instance_region])
+    cmd.extend(["--output-dir", str(evidence_dir)])
 
     try:
         # Set instance-specific environment variables
@@ -361,12 +362,12 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
     if not region:
         region = get_aws_region_from_cli(profile)
 
-    # Pass configuration as named arguments
-    cmd.extend([
-        "--profile", profile,
-        "--region", region,
-        "--output-dir", str(evidence_dir),
-    ])
+    # Pass configuration as named arguments (only when non-empty)
+    if profile:
+        cmd.extend(["--profile", profile])
+    if region:
+        cmd.extend(["--region", region])
+    cmd.extend(["--output-dir", str(evidence_dir)])
 
     try:
         # Set environment variables for the subprocess
@@ -459,8 +460,8 @@ def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict =
             if instance:
                 if instance.get("provider") == "gitlab" and "GITLAB_PROJECT_ID" in instance.get("config", {}):
                     resource = instance["config"]["GITLAB_PROJECT_ID"]
-                elif instance.get("provider") == "aws" and "AWS_REGION" in instance.get("config", {}):
-                    resource = instance["config"]["AWS_REGION"]
+                elif instance.get("provider") == "aws" and "AWS_DEFAULT_REGION" in instance.get("config", {}):
+                    resource = instance["config"]["AWS_DEFAULT_REGION"]
                 elif instance.get("provider") == "aws" and "AWS_PROFILE" in instance.get("config", {}):
                     resource = instance["config"]["AWS_PROFILE"]
         else:
