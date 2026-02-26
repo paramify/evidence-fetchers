@@ -48,7 +48,7 @@ try:
     project_root = script_dir.parent.parent  # Go up from fetchers/okta/ to project root
     env_path = project_root / '.env'
     if env_path.exists():
-        load_dotenv(dotenv_path=env_path, override=True)
+        load_dotenv(dotenv_path=env_path, override=False)
         env_loaded = True
 except (NameError, AttributeError):
     # __file__ might not be defined in some contexts
@@ -58,12 +58,12 @@ except (NameError, AttributeError):
 if not env_loaded:
     cwd_env = Path.cwd() / '.env'
     if cwd_env.exists():
-        load_dotenv(dotenv_path=cwd_env, override=True)
+        load_dotenv(dotenv_path=cwd_env, override=False)
         env_loaded = True
 
 # Strategy 3: Auto-discovery (searches up from current directory)
 if not env_loaded:
-    load_dotenv(override=True)
+    load_dotenv(override=False)
 
 # Final verification - if still using placeholder, try one more time from explicit paths
 loaded_org_url = os.getenv("OKTA_ORG_URL", "")
@@ -76,7 +76,7 @@ if not loaded_org_url or loaded_org_url == "https://yourorg.okta.com" or loaded_
     ]
     for env_file in possible_paths:
         if env_file.exists():
-            load_dotenv(dotenv_path=env_file, override=True)
+            load_dotenv(dotenv_path=env_file, override=False)
             if os.getenv("OKTA_ORG_URL", "") and os.getenv("OKTA_ORG_URL", "") != "https://yourorg.okta.com":
                 break
 

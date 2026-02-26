@@ -85,6 +85,9 @@ def parse_fetcher_args() -> tuple:
         elif args[i] == "--region" and i + 1 < len(args):
             region = args[i + 1]
             i += 2
+        elif args[i].startswith("--") and args[i] not in ("--skip-check", "--check-only"):
+            print(f"Warning: unknown argument '{args[i]}' (ignored)", file=sys.stderr)
+            i += 1
         else:
             i += 1
 

@@ -55,8 +55,13 @@ while [[ $# -gt 0 ]]; do
             REGION="$2"
             shift 2
             ;;
+        -*)
+            # Unknown flag - warn and skip
+            echo "Warning: unknown argument '$1' (ignored)" >&2
+            shift
+            ;;
         *)
-            # Unknown argument - skip it
+            # Positional argument - skip silently (may be script-specific)
             shift
             ;;
     esac

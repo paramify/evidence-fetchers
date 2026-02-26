@@ -728,7 +728,7 @@ def main():
     print("EXECUTION COMPLETE")
     print(f"{'='*60}")
     print(f"Evidence stored in: {evidence_dir}")
-    print(f"Summary file: {evidence_dir}/execution_summary.json")
+    print(f"Summary file: {evidence_dir}/summary.json")
 
 
 if __name__ == "__main__":
