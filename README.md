@@ -1,5 +1,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/paramify/evidence-fetchers)
-[![CodeQL](https://github.com/paramify/evidence-fetchers/actions/workflows/codeql.yml/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/codeql.yml)
+[![FedRAMP 20x KSIs](https://img.shields.io/badge/FedRAMP%20KSIs-catalog-blue)](fetchers/Paramify%20Evidence%20Catalog.md)
+[![CodeQL](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql)
+[![Dependencies](https://github.com/paramify/evidence-fetchers/actions/workflows/dependency-graph/auto-submission/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/dependency-graph/auto-submission)
 
 # Evidence Fetchers
 
@@ -116,5 +118,5 @@ OKTA_ORG_URL=https://your-org.okta.com
 ## Documentation
 
 - **Component docs**: See `README.md` in each numbered directory
-- **Developer guide**: `6-add-new-fetcher/DEVELOPER_GUIDE.md`
-- **Customer setup**: `1-select-fetchers/CUSTOMER_SETUP_GUIDE.md`
+- **DeepWiki docs**: [Evidence Fetchers on DeepWiki](https://deepwiki.com/paramify/evidence-fetchers)
+- **Fetcher catalog & KSIs**: [`Paramify Fetchers Catalog`](fetchers/Paramify%20Fetchers%20Catalog.md)
