@@ -118,5 +118,5 @@ OKTA_ORG_URL=https://your-org.okta.com
 ## Documentation
 
 - **Component docs**: See `README.md` in each numbered directory
-- **DeepWiki docs**: [Evidence Fetchers on DeepWiki](https://deepwiki.com/paramify/evidence-fetchers)
-- **Fetcher catalog & KSIs**: [`Paramify Fetchers Catalog`](fetchers/Paramify%20Fetchers%20Catalog.md)
+- [DeepWiki docs](https://deepwiki.com/paramify/evidence-fetchers)
+- [`FedRAMP 20x KSIs <-> Fetchers Catalog`](fetchers/Paramify%20Fetchers%20Catalog.md)
