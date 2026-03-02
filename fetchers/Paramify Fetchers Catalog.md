@@ -1,172 +1,225 @@
 # Paramify Fetchers Catalog
-[![Fetcher Count](https://img.shields.io/badge/Active_Fetchers-42_Scripts-blue)]() [![Compliance Status](https://img.shields.io/badge/Coverage-84%25_Automated-green)]()
+
+[![Fetcher Count](https://img.shields.io/badge/Active_Fetchers-42_Scripts-blue)]()  
+[![Compliance Status](https://img.shields.io/badge/Coverage-84%25_Automated-green)]()
 
 Welcome to the **Paramify Fetchers Catalog**.
 
-This repository contains the automated scripts ("fetchers") used to validate your security posture against **FedRAMP 20x Key Security Indicators (KSIs)** and more. This dashboard maps each 20x KSI to the evidence fetchers used to provide evidence for the KSI.
-
-### 📊 Compliance Summary
-
-| Status | Count | Percentage | Definition |
-| :--- | :--- | :--- | :--- |
-|  **Automated** | **42** | **84%** | Validated by a script in this repo. |
-|  **Manual** | **8** | **16%** | Validated by a pass or fail questionnaire.|
+This repository contains the automated scripts ("fetchers") used to validate your security posture against **FedRAMP 20x Key Security Indicators (KSIs)**.
 
 ---
 
-## CED Family (Cybersecurity Education)
-| KSI ID | Evidence Title | Fetcher Script | Status |
+# 📊 Compliance Summary
+
+| Status | Count | Percentage | Definition |
 | :--- | :--- | :--- | :--- |
-| **`CED-01`** | Security Awareness Training | [security_awareness_training.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/knowbe4/security_awareness_training.sh) | Automated |
-| **`CED-02`** | Role Specific Training (High Risk) | [high_risk_training.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/knowbe4/high_risk_training.sh) | Automated |
-| **`CED-03`** | Development and Engineering Training | [developer_specific_training.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/knowbe4/developer_specific_training.sh) | Automated |
-| **`CED-04`** | Response and Recovery Training | - | Manual |
+| **Automated** | **42** | **84%** | Validated by a script in this repo |
+| **Manual** | **8** | **16%** | Validated by a pass/fail questionnaire |
 
-## CMT Family (Change Management)
+---
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`CMT-01`** | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_merge_request_summary.py) | Automated |
-| | GitLab CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | Automated |
-| **`CMT-02`** | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
-| | Checkov Kubernetes Security | [checkov_kubernetes.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_kubernetes.sh) | Automated |
-| | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_merge_request_summary.py) | Automated |
-| | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_project_summary.py) | Automated |
-| **`CMT-03`** | GitLab CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | Automated |
-| **`CMT-04`** | Reviewing Change Procedures | - | Manual |
+# CED Family (Cybersecurity Education)
 
-## CNA Family (Cloud Native Architecture)
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/cybersecurity-education/
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`CNA-01`** | Security Groups | [security_groups.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/security_groups.sh) | Automated |
-| | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/waf_all_rules.sh) | Automated |
-| | WAF DoS Rules | [waf_DoS_rules.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/waf_DoS_rules.sh) | Automated |
-| **`CNA-02`** | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/load_balancer_encryption_status.sh) | Automated |
-| | AWS Component SSL Enforcement | [aws_component_ssl_enforcement_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/aws_component_ssl_enforcement_status.sh) | Automated |
-| | Security Groups | [security_groups.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/security_groups.sh) | Automated |
-| **`CNA-03`** | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/waf_all_rules.sh) | Automated |
-| | AWS Component SSL Enforcement | [aws_component_ssl_enforcement_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/aws_component_ssl_enforcement_status.sh) | Automated |
-| **`CNA-04`** | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
-| | Checkov Kubernetes Security | [checkov_kubernetes.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_kubernetes.sh) | Automated |
-| **`CNA-05`** | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/waf_all_rules.sh) | Automated |
-| | WAF DoS Rules | [waf_DoS_rules.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/waf_DoS_rules.sh) | Automated |
-| **`CNA-06`** | Auto Scaling High Availability | [auto_scaling_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/auto_scaling_high_availability.sh) | Automated |
-| | Database High Availability | [database_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/database_high_availability.sh) | Automated |
-| | EKS High Availability | [eks_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/eks_high_availability.sh) | Automated |
-| | EFS High Availability | [efs_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/efs_high_availability.sh) | Automated |
-| | Load Balancer High Availability | [load_balancer_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/load_balancer_high_availability.sh) | Automated |
-| | Network Resilience High Availability | [network_resilience_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/network_resilience_high_availability.sh) | Automated |
-| | Route 53 High Availability | [route53_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/route53_high_availability.sh) | Automated |
-| **`CNA-07`** | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/waf_all_rules.sh) | Automated |
-| | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
-| **`CNA-08`** | Enforcing Intended State | [aws_config_conformance_packs.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/aws_config_conformance_packs.sh) | Automated |
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`CED-RGT`](https://www.fedramp.gov/docs/20x/key-security-indicators/cybersecurity-education/)** | CED-01 | Security Awareness Training | [security_awareness_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/security_awareness_training.sh) | KnowBe4 | Automated |
+| **[`CED-RST`](https://www.fedramp.gov/docs/20x/key-security-indicators/cybersecurity-education/)** | CED-02 | Role Specific Training | [high_risk_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/high_risk_training.sh) | KnowBe4 | Automated |
+| **[`CED-DET`](https://www.fedramp.gov/docs/20x/key-security-indicators/cybersecurity-education/)** | CED-03 | Development & Engineering Training | [developer_specific_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/developer_specific_training.sh) | KnowBe4 | Automated |
+| **[`CED-RRT`](https://www.fedramp.gov/docs/20x/key-security-indicators/cybersecurity-education/)** | CED-04 | Response & Recovery Training | - | - | Manual |
 
-## IAM Family (Identity & Access)
+---
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`IAM-01`** | Okta Phishing Resistant MFA | [okta_phishing_resistant_mfa.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/okta/okta_phishing_resistant_mfa.py) | Automated |
-| | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_identity_center.sh) | Automated |
-| | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_roles.sh) | Automated |
-| | IAM Users and Groups | [iam_users_groups.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_users_groups.sh) | Automated |
-| **`IAM-02`** | Adopting Passwordless Methods | [okta_passwordless_authentication.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/okta/okta_passwordless_authentication.py) | Automated |
-| **`IAM-03`** | Okta Non-User Accounts | [okta_non_user_accounts_authentication.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/okta/okta_non_user_accounts_authentication.py) | Automated |
-| | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_identity_center.sh) | Automated |
-| | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_roles.sh) | Automated |
-| **`IAM-04`** | Okta Just-in-Time Authorization | [okta_just_in_time_authorization.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/okta/okta_just_in_time_authorization.py) | Automated |
-| | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_identity_center.sh) | Automated |
-| | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_roles.sh) | Automated |
-| **`IAM-05`** | Okta Least Privilege | [okta_least_privilege.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/okta/okta_least_privilege.py) | Automated |
-| | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_identity_center.sh) | Automated |
-| | EKS Least Privilege | [eks_least_privilege.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/eks_least_privilege.sh) | Automated |
-| | IAM Users and Groups | [iam_users_groups.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_users_groups.sh) | Automated |
-| **`IAM-06`** | Okta Suspicious Activity | [okta_suspicious_activity_management.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/okta/okta_suspicious_activity_management.py) | Automated |
-| | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/cloudtrail_configuration.sh) | Automated |
-| | SentinelOne Cloud Detection Rules | [sentinelone_cloud_detection_rules.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/sentinelone/sentinelone_cloud_detection_rules.py) | Automated |
-| **`IAM-07`** | Automated Account Management | [okta_automated_account_management.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/okta/okta_automated_account_management.py) | Automated |
+# CMT Family (Change Management)
 
-## INR Family (Incident Response)
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/change-management/
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`INR-01`** | Reviewing Incident Response Procedures | - | Manual |
-| **`INR-02`** | Reviewing Past Incidents | [sentinelone_activities.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/sentinelone/sentinelone_activities.py) | Automated |
-| **`INR-03`** | Generating After Action Reports | - | Manual |
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`CMT-LMC`](https://www.fedramp.gov/docs/20x/key-security-indicators/change-management/)** | CMT-01 | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_merge_request_summary.py) | GitLab | Automated |
+|  |  | GitLab CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | GitLab | Automated |
+| **[`CMT-RMV`](https://www.fedramp.gov/docs/20x/key-security-indicators/change-management/)** | CMT-02 | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov | Automated |
+|  |  | Checkov Kubernetes Security | [checkov_kubernetes.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_kubernetes.sh) | Checkov | Automated |
+|  |  | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_merge_request_summary.py) | GitLab | Automated |
+|  |  | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_project_summary.py) | GitLab | Automated |
+| **[`CMT-VTD`](https://www.fedramp.gov/docs/20x/key-security-indicators/change-management/)** | CMT-03 | CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | GitLab | Automated |
+| **[`CMT-RVP`](https://www.fedramp.gov/docs/20x/key-security-indicators/change-management/)** | CMT-04 | Reviewing Change Procedures | - | - | Manual |
 
-## MLA Family (Monitoring & Logging)
+---
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`MLA-01`** | Operating SIEM Capability | [sentinelone_cloud_detection_rules.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/sentinelone/sentinelone_cloud_detection_rules.py) | Automated |
-| | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/cloudtrail_configuration.sh) | Automated |
-| **`MLA-02`** | Reviewing Logs | [sentinelone_activities.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/sentinelone/sentinelone_activities.py) | Automated |
-| | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/cloudtrail_configuration.sh) | Automated |
-| **`MLA-05`** | Evaluating Configurations | [sentinelone_xdr_assets.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/sentinelone/sentinelone_xdr_assets.py) | Automated |
-| | SentinelOne Agents | [sentinelone_agents.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/sentinelone/sentinelone_agents.py) | Automated |
-| | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_project_summary.py) | Automated |
-| | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
-| **`MLA-07`** | Logging Event Types | [cloudwatch_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/cloudwatch_high_availability.sh) | Automated |
-| | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/cloudtrail_configuration.sh) | Automated |
-| **`MLA-08`** | Authorizing Log Access | [iam_policies.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_policies.sh) | Automated |
+# CNA Family (Cloud Native Architecture)
 
-## PIY Family (Policy)
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`PIY-01`** | Generating Inventories | [detect_new_aws_resource.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/detect_new_aws_resource.sh) | Automated |
-| | EKS Pod Inventory | [eks_pod_inventory.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/k8s/eks_pod_inventory.sh) | Automated |
-| | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_project_summary.py) | Automated |
-| | Rippling Current Employees | [rippling_current_employees.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/rippling/rippling_current_employees.py) | Automated |
-| | Rippling All Employees | [rippling_all_employees.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/rippling/rippling_all_employees.py) | Automated |
-| **`PIY-03`** | Reviewing Vulnerability Disclosures | - | Manual |
-| **`PIY-04`** | GitLab CI/CD Pipeline Config | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | Automated |
-| **`PIY-06`** | Reviewing Investments in Security | - | Manual |
-| **`PIY-08`** | Reviewing Executive Support | - | Manual |
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`CNA-RNT`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-01 | Security Groups | [security_groups.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/security_groups.sh) | AWS | Automated |
+|  |  | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/waf_all_rules.sh) | AWS WAF | Automated |
+|  |  | WAF DoS Rules | [waf_DoS_rules.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/waf_DoS_rules.sh) | AWS WAF | Automated |
+| **[`CNA-MAT`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-02 | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/load_balancer_encryption_status.sh) | AWS ELB | Automated |
+|  |  | AWS Component SSL Enforcement | [aws_component_ssl_enforcement_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/aws_component_ssl_enforcement_status.sh) | AWS | Automated |
+|  |  | Security Groups | [security_groups.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/security_groups.sh) | AWS | Automated |
+| **[`CNA-RDS`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-03 | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/waf_all_rules.sh) | AWS WAF | Automated |
+|  |  | AWS Component SSL Enforcement | [aws_component_ssl_enforcement_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/aws_component_ssl_enforcement_status.sh) | AWS | Automated |
+| **[`CNA-DFP`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-04 | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov | Automated |
+|  |  | Checkov Kubernetes Security | [checkov_kubernetes.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_kubernetes.sh) | Checkov | Automated |
+| **[`CNA-SPE`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-05 | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/waf_all_rules.sh) | AWS WAF | Automated |
+|  |  | WAF DoS Rules | [waf_DoS_rules.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/waf_DoS_rules.sh) | AWS WAF | Automated |
+| **[`CNA-OFA`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-06 | Auto Scaling High Availability | [auto_scaling_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/auto_scaling_high_availability.sh) | AWS Auto Scaling | Automated |
+|  |  | Database High Availability | [database_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/database_high_availability.sh) | AWS RDS | Automated |
+|  |  | EKS High Availability | [eks_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/eks_high_availability.sh) | AWS EKS | Automated |
+|  |  | EFS High Availability | [efs_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/efs_high_availability.sh) | AWS EFS | Automated |
+|  |  | Load Balancer High Availability | [load_balancer_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/load_balancer_high_availability.sh) | AWS ELB | Automated |
+|  |  | Network Resilience High Availability | [network_resilience_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/network_resilience_high_availability.sh) | AWS Networking | Automated |
+|  |  | Route 53 High Availability | [route53_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/route53_high_availability.sh) | AWS Route 53 | Automated |
+| **[`CNA-IOS`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-07 | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/waf_all_rules.sh) | AWS WAF | Automated |
+|  |  | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov | Automated |
+| **[`CNA-EIS`](https://www.fedramp.gov/docs/20x/key-security-indicators/cloud-native-architecture/)** | CNA-08 | Enforcing Intended State | [aws_config_conformance_packs.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/aws_config_conformance_packs.sh) | AWS Config | Automated |
 
-## RPL Family (Resilience)
+---
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`RPL-01`** | Reviewing Recovery Objectives | [backup_validation.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/backup_validation.sh) | Automated |
-| **`RPL-02`** | Aligning Recovery Plan | [backup_recovery_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/backup_recovery_high_availability.sh) | Automated |
-| **`RPL-03`** | RDS Database High Availability | [database_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/database_high_availability.sh) | Automated |
-| | Backup Recovery High Availability | [backup_recovery_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/backup_recovery_high_availability.sh) | Automated |
-| | EFS High Availability | [efs_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/efs_high_availability.sh) | Automated |
-| | EKS High Availability | [eks_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/eks_high_availability.sh) | Automated |
-| | Load Balancer High Availability | [load_balancer_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/load_balancer_high_availability.sh) | Automated |
-| | Network Resilience High Availability | [network_resilience_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/network_resilience_high_availability.sh) | Automated |
-| | Route 53 High Availability | [route53_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/route53_high_availability.sh) | Automated |
-| | CloudWatch High Availability | [cloudwatch_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/cloudwatch_high_availability.sh) | Automated |
-| **`RPL-04`** | Testing Recovery Capabilities | [backup_validation.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/backup_validation.sh) | Automated |
+# IAM Family (Identity & Access)
 
-## SCR Family (Supply Chain Risk)
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`SCR-MIT`** | Mitigating Supply Chain Risk | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
-| **`SCR-MON`** | Monitoring Supply Chain Risk | [guard_duty.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/guard_duty.sh) | Automated |
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`IAM-MFA`](https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/)** | IAM-01 | Okta Phishing Resistant MFA | [okta_phishing_resistant_mfa.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_phishing_resistant_mfa.py) | Okta | Automated |
+|  |  | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_identity_center.sh) | AWS IAM Identity Center | Automated |
+|  |  | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_roles.sh) | AWS IAM | Automated |
+|  |  | IAM Users and Groups | [iam_users_groups.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_users_groups.sh) | AWS IAM | Automated |
+| **[`IAM-AMP`](https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/)** | IAM-02 | Adopting Passwordless Methods | [okta_passwordless_authentication.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_passwordless_authentication.py) | Okta | Automated |
+| **[`IAM-ATM`](https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/)** | IAM-03 | Okta Non-User Accounts | [okta_non_user_accounts_authentication.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_non_user_accounts_authentication.py) | Okta | Automated |
+|  |  | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_identity_center.sh) | AWS IAM Identity Center | Automated |
+|  |  | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_roles.sh) | AWS IAM | Automated |
+| **[`IAM-JTA`](https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/)** | IAM-04 | Okta Just-in-Time Authorization | [okta_just_in_time_authorization.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_just_in_time_authorization.py) | Okta | Automated |
+|  |  | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_identity_center.sh) | AWS IAM Identity Center | Automated |
+|  |  | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_roles.sh) | AWS IAM | Automated |
+| **[`IAM-ELP`](https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/)** | IAM-05 | Okta Least Privilege | [okta_least_privilege.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_least_privilege.py) | Okta | Automated |
+|  |  | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_identity_center.sh) | AWS IAM Identity Center | Automated |
+|  |  | EKS Least Privilege | [eks_least_privilege.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/eks_least_privilege.sh) | AWS EKS | Automated |
+|  |  | IAM Users and Groups | [iam_users_groups.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_users_groups.sh) | AWS IAM | Automated |
+| **[`IAM-SAM`](https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/)** | IAM-06 | Okta Suspicious Activity | [okta_suspicious_activity_management.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_suspicious_activity_management.py) | Okta | Automated |
+|  |  | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/cloudtrail_configuration.sh) | AWS CloudTrail | Automated |
+|  |  | SentinelOne Cloud Detection Rules | [sentinelone_cloud_detection_rules.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_cloud_detection_rules.py) | SentinelOne | Automated |
+| **[`IAM-AAM`](https://www.fedramp.gov/docs/20x/key-security-indicators/identity-and-access-management/)** | IAM-07 | Automated Account Management | [okta_automated_account_management.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_automated_account_management.py) | Okta | Automated |
 
-## SVC Family (Service Config)
+---
 
-| KSI ID | Evidence Title | Fetcher Script | Status |
-| :--- | :--- | :--- | :--- |
-| **`SVC-01`** | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_merge_request_summary.py) | Automated |
-| | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_project_summary.py) | Automated |
-| | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
-| | Checkov Kubernetes Security | [checkov_kubernetes.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_kubernetes.sh) | Automated |
-| **`SVC-02`** | Block Storage Encryption Status | [block_storage_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/block_storage_encryption_status.sh) | Automated |
-| | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/load_balancer_encryption_status.sh) | Automated |
-| | RDS Encryption | [rds_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/rds_encryption_status.sh) | Automated |
-| | S3 Encryption | [s3_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/s3_encryption_status.sh) | Automated |
-| **`SVC-04`** | AWS Config Monitoring | [aws_config_monitoring.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/aws_config_monitoring.sh) | Automated |
-| | AWS Config Conformance Packs | [aws_config_conformance_packs.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/aws_config_conformance_packs.sh) | Automated |
-| | IAM Policies | [iam_policies.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_policies.sh) | Automated |
-| | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
-| **`SVC-05`** | Authorized Cryptographic Modules | [block_storage_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/block_storage_encryption_status.sh) | Automated |
-| | RDS Encryption | [rds_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/rds_encryption_status.sh) | Automated |
-| | S3 Encryption | [s3_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/s3_encryption_status.sh) | Automated |
-| **`SVC-06`** | KMS Key Rotation | [kms_key_rotation.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/kms_key_rotation.sh) | Automated |
-| **`SVC-08`** | Preventing Residual Risk | [s3_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/s3_encryption_status.sh) | Automated |
-| **`SVC-09`** | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/load_balancer_encryption_status.sh) | Automated |
-| **`SVC-10`** | Removing Unwanted Data | - | Manual |
+# INR Family (Incident Response)
+
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/incident-response/
+
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`INR-RIR`](https://www.fedramp.gov/docs/20x/key-security-indicators/incident-response/)** | INR-01 | Reviewing Incident Response Procedures | - | - | Manual |
+| **[`INR-RPI`](https://www.fedramp.gov/docs/20x/key-security-indicators/incident-response/)** | INR-02 | Reviewing Past Incidents | [sentinelone_activities.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_activities.py) | SentinelOne | Automated |
+| **[`INR-AAR`](https://www.fedramp.gov/docs/20x/key-security-indicators/incident-response/)** | INR-03 | Generating After Action Reports | - | - | Manual |
+
+---
+
+# MLA Family (Monitoring & Logging)
+
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/monitoring-and-logging/
+
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`MLA-OSI`](https://www.fedramp.gov/docs/20x/key-security-indicators/monitoring-and-logging/)** | MLA-01 | Operating SIEM Capability | [sentinelone_cloud_detection_rules.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_cloud_detection_rules.py) | SentinelOne | Automated |
+|  |  | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/cloudtrail_configuration.sh) | AWS CloudTrail | Automated |
+| **[`MLA-RLG`](https://www.fedramp.gov/docs/20x/key-security-indicators/monitoring-and-logging/)** | MLA-02 | Reviewing Logs | [sentinelone_activities.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_activities.py) | SentinelOne | Automated |
+|  |  | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/cloudtrail_configuration.sh) | AWS CloudTrail | Automated |
+| **[`MLA-EVL`](https://www.fedramp.gov/docs/20x/key-security-indicators/monitoring-and-logging/)** | MLA-05 | Evaluating Configurations | [sentinelone_xdr_assets.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_xdr_assets.py) | SentinelOne | Automated |
+|  |  | SentinelOne Agents | [sentinelone_agents.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_agents.py) | SentinelOne | Automated |
+|  |  | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_project_summary.py) | GitLab | Automated |
+|  |  | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov | Automated |
+| **[`MLA-LET`](https://www.fedramp.gov/docs/20x/key-security-indicators/monitoring-and-logging/)** | MLA-07 | Logging Event Types | [cloudwatch_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/cloudwatch_high_availability.sh) | AWS CloudWatch | Automated |
+|  |  | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/cloudtrail_configuration.sh) | AWS CloudTrail | Automated |
+| **[`MLA-ALA`](https://www.fedramp.gov/docs/20x/key-security-indicators/monitoring-and-logging/)** | MLA-08 | Authorizing Log Access | [iam_policies.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_policies.sh) | AWS IAM | Automated |
+
+---
+
+# PIY Family (Policy)
+
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/policy/
+
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`PIY-GEN`](https://www.fedramp.gov/docs/20x/key-security-indicators/policy/)** | PIY-01 | Generating Inventories | [detect_new_aws_resource.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/detect_new_aws_resource.sh) | AWS | Automated |
+|  |  | EKS Pod Inventory | [eks_pod_inventory.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/eks_pod_inventory.sh) | AWS EKS | Automated |
+|  |  | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_project_summary.py) | GitLab | Automated |
+|  |  | Rippling Current Employees | [rippling_current_employees.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/rippling/rippling_current_employees.py) | Rippling | Automated |
+|  |  | Rippling All Employees | [rippling_all_employees.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/rippling/rippling_all_employees.py) | Rippling | Automated |
+| **[`PIY-RVD`](https://www.fedramp.gov/docs/20x/key-security-indicators/policy/)** | PIY-03 | Reviewing Vulnerability Disclosures | - | - | Manual |
+| **[`PIY-CDD`](https://www.fedramp.gov/docs/20x/key-security-indicators/policy/)** | PIY-04 | GitLab CI/CD Pipeline Config | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | GitLab | Automated |
+| **[`PIY-RIS`](https://www.fedramp.gov/docs/20x/key-security-indicators/policy/)** | PIY-06 | Reviewing Investments in Security | - | - | Manual |
+| **[`PIY-RES`](https://www.fedramp.gov/docs/20x/key-security-indicators/policy/)** | PIY-08 | Reviewing Executive Support | - | - | Manual |
+
+---
+
+# RPL Family (Resilience)
+
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/resilience/
+
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`RPL-RRO`](https://www.fedramp.gov/docs/20x/key-security-indicators/resilience/)** | RPL-01 | Reviewing Recovery Objectives | [backup_validation.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/backup_validation.sh) | AWS Backup | Automated |
+| **[`RPL-ARP`](https://www.fedramp.gov/docs/20x/key-security-indicators/resilience/)** | RPL-02 | Aligning Recovery Plan | [backup_recovery_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/backup_recovery_high_availability.sh) | AWS Backup | Automated |
+| **[`RPL-RTP`](https://www.fedramp.gov/docs/20x/key-security-indicators/resilience/)** | RPL-03 | RDS Database High Availability | [database_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/database_high_availability.sh) | AWS RDS | Automated |
+|  |  | Backup Recovery High Availability | [backup_recovery_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/backup_recovery_high_availability.sh) | AWS Backup | Automated |
+|  |  | EFS High Availability | [efs_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/efs_high_availability.sh) | AWS EFS | Automated |
+|  |  | EKS High Availability | [eks_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/eks_high_availability.sh) | AWS EKS | Automated |
+|  |  | Load Balancer High Availability | [load_balancer_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/load_balancer_high_availability.sh) | AWS ELB | Automated |
+|  |  | Network Resilience High Availability | [network_resilience_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/network_resilience_high_availability.sh) | AWS Networking | Automated |
+|  |  | Route 53 High Availability | [route53_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/route53_high_availability.sh) | AWS Route 53 | Automated |
+|  |  | CloudWatch High Availability | [cloudwatch_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/cloudwatch_high_availability.sh) | AWS CloudWatch | Automated |
+| **[`RPL-TRC`](https://www.fedramp.gov/docs/20x/key-security-indicators/resilience/)** | RPL-04 | Testing Recovery Capabilities | [backup_validation.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/backup_validation.sh) | AWS Backup | Automated |
+
+---
+
+# SCR Family (Supply Chain Risk)
+
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/supply-chain-risk/
+
+| 20x ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **[`SCR-MIT`](https://www.fedramp.gov/docs/20x/key-security-indicators/supply-chain-risk/)** | Mitigating Supply Chain Risk | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov | Automated |
+| **[`SCR-MON`](https://www.fedramp.gov/docs/20x/key-security-indicators/supply-chain-risk/)** | Monitoring Supply Chain Risk | [guard_duty.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/guard_duty.sh) | AWS GuardDuty | Automated |
+
+---
+
+# SVC Family (Service Configuration)
+
+Base URL:  
+https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/
+
+| 20x ID | Former ID | Evidence Title | Fetcher Script | Source System | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **[`SVC-DMR`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-01 | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_merge_request_summary.py) | GitLab | Automated |
+|  |  | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_project_summary.py) | GitLab | Automated |
+|  |  | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov | Automated |
+|  |  | Checkov Kubernetes Security | [checkov_kubernetes.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_kubernetes.sh) | Checkov | Automated |
+| **[`SVC-DRE`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-02 | Block Storage Encryption Status | [block_storage_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/block_storage_encryption_status.sh) | AWS EBS | Automated |
+|  |  | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/load_balancer_encryption_status.sh) | AWS ELB | Automated |
+|  |  | RDS Encryption | [rds_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/rds_encryption_status.sh) | AWS RDS | Automated |
+|  |  | S3 Encryption | [s3_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/s3_encryption_status.sh) | AWS S3 | Automated |
+| **[`SVC-MAS`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-04 | AWS Config Monitoring | [aws_config_monitoring.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/aws_config_monitoring.sh) | AWS Config | Automated |
+|  |  | AWS Config Conformance Packs | [aws_config_conformance_packs.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/aws_config_conformance_packs.sh) | AWS Config | Automated |
+|  |  | IAM Policies | [iam_policies.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_policies.sh) | AWS IAM | Automated |
+|  |  | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov | Automated |
+| **[`SVC-ACC`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-05 | Authorized Cryptographic Modules | [block_storage_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/block_storage_encryption_status.sh) | AWS EBS | Automated |
+|  |  | RDS Encryption | [rds_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/rds_encryption_status.sh) | AWS RDS | Automated |
+|  |  | S3 Encryption | [s3_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/s3_encryption_status.sh) | AWS S3 | Automated |
+| **[`SVC-ASM`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-06 | KMS Key Rotation | [kms_key_rotation.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/kms_key_rotation.sh) | AWS KMS | Automated |
+| **[`SVC-PRR`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-08 | Preventing Residual Risk | [s3_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/s3_encryption_status.sh) | AWS S3 | Automated |
+| **[`SVC-ELB`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-09 | Load Balancer Encryption Status | [load_balancer_encryption_status.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/load_balancer_encryption_status.sh) | AWS ELB | Automated |
+| **[`SVC-RUD`](https://www.fedramp.gov/docs/20x/key-security-indicators/service-configuration/)** | SVC-10 | Removing Unwanted Data | - | - | Manual |
