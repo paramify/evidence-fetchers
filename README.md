@@ -1,7 +1,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/paramify/evidence-fetchers)
-[![FedRAMP 20x KSIs](https://img.shields.io/badge/FedRAMP%20KSIs-catalog-blue)](fetchers/Paramify%20Evidence%20Catalog.md)
+[![FedRAMP 20x KSIs](https://img.shields.io/badge/FedRAMP%2020x%20KSIs-%20-blue)](fetchers/Paramify%20Fetchers%20Catalog.md)
 [![CodeQL](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql)
-[![Dependencies](https://github.com/paramify/evidence-fetchers/actions/workflows/dependency-graph/auto-submission/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/dependency-graph/auto-submission)
+[![Dependencies](https://img.shields.io/badge/Dependencies-%20-blue)](https://github.com/paramify/evidence-fetchers/actions/workflows/dependency-graph/auto-submission)
 
 # Evidence Fetchers
 
