@@ -13,16 +13,8 @@
 
 # Output: Creates JSON report with RDS encryption at rest status
 
-# Check if required parameters are provided
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Initialize counters
 total_databases=0
@@ -124,7 +116,5 @@ results_json=$(jq -n \
 # Write results to JSON file
 echo "$results_json" > "$OUTPUT_DIR/rds_encryption_status.json"
 
-# Add to CSV
-echo "rds_encryption_status,$(echo "$results_json" | jq -r '.results.summary | "Total: \(.total_storage), Encrypted: \(.encrypted_storage) (\(.encryption_percentage)%)"')" >> "$CSV_FILE"
 
 exit 0 

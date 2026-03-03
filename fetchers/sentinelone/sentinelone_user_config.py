@@ -12,6 +12,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common.env_loader import parse_fetcher_args
+
 
 def current_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -134,15 +137,7 @@ def get_sentinelone_users() -> Dict[str, Any]:
 
 
 def main() -> int:
-    # Args from runner: profile, region, output_dir, csv_file
-    if len(sys.argv) != 5:
-        print("Usage: python sentinelone_user_config.py <profile> <region> <output_dir> <csv_file>")
-        return 1
-
-    _profile = sys.argv[1]
-    _region = sys.argv[2]
-    output_dir = sys.argv[3]
-    csv_file = sys.argv[4]
+    output_dir, _profile, _region = parse_fetcher_args()
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     component = "sentinelone_user_config"
@@ -152,13 +147,6 @@ def main() -> int:
 
     with open(output_json, "w") as f:
         json.dump(result, f, indent=2, default=str)
-
-    # Append CSV summary
-    with open(csv_file, "a") as f:
-        status = result.get("status", "unknown")
-        # Generate a brief summary message based on analysis if available
-        msg = f"User config retrieved. Records: {result.get('record_count', 0)}"
-        f.write(f"{component},{status},{current_timestamp()},{msg}\n")
 
     return 0 if result.get("status") in {"success", "partial_or_empty"} else 1
 

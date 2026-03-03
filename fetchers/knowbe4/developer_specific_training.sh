@@ -69,15 +69,11 @@
 # 7. Calculate per-user training status and summary metrics
 #
 # Usage:
-#   ./developer_specific_training.sh <profile> <region> <output_dir> <csv_file>
+#   ./developer_specific_training.sh
+#   ./developer_specific_training.sh --output-dir /path/to/output
 
-# Required parameters
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-OUTPUT_DIR="$3"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="developer_specific_training"

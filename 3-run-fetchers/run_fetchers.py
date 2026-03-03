@@ -6,8 +6,10 @@ This script executes the selected evidence fetcher scripts and stores evidence
 in timestamped directories. Optionally uploads evidence files to Paramify.
 """
 
+import importlib
 import json
 import os
+import shutil
 import sys
 import subprocess
 import re
@@ -57,6 +59,107 @@ def check_prerequisites():
     
     print("✓ All prerequisites met")
     return True
+
+
+# Mapping from catalog dependency names to binary names and install instructions
+_DEPENDENCY_BINARY_MAP = {
+    "aws-cli": ("aws", "Install AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"),
+    "kubectl": ("kubectl", "Install kubectl: https://kubernetes.io/docs/tasks/tools/"),
+    "checkov": ("checkov", "pip install checkov"),
+    "curl": ("curl", "Install curl for your OS"),
+    "jq": ("jq", "Install jq: https://jqlang.github.io/jq/download/"),
+    "git": ("git", "Install git: https://git-scm.com/downloads"),
+}
+
+# Python package dependencies that need import-based checking
+_PYTHON_PACKAGE_DEPS = {
+    "requests": "pip install requests",
+    "python3": None,  # Skip — we're already running Python
+}
+
+
+def check_tool_dependencies(evidence_sets: dict) -> None:
+    """Check if required tool dependencies are available for selected fetchers.
+
+    Reads the catalog to find dependencies for each selected fetcher, then
+    checks whether the required binaries are on the PATH. Prints warnings
+    for any missing tools but does not block execution.
+    """
+    catalog_path = Path("1-select-fetchers/evidence_fetchers_catalog.json")
+    if not catalog_path.exists():
+        return  # Can't check without catalog
+
+    try:
+        catalog = load_json_file(str(catalog_path))
+    except SystemExit:
+        return  # load_json_file calls sys.exit on error; don't block here
+
+    # Build a map: dependency_name -> set of fetcher names that need it
+    dep_to_fetchers: Dict[str, set] = {}
+    selected_fetchers = set(evidence_sets.get("evidence_sets", {}).keys())
+
+    # Walk the catalog to find dependencies for selected fetchers
+    categories = {}
+    if "evidence_fetchers_catalog" in catalog and "categories" in catalog["evidence_fetchers_catalog"]:
+        categories = catalog["evidence_fetchers_catalog"]["categories"]
+    elif "evidence_fetchers" in catalog:
+        # Legacy flat structure
+        categories = {"_legacy": {"scripts": catalog["evidence_fetchers"]}}
+
+    for _cat_name, cat_data in categories.items():
+        scripts = cat_data.get("scripts", {})
+        for script_name, script_data in scripts.items():
+            if script_name not in selected_fetchers:
+                continue
+            for dep in script_data.get("dependencies", []):
+                dep_to_fetchers.setdefault(dep, set()).add(script_name)
+
+    if not dep_to_fetchers:
+        return
+
+    print("\nChecking tool dependencies for selected fetchers...")
+    missing_count = 0
+
+    for dep_name in sorted(dep_to_fetchers.keys()):
+        fetchers = dep_to_fetchers[dep_name]
+
+        # Skip python3 — we're already running Python
+        if dep_name == "python3":
+            continue
+
+        # Check Python packages via import
+        if dep_name in _PYTHON_PACKAGE_DEPS:
+            install_hint = _PYTHON_PACKAGE_DEPS[dep_name]
+            if install_hint is None:
+                continue
+            try:
+                importlib.import_module(dep_name)
+                print(f"  ✓ {dep_name}")
+            except ImportError:
+                missing_count += 1
+                print(f"  ✗ {dep_name} not found — {install_hint}")
+                print(f"    Required by: {', '.join(sorted(fetchers))}")
+            continue
+
+        # Check CLI tools via PATH lookup
+        if dep_name in _DEPENDENCY_BINARY_MAP:
+            binary, install_hint = _DEPENDENCY_BINARY_MAP[dep_name]
+        else:
+            # Unknown dependency — try the name directly as a binary
+            binary = dep_name
+            install_hint = f"Install {dep_name}"
+
+        if shutil.which(binary):
+            print(f"  ✓ {dep_name}" + (f" ({binary})" if binary != dep_name else ""))
+        else:
+            missing_count += 1
+            print(f"  ✗ {dep_name} not found — {install_hint}")
+            print(f"    Required by: {', '.join(sorted(fetchers))}")
+
+    if missing_count > 0:
+        print(f"\n  ⚠ {missing_count} missing {'dependency' if missing_count == 1 else 'dependencies'}. Affected fetchers will fail.")
+    else:
+        print("  ✓ All tool dependencies available")
 
 
 def load_evidence_sets():
@@ -195,13 +298,14 @@ def create_fetcher_instances(evidence_sets: Dict[str, Any], multi_config: Dict[s
                     "provider": "aws",
                     "config": {
                         "AWS_PROFILE": region["profile"],
-                        "AWS_REGION": region["region"]
+                        "AWS_DEFAULT_REGION": region["region"]
                     }
                 }
                 
-                # Add region-specific overrides
+                # Add region-specific overrides (use AWS_DEFAULT_REGION for region key)
                 for key, value in region["config"].items():
-                    instance["config"][f"AWS_{key.upper()}"] = value
+                    env_key = "AWS_DEFAULT_REGION" if key.upper() == "REGION" else f"AWS_{key.upper()}"
+                    instance["config"][env_key] = value
                 
                 instances.append(instance)
     
@@ -269,17 +373,19 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     else:
         cmd = ["bash", str(script_path)]
     
-    # Add common parameters - CSV disabled in favor of JSON
-    cmd.extend([
-        config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", "")),  # profile
-        config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "")),  # region
-        str(evidence_dir),  # output directory
-        "/dev/null"  # CSV file disabled - JSON output preferred
-    ])
-    
+    # Pass configuration as named arguments (only when non-empty)
+    instance_profile = config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", ""))
+    instance_region = config.get("AWS_DEFAULT_REGION", os.environ.get("AWS_DEFAULT_REGION", ""))
+    if instance_profile:
+        cmd.extend(["--profile", instance_profile])
+    if instance_region:
+        cmd.extend(["--region", instance_region])
+    cmd.extend(["--output-dir", str(evidence_dir)])
+
     try:
         # Set instance-specific environment variables
         env = os.environ.copy()
+        env["EVIDENCE_DIR"] = str(evidence_dir)
         for key, value in config.items():
             env[key] = value
         
@@ -303,9 +409,8 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
         return False
 
 
-def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
-                      aws_profile: str = None, aws_region: str = None, timeout: int = 300, 
-                      additional_flags: list = None) -> bool:
+def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
+                      aws_profile: str = None, aws_region: str = None, timeout: int = 300) -> bool:
     """Run a single fetcher script."""
     print(f"Running {script_name}...")
     
@@ -355,26 +460,29 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
     # Get AWS profile and region from environment or use defaults
     profile = aws_profile or os.environ.get("AWS_PROFILE", "")
     region = aws_region or os.environ.get("AWS_DEFAULT_REGION", "")
-    
+
     # If region is not set, try to get it from AWS CLI
     if not region:
         region = get_aws_region_from_cli(profile)
-    
-    # Add common parameters - CSV disabled in favor of JSON
-    cmd.extend([
-        profile,  # AWS profile
-        region,   # AWS region
-        str(evidence_dir),  # output directory
-        "/dev/null"  # CSV file disabled - JSON output preferred
-    ])
-    
-    # Add additional flags if provided
-    if additional_flags:
-        cmd.extend(additional_flags)
-    
+
+    # Pass configuration as named arguments (only when non-empty)
+    if profile:
+        cmd.extend(["--profile", profile])
+    if region:
+        cmd.extend(["--region", region])
+    cmd.extend(["--output-dir", str(evidence_dir)])
+
     try:
+        # Set environment variables for the subprocess
+        env = os.environ.copy()
+        env["EVIDENCE_DIR"] = str(evidence_dir)
+        if profile:
+            env["AWS_PROFILE"] = profile
+        if region:
+            env["AWS_DEFAULT_REGION"] = region
+
         # Run the script
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         
         if result.returncode == 0:
             print(f"  ✓ {script_name} completed successfully")
@@ -448,15 +556,15 @@ def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict =
                     evidence_file = str(matching_files[0][0])
         
         # Extract resource information from instance_name or instance_info
-        resource = "unknown"
+        resource = None
         if instance_info:
             # Try to get instance info for this script_name
             instance = instance_info.get(script_name)
             if instance:
                 if instance.get("provider") == "gitlab" and "GITLAB_PROJECT_ID" in instance.get("config", {}):
                     resource = instance["config"]["GITLAB_PROJECT_ID"]
-                elif instance.get("provider") == "aws" and "AWS_REGION" in instance.get("config", {}):
-                    resource = instance["config"]["AWS_REGION"]
+                elif instance.get("provider") == "aws" and "AWS_DEFAULT_REGION" in instance.get("config", {}):
+                    resource = instance["config"]["AWS_DEFAULT_REGION"]
                 elif instance.get("provider") == "aws" and "AWS_PROFILE" in instance.get("config", {}):
                     resource = instance["config"]["AWS_PROFILE"]
         else:
@@ -509,7 +617,10 @@ def main():
     
     # Load evidence sets
     evidence_sets = load_evidence_sets()
-    
+
+    # Check tool dependencies for selected fetchers (warnings only)
+    check_tool_dependencies(evidence_sets)
+
     # Parse multi-instance configuration
     multi_config = parse_multi_instance_config()
     
@@ -549,7 +660,10 @@ def main():
     
     # Create evidence directory
     evidence_dir = create_evidence_directory()
-    
+
+    # Set EVIDENCE_DIR so fetchers can read it from the environment
+    os.environ["EVIDENCE_DIR"] = str(evidence_dir)
+
     # Run fetchers
     print(f"\nExecuting evidence fetchers...")
     print("-" * 40)
@@ -593,30 +707,9 @@ def main():
         
         for script_name in sorted(uncovered_fetchers):
             script_data = evidence_sets['evidence_sets'][script_name]
-            
-            # Get additional flags for this specific fetcher
-            additional_flags = []
-            
-            # Check for fetcher-specific flags in environment variables (new naming convention)
-            fetcher_flags_env = os.environ.get(f"{script_name.upper()}_FETCHER", "")
-            if fetcher_flags_env:
-                additional_flags.extend(fetcher_flags_env.split())
-            
-            # Check for legacy fetcher-specific flags in environment variables (backward compatibility)
-            legacy_fetcher_flags_env = os.environ.get(f"FETCHER_FLAGS_{script_name.upper()}", "")
-            if legacy_fetcher_flags_env:
-                additional_flags.extend(legacy_fetcher_flags_env.split())
-            
-            # Check for flags in script data
-            if "flags" in script_data:
-                additional_flags.extend(script_data["flags"])
-            
-            # Show additional flags if any
-            if additional_flags:
-                print(f"  Using additional flags: {' '.join(additional_flags)}")
-            
-            success = run_fetcher_script(script_name, script_data, evidence_dir, 
-                                       aws_profile, aws_region, timeout, additional_flags)
+
+            success = run_fetcher_script(script_name, script_data, evidence_dir,
+                                       aws_profile, aws_region, timeout)
             results[script_name] = success
     
     # Create summary
@@ -635,7 +728,7 @@ def main():
     print("EXECUTION COMPLETE")
     print(f"{'='*60}")
     print(f"Evidence stored in: {evidence_dir}")
-    print(f"Summary file: {evidence_dir}/execution_summary.json")
+    print(f"Summary file: {evidence_dir}/summary.json")
 
 
 if __name__ == "__main__":

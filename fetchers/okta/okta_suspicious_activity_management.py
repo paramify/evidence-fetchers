@@ -9,23 +9,21 @@ import json
 import sys
 from pathlib import Path
 
-# Ensure we can import sibling module when running as a script
+# Ensure we can import sibling module and common package
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR.parent))
 
+from common.env_loader import parse_fetcher_args
 from okta_iam_core import OktaIAMEvidenceFetcher  # type: ignore
 
 
 def main():
     skip_check = "--skip-check" in sys.argv
-    filtered_argv = [arg for arg in sys.argv if arg != "--skip-check"]
 
-    if len(filtered_argv) < 4:
-        print("Usage: python okta_suspicious_activity_management.py <profile> <region> <output_dir> [--skip-check]")
-        sys.exit(1)
-
-    output_dir = Path(filtered_argv[3])
+    output_dir_str, _profile, _region = parse_fetcher_args()
+    output_dir = Path(output_dir_str)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     fetcher = OktaIAMEvidenceFetcher(skip_compatibility_check=skip_check)

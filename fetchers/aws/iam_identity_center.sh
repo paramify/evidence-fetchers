@@ -16,16 +16,8 @@
 #
 # Output: Creates JSON with Identity Provider and Identity Center details and writes to CSV
 
-# Check if required parameters are provided
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="iam_identity_center"
@@ -88,8 +80,6 @@ echo "$saml_providers" | jq -c '.[]' | while read -r provider; do
     # Add provider to results
     jq --arg arn "$provider_arn" --argjson details "$provider_details" '.results.iam_providers.saml += [{"Arn": $arn, "Details": $details}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
-    # Add to CSV
-    echo "$COMPONENT,saml_provider,$provider_arn,$(echo "$provider_details" | jq -r '.Issuer')" >> "$OUTPUT_CSV"
 done
 
 echo -e "${BLUE}Retrieving OpenID Connect providers...${NC}"
@@ -107,8 +97,6 @@ echo "$oidc_providers" | jq -c '.[]' | while read -r provider; do
     # Add provider to results
     jq --arg arn "$provider_arn" --argjson details "$provider_details" '.results.iam_providers.oidc += [{"Arn": $arn, "Details": $details}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
-    # Add to CSV
-    echo "$COMPONENT,oidc_provider,$provider_arn,$(echo "$provider_details" | jq -r '.issuer')" >> "$OUTPUT_CSV"
 done
 
 # B. Get Identity Center Information
@@ -135,7 +123,6 @@ else
         jq --argjson instance "$instance" '.results.identity_center.instances += [$instance]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
         
         # Add to CSV
-        echo "$COMPONENT,instance,$instance_id,$(echo "$instance" | jq -r '.IdentityStoreId')" >> "$OUTPUT_CSV"
 
         # Get Identity Providers for this instance
         echo -e "${BLUE}Retrieving Identity Providers for instance $instance_id...${NC}"
@@ -156,7 +143,6 @@ else
             jq --argjson provider "$provider" '.results.identity_center.identity_providers += [$provider]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
             
             # Add to CSV
-            echo "$COMPONENT,identity_provider,$provider_id,$(echo "$provider" | jq -r '.DisplayName')" >> "$OUTPUT_CSV"
         done
 
         # Get Permission Sets for this instance
@@ -180,7 +166,6 @@ else
                 jq --argjson ps "$permission_set_details" '.results.identity_center.permission_sets += [$ps]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
                 
                 # Add to CSV
-                echo "$COMPONENT,permission_set,$permission_set_arn,$(echo "$permission_set_details" | jq -r '.Name')" >> "$OUTPUT_CSV"
             else
                 echo -e "${YELLOW}Unable to retrieve details for permission set: $permission_set_arn - checking next permission set${NC}"
             fi

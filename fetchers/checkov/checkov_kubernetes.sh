@@ -3,18 +3,11 @@
 # Flexible fetcher that supports multiple source types and configurations
 # Scans Kubernetes manifest files for security compliance evidence
 
-# Usage: ./checkov_kubernetes.sh <profile> <region> <output_dir> <output_csv>
-# Note: profile and region are kept for consistency but not used for Checkov
+# Usage: ./checkov_kubernetes.sh
+# Note: Configuration comes from .env or environment variables
 
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier - include GitLab project ID to avoid overwriting
 COMPONENT="checkov_kubernetes"

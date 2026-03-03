@@ -25,16 +25,8 @@
 # Exit on any error
 set -e
 
-# Check if required parameters are provided
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="eks_microservice_segmentation"
@@ -179,9 +171,6 @@ while read -r cluster_name; do
     if [ -n "$security_group_policies" ]; then
         jq '.summary.clusters.with_security_groups += 1' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     fi
-    
-    # Add to CSV
-    echo "$COMPONENT,cluster,$cluster_name,$([ -n "$default_deny_policies" ] && echo "true" || echo "false"),$(echo "$pod_resources" | grep -q "limits\|requests" && echo "true" || echo "false"),$([ -n "$security_group_policies" ] && echo "true" || echo "false")" >> "$CSV_FILE"
     
 done < <(echo "$clusters" | jq -r '.[]')
 
