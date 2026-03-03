@@ -14,15 +14,8 @@
 
 set -e
 
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 COMPONENT="aws_component_ssl_enforcement"
 OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
@@ -133,7 +126,6 @@ jq --arg s3_total "$s3_total" --arg s3_ssl_enforced "$s3_ssl_enforced" \
    }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
 
 # Add to CSV with formatted summary
-echo "aws_component_ssl_enforcement,$(echo "$(jq -r '.summary | "S3: \(.s3_ssl_enforced)/\(.s3_total), RDS: \(.rds_ssl_enforced)/\(.rds_total)"' "$OUTPUT_JSON")")" >> "$CSV_FILE"
 
 # Print summary
 echo -e "\nAWS Component SSL/TLS Enforcement Summary:"

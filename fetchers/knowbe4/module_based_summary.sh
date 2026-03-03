@@ -75,15 +75,11 @@
 # 5. Output results as structured JSON
 #
 # Usage:
-# ./module_based_summary.sh <profile> <region> <output_dir> <csv_file>
+# ./module_based_summary.sh
+# ./module_based_summary.sh --output-dir /path/to/output
 
-# Required parameters
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-OUTPUT_DIR="$3"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="module_based_summary"

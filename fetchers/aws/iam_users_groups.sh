@@ -28,16 +28,8 @@
 #
 # Output: Creates JSON with IAM user/group details and writes to CSV
 
-# Check if required parameters are provided
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="iam_users_groups"
@@ -124,8 +116,6 @@ echo "$users" | jq -c '.[]' | while read -r user; do
     # Add to JSON
     jq --argjson user "$user_info" '.results.users += [$user]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
-    # Add to CSV
-    echo "$COMPONENT,user,$username,$(echo "$user_info" | jq -r '.CreateDate'),$(echo "$user_info" | jq -r '.PasswordLastUsed'),$(echo "$user_info" | jq -r '.HasLoginProfile')" >> "$OUTPUT_CSV"
 done
 
 # Get all IAM groups
@@ -156,8 +146,6 @@ echo "$groups" | jq -c '.[]' | while read -r group; do
     # Add to JSON
     jq --argjson group "$group_info" '.results.groups += [$group]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
-    # Add to CSV
-    echo "$COMPONENT,group,$groupname,$(echo "$group_info" | jq -r '.CreateDate')" >> "$OUTPUT_CSV"
 done
 
 exit 0 

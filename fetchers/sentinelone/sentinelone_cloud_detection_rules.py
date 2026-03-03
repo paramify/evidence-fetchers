@@ -14,6 +14,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common.env_loader import parse_fetcher_args
+
 
 def run_power_query(api_url: str, api_token: str, body: dict = None) -> dict:
     """Run a power query against the SentinelOne powerQuery endpoint and return the JSON payload.
@@ -147,14 +150,7 @@ def get_cloud_detection_rules() -> Dict[str, Any]:
 
 
 def main() -> int:
-    if len(sys.argv) != 5:
-        print("Usage: python clouddetectionrules.py <profile> <region> <output_dir> <csv_file>")
-        return 1
-
-    _profile = sys.argv[1]
-    _region = sys.argv[2]
-    output_dir = sys.argv[3]
-    csv_file = sys.argv[4]
+    output_dir, _profile, _region = parse_fetcher_args()
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     component = "sentinelone_cloud_detection_rules"
@@ -164,11 +160,6 @@ def main() -> int:
 
     with open(output_json, "w") as f:
         json.dump(result, f, indent=2, default=str)
-
-    with open(csv_file, "a") as f:
-        status = result.get("status", "unknown")
-        msg = f"Cloud detection rules retrieved. Records: {result.get('record_count', 0)}"
-        f.write(f"{component},{status},{current_timestamp()},{msg}\n")
 
     return 0 if result.get("status") in {"success", "partial_or_empty"} else 1
 

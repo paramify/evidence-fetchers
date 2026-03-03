@@ -9,6 +9,12 @@ Let's go fetch some evidence! And don't forget, screenshots are so 2012.
 
 ## Quick Start
 
+Set the .env file
+
+```bash
+cp .env.example .env
+```
+
 Run the main script to access all functionality:
 
 ```bash

@@ -23,15 +23,8 @@
 #
 # Output: Creates JSON with validation results
 
-# Check if required parameters are provided
-if [ "$#" -lt 3 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="okta_authenticators"

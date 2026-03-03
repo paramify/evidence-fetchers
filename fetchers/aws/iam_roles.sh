@@ -17,38 +17,17 @@
 #    - Tags
 #    aws iam list-role-tags
 #
-# Output: Creates JSON with IAM role details and writes to CSV
+# Output: Creates JSON with IAM role details
 
-# Default values
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
+
+# Read fetcher-specific flags from environment (IAM_ROLES_FETCHER=--exclude-aws-managed-roles)
 EXCLUDE_AWS_ROLES=false
-
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --exclude-aws-managed-roles)
-            EXCLUDE_AWS_ROLES=true
-            shift
-            ;;
-        *)
-            # Store positional arguments
-            if [ -z "$PROFILE" ]; then
-                PROFILE="$1"
-            elif [ -z "$REGION" ]; then
-                REGION="$1"
-            elif [ -z "$OUTPUT_DIR" ]; then
-                OUTPUT_DIR="$1"
-            elif [ -z "$OUTPUT_CSV" ]; then
-                OUTPUT_CSV="$1"
-            fi
-            shift
-            ;;
+if [ -n "$IAM_ROLES_FETCHER" ]; then
+    case "$IAM_ROLES_FETCHER" in
+        *--exclude-aws-managed-roles*) EXCLUDE_AWS_ROLES=true ;;
     esac
-done
-
-# Check if required parameters are provided
-if [ -z "$PROFILE" ] || [ -z "$REGION" ] || [ -z "$OUTPUT_DIR" ] || [ -z "$OUTPUT_CSV" ]; then
-    echo "Usage: $0 [--exclude-aws-managed-roles] <profile> <region> <output_dir> <output_csv>"
-    exit 1
 fi
 
 # Component identifier
@@ -140,8 +119,6 @@ echo "$roles" | jq -c '.[]' | while read -r role; do
     # Add to JSON
     jq --argjson role "$role_info" '.results += [$role]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
-    # Add to CSV
-    echo "$COMPONENT,role,$role_name,$(echo "$role_info" | jq -r '.CreateDate'),$(echo "$role_info" | jq -r '.Description')" >> "$OUTPUT_CSV"
 done
 
 # Get account password policy
@@ -151,7 +128,5 @@ password_policy=$(aws iam get-account-password-policy --profile "$PROFILE" --que
 # Add password policy to results
 jq --argjson policy "$password_policy" '.results += [{"Type": "PasswordPolicy", "Policy": $policy}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
 
-# Add to CSV
-echo "$COMPONENT,password_policy,$(echo "$password_policy" | jq -r '.MinimumPasswordLength'),$(echo "$password_policy" | jq -r '.RequireSymbols'),$(echo "$password_policy" | jq -r '.RequireNumbers')" >> "$OUTPUT_CSV"
 
 exit 0 

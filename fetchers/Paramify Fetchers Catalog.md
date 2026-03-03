@@ -35,7 +35,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 | **`CMT-03`** | GitLab CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | Automated |
 | **`CMT-04`** | Reviewing Change Procedures | - | Manual |
 
-## CNA Family (Cloud Native Architecture)
+## CNA Family (Cloud-Native Architecture)
 
 | KSI ID | Evidence Title | Fetcher Script | Status |
 | :--- | :--- | :--- | :--- |
@@ -62,7 +62,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 | | Checkov Terraform Security | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
 | **`CNA-08`** | Enforcing Intended State | [aws_config_conformance_packs.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/aws_config_conformance_packs.sh) | Automated |
 
-## IAM Family (Identity & Access)
+## IAM Family (Identity and Access Management)
 
 | KSI ID | Evidence Title | Fetcher Script | Status |
 | :--- | :--- | :--- | :--- |
@@ -94,7 +94,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 | **`INR-02`** | Reviewing Past Incidents | [sentinelone_activities.py](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/sentinelone/sentinelone_activities.py) | Automated |
 | **`INR-03`** | Generating After Action Reports | - | Manual |
 
-## MLA Family (Monitoring & Logging)
+## MLA Family (Monitoring, Logging and Auditing)
 
 | KSI ID | Evidence Title | Fetcher Script | Status |
 | :--- | :--- | :--- | :--- |
@@ -110,7 +110,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 | | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/cloudtrail_configuration.sh) | Automated |
 | **`MLA-08`** | Authorizing Log Access | [iam_policies.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/iam_policies.sh) | Automated |
 
-## PIY Family (Policy)
+## PIY Family (Policy and inventory)
 
 | KSI ID | Evidence Title | Fetcher Script | Status |
 | :--- | :--- | :--- | :--- |
@@ -124,7 +124,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 | **`PIY-06`** | Reviewing Investments in Security | - | Manual |
 | **`PIY-08`** | Reviewing Executive Support | - | Manual |
 
-## RPL Family (Resilience)
+## RPL Family (Recovery Planning)
 
 | KSI ID | Evidence Title | Fetcher Script | Status |
 | :--- | :--- | :--- | :--- |
@@ -147,7 +147,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 | **`SCR-MIT`** | Mitigating Supply Chain Risk | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/checkov/checkov_terraform.sh) | Automated |
 | **`SCR-MON`** | Monitoring Supply Chain Risk | [guard_duty.sh](https://github.com/paramify/evidence-fetchers/blob/catalog-updates/fetchers/aws/guard_duty.sh) | Automated |
 
-## SVC Family (Service Config)
+## SVC Family (Service Configuration)
 
 | KSI ID | Evidence Title | Fetcher Script | Status |
 | :--- | :--- | :--- | :--- |

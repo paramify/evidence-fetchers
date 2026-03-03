@@ -15,16 +15,8 @@
 #
 # Output: Creates JSON with conformance pack details and writes to CSV
 
-# Required parameters
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="aws_config_conformance_packs"
@@ -56,7 +48,6 @@ jq -n \
     },
     "results": {}
   }' > "$OUTPUT_JSON"
-echo "ConformancePack,Status,Compliant,NonCompliant,NotApplicable" > "$OUTPUT_CSV"
 
 # Function to make API calls with retries
 make_api_call() {
@@ -183,7 +174,6 @@ for pack in $(echo "$conformance_packs" | jq -r '.[]'); do
     not_applicable=$(echo "$compliance_details" | jq -r '.ConformancePackRuleEvaluationResults[] | select(.ComplianceType == "NOT_APPLICABLE") | .EvaluationResultIdentifier.EvaluationResultQualifier.ConfigRuleName' | sort -u | wc -l)
     
     # Write to CSV
-    echo "$pack,$status,$compliant,$non_compliant,$not_applicable" >> "$OUTPUT_CSV"
     
     # Update JSON
     jq --arg pack "$pack" \

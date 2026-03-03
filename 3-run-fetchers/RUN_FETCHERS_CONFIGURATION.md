@@ -12,6 +12,9 @@ This guide explains how to configure the evidence fetchers to work with your spe
 - `AWS_PROFILE`: AWS profile to use (eg: "gov_readonly")
 - `AWS_DEFAULT_REGION`: AWS region to use (eg: "us-gov-west-1")
 
+### Evidence Output
+- `EVIDENCE_DIR`: Directory where evidence files are saved (default: `./evidence`). When run via the orchestrator, this is overridden with a timestamped subdirectory.
+
 ### Fetcher Configuration
 - `FETCHER_TIMEOUT`: Timeout in seconds for each fetcher script (default: 300 = 5 minutes)
 
@@ -87,6 +90,10 @@ PARAMIFY_UPLOAD_API_TOKEN=your_paramify_api_token_here
 # Optional: Paramify API Base URL (defaults to https://app.paramify.com/api/v0)
 # PARAMIFY_API_BASE_URL=https://app.paramify.com/api/v0
 
+# Optional: Evidence Output Directory (default: ./evidence)
+# When running via orchestrator, this is overridden with a timestamped subdirectory.
+# EVIDENCE_DIR=./evidence
+
 # Optional: Fetcher Configuration
 # FETCHER_TIMEOUT=300      # 5 minutes (default)
 
@@ -107,11 +114,32 @@ PARAMIFY_UPLOAD_API_TOKEN=your_paramify_api_token_here
 
 ## Running the Fetchers
 
+### Via Orchestrator
 1. Set up your environment variables (either in `.env` file or export them)
 2. Run the fetchers:
    ```bash
    python 3-run-fetchers/run_fetchers.py
    ```
+
+### Running Individual Fetchers Standalone
+Each fetcher can be run independently with zero arguments (configuration comes from `.env`):
+
+```bash
+# Shell fetcher — reads AWS_PROFILE, AWS_DEFAULT_REGION, EVIDENCE_DIR from .env
+bash fetchers/aws/s3_encryption_status.sh
+
+# Python fetcher — same env-first approach
+python fetchers/sentinelone/sentinelone_agents.py
+
+# Override output directory via named arg
+bash fetchers/aws/iam_roles.sh --output-dir /tmp/evidence
+python fetchers/okta/okta_phishing_resistant_mfa.py --output-dir /tmp/evidence
+```
+
+All fetchers accept these optional named arguments:
+- `--output-dir <path>`: Override the evidence output directory
+- `--profile <name>`: Override the AWS profile
+- `--region <name>`: Override the AWS region
 
 ## Troubleshooting
 

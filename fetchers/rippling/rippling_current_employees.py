@@ -25,6 +25,9 @@ from typing import Dict, List, Optional
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common.env_loader import parse_fetcher_args
+
 
 def rippling_request(path: str, params: Optional[Dict[str, str]] = None) -> List[Dict]:
     base_url = "https://api.rippling.com"
@@ -64,11 +67,9 @@ def fetch_current_employees() -> List[Dict]:
 
 
 def main() -> None:
-    if len(sys.argv) != 5:
-        print("Usage: python rippling_current_employees.py <profile> <region> <evidence-dir> <csv-file>")
-        sys.exit(1)
+    output_dir, _profile, _region = parse_fetcher_args()
 
-    evidence_dir = Path(sys.argv[3])
+    evidence_dir = Path(output_dir)
     evidence_dir.mkdir(parents=True, exist_ok=True)
 
     employees = fetch_current_employees()

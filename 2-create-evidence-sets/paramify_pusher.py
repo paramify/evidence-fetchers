@@ -19,23 +19,21 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from dotenv import load_dotenv
+
 # Add the rich text formatter to the path
 sys.path.append(str(Path(__file__).parent.parent / "1-select-fetchers"))
 from rich_text_formatter import convert_instructions_to_string
 
 
 def load_env_file():
-    """Load environment variables from .env file if it exists"""
+    """Load environment variables from .env file if it exists.
+
+    Uses override=False so orchestrator-set environment variables take precedence.
+    """
     env_file = Path(".env")
     if env_file.exists():
-        print(f"Loading environment variables from {env_file}")
-        with open(env_file, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
-                    os.environ[key] = value
-                    print(f"  Loaded {key}")
+        load_dotenv(dotenv_path=env_file, override=False)
 
 
 class ParamifyPusher:
@@ -231,12 +229,15 @@ class ParamifyPusher:
         for result in summary["results"]:
             # Handle both "check" and "script" field names
             check_name = result.get("check") or result.get("script")
-            resource = result.get("resource", "unknown")
+            resource = result.get("resource")
             status = result["status"]
             evidence_file = result["evidence_file"]
             timestamp = summary["timestamp"]
-            
-            print(f"Processing: {check_name} for {resource} ({status})")
+
+            if resource:
+                print(f"Processing: {check_name} for {resource} ({status})")
+            else:
+                print(f"Processing: {check_name} ({status})")
             
             # Skip if no evidence file (failed scripts)
             if not evidence_file:

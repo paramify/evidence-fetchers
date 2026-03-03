@@ -14,16 +14,8 @@
 #
 # Output: Creates JSON with WAF rules and writes to CSV
 
-# Check if required parameters are provided
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="waf_dos_rules"
@@ -139,7 +131,6 @@ while IFS=$'\t' read -r acl_id acl_name; do
             echo -e "| ${GREEN}$rule_name${NC} | $rule_type | $rate_limit req/5min | $rule_action |"
             
             # Add to CSV
-            echo "$COMPONENT,$acl_id,$acl_name,$rule_id,$rule_name,$rule_type,$rate_limit,$rule_action" >> "$OUTPUT_CSV"
             
             # Add full rule to JSON (capture complete rule object)
             rules_json=$(echo "$rules_json" | jq --argjson rule "$rule" '. += [$rule]')
@@ -155,7 +146,6 @@ while IFS=$'\t' read -r acl_id acl_name; do
                 echo -e "| ${GREEN}$rule_name${NC} | $rule_type: $name | Managed DoS Protection | Override: $action |"
                 
                 # Add to CSV
-                echo "$COMPONENT,$acl_id,$acl_name,$rule_id,$rule_name,$rule_type: $name,Managed,$action" >> "$OUTPUT_CSV"
                 
                 # Add full rule to JSON
                 rules_json=$(echo "$rules_json" | jq --argjson rule "$rule" '. += [$rule]')

@@ -19,20 +19,8 @@
 #
 # Output: Creates JSON report with KMS key rotation status
 
-# Check if required parameters are provided
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
-
-# Create output directory if it doesn't exist
-mkdir -p "$(dirname "$OUTPUT_DIR")"
-mkdir -p "$(dirname "$CSV_FILE")"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Initialize counters
 total_keys=0
@@ -137,7 +125,5 @@ results_json=$(jq -n \
 # Write results to JSON file
 echo "$results_json" > "${OUTPUT_DIR}/kms_key_rotation.json"
 
-# Add to CSV
-echo "kms_key_rotation,$(echo "$results_json" | jq -r '.results.summary | "Total: \(.total_keys), Rotated: \(.rotated_keys) (\(.rotation_percentage)%)"')" >> "$CSV_FILE"
 
 exit 0
