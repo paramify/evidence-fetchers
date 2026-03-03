@@ -69,79 +69,61 @@ config_recorders=$(aws configservice describe-configuration-recorders --profile 
 # Get delivery channel configuration
 delivery_channels=$(aws configservice describe-delivery-channels --profile "$PROFILE" --region "$REGION" --query 'DeliveryChannels[*]' --output json)
 
-# Update unique JSON with results
-jq --argjson status "$recorder_status" \
-   --argjson recorders "$config_recorders" \
-   --argjson channels "$delivery_channels" \
-   '.results = {
-       "configuration_recorders": ($recorders // []),
-       "recorder_status": ($status // []),
-       "delivery_channels": ($channels // [])
-   }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
-
-
-
-# Append results to CSV
-# Add configuration recorder status
-recording_status=$(echo "$recorder_status" | jq -r '.[0].recording // "false"')
-
-# Add delivery channel status
-if [ "$(echo "$delivery_channels" | jq 'length')" -gt 0 ]; then
-else
-fi
-
-# Generate summary information
+# Compute summary values from API responses (before single jq write so summary is never missing)
+recording_status=$(echo "$recorder_status" | jq -r 'if .[0].recording == true then "true" else "false" end')
 recorder_count=$(echo "$config_recorders" | jq 'length')
 channel_count=$(echo "$delivery_channels" | jq 'length')
 all_resources=$(echo "$config_recorders" | jq -r '.[0].recordingGroup.allSupported // false')
-global_resources=$(echo "$config_recorders" | jq -r '.[0].recordingGroup.includeGlobalResources // false')
+global_resources=$(echo "$config_recorders" | jq -r '.[0].recordingGroup.includeGlobalResourceTypes // .[0].recordingGroup.includeGlobalResources // false')
 last_status=$(echo "$recorder_status" | jq -r '.[0].lastStatus // "N/A"')
 last_error=$(echo "$recorder_status" | jq -r '.[0].lastErrorCode // "NONE"')
 s3_bucket=$(echo "$delivery_channels" | jq -r '.[0].s3BucketName // "N/A"')
 sns_topic=$(echo "$delivery_channels" | jq -r '.[0].snsTopicARN // "N/A"')
 delivery_freq=$(echo "$delivery_channels" | jq -r '.[0].configSnapshotDeliveryProperties.deliveryFrequency // "N/A"')
 
-# Create summary JSON
-summary_json=$(jq -n \
-  --arg status "$recording_status" \
-  --arg channels "$channel_count" \
-  --arg recorders "$recorder_count" \
-  --arg all_res "$all_resources" \
-  --arg global_res "$global_resources" \
-  --arg last_stat "$last_status" \
-  --arg last_err "$last_error" \
-  --arg s3 "$s3_bucket" \
-  --arg sns "$sns_topic" \
-  --arg freq "$delivery_freq" \
-  '{
-    "summary": {
-      "basic_status": {
-        "recording_enabled": $status,
-        "delivery_channels_configured": $channels
-      },
-      "configuration_details": {
-        "recorder_count": $recorders,
-        "all_resources_recorded": $all_res,
-        "global_resources_included": $global_res
-      },
-      "status_details": {
-        "last_status": $last_stat,
-        "last_error": $last_err
-      },
-      "delivery_details": {
-        "s3_bucket": $s3,
-        "sns_topic": $sns,
-        "delivery_frequency": $freq
-      },
-      "health_assessment": {
-        "status": (if $status == "true" and $channels != "0" then "HEALTHY" else "REQUIRES_ATTENTION" end),
-        "issues": (if $status != "true" then ["recording_disabled"] else [] end + if $channels == "0" then ["no_delivery_channel"] else [] end)
-      }
-    }
-  }')
-
-# Update unique JSON with summary
-jq --argjson summary "$summary_json" '.results.summary = $summary.summary' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+# Write results and summary in a single jq so validation (recording_enabled + HEALTHY) always sees summary
+jq --argjson status "$recorder_status" \
+   --argjson recorders "$config_recorders" \
+   --argjson channels "$delivery_channels" \
+   --arg rec_status "$recording_status" \
+   --arg ch_count "$channel_count" \
+   --arg rec_count "$recorder_count" \
+   --arg all_res "$all_resources" \
+   --arg global_res "$global_resources" \
+   --arg last_stat "$last_status" \
+   --arg last_err "$last_error" \
+   --arg s3 "$s3_bucket" \
+   --arg sns "$sns_topic" \
+   --arg freq "$delivery_freq" \
+   '.results = {
+       "configuration_recorders": ($recorders // []),
+       "recorder_status": ($status // []),
+       "delivery_channels": ($channels // []),
+       "summary": {
+         "basic_status": {
+           "recording_enabled": $rec_status,
+           "delivery_channels_configured": $ch_count
+         },
+         "configuration_details": {
+           "recorder_count": $rec_count,
+           "all_resources_recorded": $all_res,
+           "global_resources_included": $global_res
+         },
+         "status_details": {
+           "last_status": $last_stat,
+           "last_error": $last_err
+         },
+         "delivery_details": {
+           "s3_bucket": $s3,
+           "sns_topic": $sns,
+           "delivery_frequency": $freq
+         },
+         "health_assessment": {
+           "status": (if $rec_status == "true" and $ch_count != "0" then "HEALTHY" else "REQUIRES_ATTENTION" end),
+           "issues": (if $rec_status != "true" then ["recording_disabled"] else [] end + if $ch_count == "0" then ["no_delivery_channel"] else [] end)
+         }
+       }
+   }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
 
 
 
