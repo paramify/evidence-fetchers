@@ -1,8 +1,19 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/paramify/evidence-fetchers)
+[![FedRAMP 20x KSIs](https://img.shields.io/badge/FedRAMP%2020x-KSIs-blue)](fetchers/Paramify%20Fetchers%20Catalog.md)
+[![CodeQL](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql)
+[![Dependencies](https://github.com/paramify/evidence-fetchers/actions/workflows/dependency-graph/auto-submission/badge.svg?branch=main)](https://github.com/paramify/evidence-fetchers/actions/workflows/dependency-graph/auto-submission)
+
 # Evidence Fetchers
 
 Let's go fetch some evidence! And don't forget, screenshots are so 2012.
 
 ## Quick Start
+
+Set the .env file
+
+```bash
+cp .env.example .env
+```
 
 Run the main script to access all functionality:
 
@@ -104,6 +115,7 @@ OKTA_ORG_URL=https://your-org.okta.com
 ## Dependencies
 
 - Python 3.x
+- dotenv (load env variables in python)
 - AWS CLI (for AWS scripts)
 - jq (JSON processor)
 - curl (HTTP client)
@@ -112,5 +124,5 @@ OKTA_ORG_URL=https://your-org.okta.com
 ## Documentation
 
 - **Component docs**: See `README.md` in each numbered directory
-- **Developer guide**: `6-add-new-fetcher/DEVELOPER_GUIDE.md`
-- **Customer setup**: `1-select-fetchers/CUSTOMER_SETUP_GUIDE.md`
+- [DeepWiki docs](https://deepwiki.com/paramify/evidence-fetchers)
+- [`FedRAMP 20x KSIs <-> Fetchers Catalog`](fetchers/Paramify%20Fetchers%20Catalog.md)

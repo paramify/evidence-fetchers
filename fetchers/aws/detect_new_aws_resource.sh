@@ -24,16 +24,8 @@
 #
 # Output: Creates JSON with validation results and writes to CSV
 
-# Check if required parameters are provided
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="detect_new_aws_resource"
@@ -134,7 +126,6 @@ if [ "$(echo "$rules" | jq 'length')" -gt 0 ]; then
            }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
         
         # Add to CSV with actual schedule
-        echo "$COMPONENT,eventbridge_rule,$rule_name,$schedule" >> "$OUTPUT_CSV"
     done
 else
     echo -e "${YELLOW}No EventBridge rule found with name 'New-Resource-Launched-Alert-Rule'${NC}"
@@ -169,7 +160,6 @@ if [ "$(echo "$topics" | jq 'length')" -gt 0 ]; then
                }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
             
             # Add to CSV
-            echo "$COMPONENT,sns_topic,$topic_name,$(echo "$subscriptions" | jq -r 'length // 0')" >> "$OUTPUT_CSV"
         fi
     done
 else
@@ -201,7 +191,6 @@ if [ "$(jq -r '.results.eventbridge.rules | length' "$OUTPUT_JSON")" -gt 0 ]; th
            }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
         
         # Add to CSV
-        echo "$COMPONENT,interval_check,$rule_name,$interval_check" >> "$OUTPUT_CSV"
     done
 else
     echo -e "${YELLOW}No EventBridge rules found to check intervals${NC}"

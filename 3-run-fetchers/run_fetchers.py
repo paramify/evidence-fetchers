@@ -4,10 +4,16 @@ Run Fetchers
 
 This script executes the selected evidence fetcher scripts and stores evidence
 in timestamped directories. Optionally uploads evidence files to Paramify.
+
+Notes:
+- AWS-based fetchers require a valid AWS CLI session. If you are using AWS SSO,
+  run `aws sso login --profile <your-profile>` before running this script.
 """
 
+import importlib
 import json
 import os
+import shutil
 import sys
 import subprocess
 import re
@@ -59,6 +65,107 @@ def check_prerequisites():
     return True
 
 
+# Mapping from catalog dependency names to binary names and install instructions
+_DEPENDENCY_BINARY_MAP = {
+    "aws-cli": ("aws", "Install AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"),
+    "kubectl": ("kubectl", "Install kubectl: https://kubernetes.io/docs/tasks/tools/"),
+    "checkov": ("checkov", "pip install checkov"),
+    "curl": ("curl", "Install curl for your OS"),
+    "jq": ("jq", "Install jq: https://jqlang.github.io/jq/download/"),
+    "git": ("git", "Install git: https://git-scm.com/downloads"),
+}
+
+# Python package dependencies that need import-based checking
+_PYTHON_PACKAGE_DEPS = {
+    "requests": "pip install requests",
+    "python3": None,  # Skip — we're already running Python
+}
+
+
+def check_tool_dependencies(evidence_sets: dict) -> None:
+    """Check if required tool dependencies are available for selected fetchers.
+
+    Reads the catalog to find dependencies for each selected fetcher, then
+    checks whether the required binaries are on the PATH. Prints warnings
+    for any missing tools but does not block execution.
+    """
+    catalog_path = Path("1-select-fetchers/evidence_fetchers_catalog.json")
+    if not catalog_path.exists():
+        return  # Can't check without catalog
+
+    try:
+        catalog = load_json_file(str(catalog_path))
+    except SystemExit:
+        return  # load_json_file calls sys.exit on error; don't block here
+
+    # Build a map: dependency_name -> set of fetcher names that need it
+    dep_to_fetchers: Dict[str, set] = {}
+    selected_fetchers = set(evidence_sets.get("evidence_sets", {}).keys())
+
+    # Walk the catalog to find dependencies for selected fetchers
+    categories = {}
+    if "evidence_fetchers_catalog" in catalog and "categories" in catalog["evidence_fetchers_catalog"]:
+        categories = catalog["evidence_fetchers_catalog"]["categories"]
+    elif "evidence_fetchers" in catalog:
+        # Legacy flat structure
+        categories = {"_legacy": {"scripts": catalog["evidence_fetchers"]}}
+
+    for _cat_name, cat_data in categories.items():
+        scripts = cat_data.get("scripts", {})
+        for script_name, script_data in scripts.items():
+            if script_name not in selected_fetchers:
+                continue
+            for dep in script_data.get("dependencies", []):
+                dep_to_fetchers.setdefault(dep, set()).add(script_name)
+
+    if not dep_to_fetchers:
+        return
+
+    print("\nChecking tool dependencies for selected fetchers...")
+    missing_count = 0
+
+    for dep_name in sorted(dep_to_fetchers.keys()):
+        fetchers = dep_to_fetchers[dep_name]
+
+        # Skip python3 — we're already running Python
+        if dep_name == "python3":
+            continue
+
+        # Check Python packages via import
+        if dep_name in _PYTHON_PACKAGE_DEPS:
+            install_hint = _PYTHON_PACKAGE_DEPS[dep_name]
+            if install_hint is None:
+                continue
+            try:
+                importlib.import_module(dep_name)
+                print(f"  ✓ {dep_name}")
+            except ImportError:
+                missing_count += 1
+                print(f"  ✗ {dep_name} not found — {install_hint}")
+                print(f"    Required by: {', '.join(sorted(fetchers))}")
+            continue
+
+        # Check CLI tools via PATH lookup
+        if dep_name in _DEPENDENCY_BINARY_MAP:
+            binary, install_hint = _DEPENDENCY_BINARY_MAP[dep_name]
+        else:
+            # Unknown dependency — try the name directly as a binary
+            binary = dep_name
+            install_hint = f"Install {dep_name}"
+
+        if shutil.which(binary):
+            print(f"  ✓ {dep_name}" + (f" ({binary})" if binary != dep_name else ""))
+        else:
+            missing_count += 1
+            print(f"  ✗ {dep_name} not found — {install_hint}")
+            print(f"    Required by: {', '.join(sorted(fetchers))}")
+
+    if missing_count > 0:
+        print(f"\n  ⚠ {missing_count} missing {'dependency' if missing_count == 1 else 'dependencies'}. Affected fetchers will fail.")
+    else:
+        print("  ✓ All tool dependencies available")
+
+
 def load_evidence_sets():
     """Load the evidence sets configuration."""
     evidence_sets = load_json_file("evidence_sets.json")
@@ -79,6 +186,77 @@ def get_aws_region_from_cli(profile: str = None) -> str:
     except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
         pass
     return ""
+
+
+def check_aws_auth(profile: str = "", region: str = "") -> bool:
+    """Verify that the AWS CLI is authenticated for the given profile/region.
+
+    This is used to fail AWS-based fetchers early when the user has not
+    established an AWS session (for example, by running `aws sso login`).
+    """
+    cmd = ["aws", "sts", "get-caller-identity", "--output", "json"]
+
+    if profile:
+        cmd.extend(["--profile", profile])
+    if region:
+        cmd.extend(["--region", region])
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    except FileNotFoundError:
+        print("  ✗ AWS CLI not found on PATH.")
+        print("    Please install the AWS CLI and ensure it is available on your PATH.")
+        return False
+    except subprocess.TimeoutExpired:
+        print("  ✗ AWS authentication check timed out when calling STS.")
+        print("    Please verify network connectivity and your AWS CLI configuration.")
+        return False
+    except Exception as e:
+        print(f"  ✗ Unexpected error while checking AWS authentication: {e}")
+        return False
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        if stderr:
+            print(f"  ✗ AWS authentication failed for profile '{profile}' and region '{region}'.")
+            print(f"    AWS CLI error: {stderr}")
+        else:
+            print(f"  ✗ AWS authentication failed for profile '{profile}' and region '{region}'.")
+        print("    Ensure you have valid AWS credentials and, if using AWS SSO,")
+        print(f"    run 'aws sso login --profile {profile}' before running the fetchers.")
+        return False
+
+    return True
+
+
+def validate_aws_evidence(script_name: str, evidence_dir: Path) -> bool:
+    """Validate AWS evidence JSON to detect runs without real AWS identity.
+
+    If the evidence file exists and its metadata account_id/arn are \"unknown\",
+    we treat the run as failed due to missing AWS authentication.
+    """
+    evidence_path = evidence_dir / f"{script_name}.json"
+    if not evidence_path.exists():
+        return True
+
+    try:
+        with open(evidence_path, "r") as f:
+            data = json.load(f)
+    except Exception:
+        # If we cannot read/parse the file, do not guess; leave result unchanged.
+        return True
+
+    metadata = data.get("metadata", {})
+    account_id = metadata.get("account_id")
+    arn = metadata.get("arn")
+
+    if account_id == "unknown" or arn == "unknown":
+        print(f"  ✗ Evidence for '{script_name}' indicates unknown AWS identity (account_id/arn).")
+        print("    This typically means AWS CLI was not authenticated when the fetcher ran.")
+        print("    Please run 'aws sso login' for the appropriate profile and re-run the fetchers.")
+        return False
+
+    return True
 
 
 def create_evidence_directory():
@@ -195,20 +373,26 @@ def create_fetcher_instances(evidence_sets: Dict[str, Any], multi_config: Dict[s
                     "provider": "aws",
                     "config": {
                         "AWS_PROFILE": region["profile"],
-                        "AWS_REGION": region["region"]
+                        "AWS_DEFAULT_REGION": region["region"]
                     }
                 }
                 
-                # Add region-specific overrides
+                # Add region-specific overrides (use AWS_DEFAULT_REGION for region key)
                 for key, value in region["config"].items():
-                    instance["config"][f"AWS_{key.upper()}"] = value
+                    env_key = "AWS_DEFAULT_REGION" if key.upper() == "REGION" else f"AWS_{key.upper()}"
+                    instance["config"][env_key] = value
                 
                 instances.append(instance)
     
     return instances
 
 
-def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: int) -> bool:
+def run_fetcher_instance(
+    instance: Dict[str, Any],
+    evidence_dir: Path,
+    timeout: int,
+    error_reasons: Optional[Dict[str, str]] = None,
+) -> bool:
     """Run a single fetcher instance with its specific configuration."""
     script_name = instance["script_name"]
     script_data = instance["script_data"]
@@ -262,6 +446,22 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     if not script_path.exists():
         print(f"  ✗ Script not found: {script_path}")
         return False
+
+    # Resolve AWS profile and region for this instance (used for both auth check and parameters)
+    profile = config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", ""))
+    region = config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", ""))
+
+    # For AWS-based instances, verify that the AWS CLI is authenticated before running
+    if provider == "aws":
+        if not check_aws_auth(profile, region):
+            print(f"  ✗ {instance_name} could not run due to missing or invalid AWS CLI authentication.")
+            print("    Please run 'aws sso login' for the appropriate profile and try again.")
+            if error_reasons is not None:
+                error_reasons[instance_name] = (
+                    "AWS authentication missing or invalid; "
+                    f"run 'aws sso login --profile {profile}' and re-run this fetcher."
+                )
+            return False
     
     # Prepare command
     if script_path.suffix == '.py':
@@ -271,15 +471,25 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
     
     # Add common parameters - CSV disabled in favor of JSON
     cmd.extend([
-        config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", "")),  # profile
-        config.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "")),  # region
+        profile,  # profile
+        region,   # region
         str(evidence_dir),  # output directory
         "/dev/null"  # CSV file disabled - JSON output preferred
     ])
     
+    # Pass configuration as named arguments (only when non-empty)
+    instance_profile = config.get("AWS_PROFILE", os.environ.get("AWS_PROFILE", ""))
+    instance_region = config.get("AWS_DEFAULT_REGION", os.environ.get("AWS_DEFAULT_REGION", ""))
+    if instance_profile:
+        cmd.extend(["--profile", instance_profile])
+    if instance_region:
+        cmd.extend(["--region", instance_region])
+    cmd.extend(["--output-dir", str(evidence_dir)])
+
     try:
         # Set instance-specific environment variables
         env = os.environ.copy()
+        env["EVIDENCE_DIR"] = str(evidence_dir)
         for key, value in config.items():
             env[key] = value
         
@@ -287,6 +497,16 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         
         if result.returncode == 0:
+            # For AWS instances, validate the evidence metadata to catch \"unknown\" identities
+            if provider == "aws" and not validate_aws_evidence(script_name, evidence_dir):
+                print(f"  ✗ {instance_name} marked as failed due to invalid AWS identity in evidence.")
+                if error_reasons is not None:
+                    error_reasons[instance_name] = (
+                        "Evidence metadata shows unknown AWS identity; "
+                        "AWS CLI was likely not authenticated when this fetcher ran."
+                    )
+                return False
+
             print(f"  ✓ {instance_name} completed successfully")
             return True
         else:
@@ -303,9 +523,18 @@ def run_fetcher_instance(instance: Dict[str, Any], evidence_dir: Path, timeout: 
         return False
 
 
-def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path, 
-                      aws_profile: str = None, aws_region: str = None, timeout: int = 300, 
-                      additional_flags: list = None) -> bool:
+def run_fetcher_script(
+    script_name: str,
+    script_data: dict,
+    evidence_dir: Path,
+    aws_profile: str = None,
+    aws_region: str = None,
+    timeout: int = 300,
+    additional_flags: list = None,
+    error_reasons: Optional[Dict[str, str]] = None,
+) -> bool:
+def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
+                      aws_profile: str = None, aws_region: str = None, timeout: int = 300) -> bool:
     """Run a single fetcher script."""
     print(f"Running {script_name}...")
     
@@ -355,10 +584,23 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
     # Get AWS profile and region from environment or use defaults
     profile = aws_profile or os.environ.get("AWS_PROFILE", "")
     region = aws_region or os.environ.get("AWS_DEFAULT_REGION", "")
-    
+
     # If region is not set, try to get it from AWS CLI
     if not region:
         region = get_aws_region_from_cli(profile)
+
+    # For AWS-based fetchers, verify that the AWS CLI is authenticated before running
+    service = script_data.get('service', 'aws').lower()
+    if service == 'aws':
+        if not check_aws_auth(profile, region):
+            print(f"  ✗ {script_name} could not run due to missing or invalid AWS CLI authentication.")
+            print("    Please run 'aws sso login' for the appropriate profile and try again.")
+            if error_reasons is not None:
+                error_reasons[script_name] = (
+                    "AWS authentication missing or invalid; "
+                    f"run 'aws sso login --profile {profile}' and re-run this fetcher."
+                )
+            return False
     
     # Add common parameters - CSV disabled in favor of JSON
     cmd.extend([
@@ -372,11 +614,36 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
     if additional_flags:
         cmd.extend(additional_flags)
     
+    # Pass configuration as named arguments (only when non-empty)
+    if profile:
+        cmd.extend(["--profile", profile])
+    if region:
+        cmd.extend(["--region", region])
+    cmd.extend(["--output-dir", str(evidence_dir)])
+
     try:
+        # Set environment variables for the subprocess
+        env = os.environ.copy()
+        env["EVIDENCE_DIR"] = str(evidence_dir)
+        if profile:
+            env["AWS_PROFILE"] = profile
+        if region:
+            env["AWS_DEFAULT_REGION"] = region
+
         # Run the script
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         
         if result.returncode == 0:
+            # For AWS-based fetchers, validate the evidence metadata to catch \"unknown\" identities
+            if service == "aws" and not validate_aws_evidence(script_name, evidence_dir):
+                print(f"  ✗ {script_name} marked as failed due to invalid AWS identity in evidence.")
+                if error_reasons is not None:
+                    error_reasons[script_name] = (
+                        "Evidence metadata shows unknown AWS identity; "
+                        "AWS CLI was likely not authenticated when this fetcher ran."
+                    )
+                return False
+
             print(f"  ✓ {script_name} completed successfully")
             return True
         else:
@@ -393,13 +660,20 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
         return False
 
 
-def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict = None):
+def create_summary_file(
+    evidence_dir: Path,
+    results: dict,
+    instance_info: dict = None,
+    error_reasons: Optional[Dict[str, str]] = None,
+):
     """Create a summary file with execution results.
     
     Args:
         evidence_dir: Directory containing evidence files
         results: Dict mapping script_name/instance_name to success bool
         instance_info: Optional dict mapping instance_name to instance config (for resource extraction)
+        error_reasons: Optional dict mapping script_name/instance_name to a human-readable
+            error description (for example, missing AWS authentication)
     """
     timestamp = datetime.now().isoformat() + "Z"
     
@@ -448,15 +722,15 @@ def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict =
                     evidence_file = str(matching_files[0][0])
         
         # Extract resource information from instance_name or instance_info
-        resource = "unknown"
+        resource = None
         if instance_info:
             # Try to get instance info for this script_name
             instance = instance_info.get(script_name)
             if instance:
                 if instance.get("provider") == "gitlab" and "GITLAB_PROJECT_ID" in instance.get("config", {}):
                     resource = instance["config"]["GITLAB_PROJECT_ID"]
-                elif instance.get("provider") == "aws" and "AWS_REGION" in instance.get("config", {}):
-                    resource = instance["config"]["AWS_REGION"]
+                elif instance.get("provider") == "aws" and "AWS_DEFAULT_REGION" in instance.get("config", {}):
+                    resource = instance["config"]["AWS_DEFAULT_REGION"]
                 elif instance.get("provider") == "aws" and "AWS_PROFILE" in instance.get("config", {}):
                     resource = instance["config"]["AWS_PROFILE"]
         else:
@@ -476,6 +750,8 @@ def create_summary_file(evidence_dir: Path, results: dict, instance_info: dict =
             "status": status,
             "evidence_file": evidence_file
         }
+        if error_reasons and script_name in error_reasons:
+            result_entry["error_reason"] = error_reasons[script_name]
         summary_results.append(result_entry)
     
     summary = {
@@ -509,7 +785,10 @@ def main():
     
     # Load evidence sets
     evidence_sets = load_evidence_sets()
-    
+
+    # Check tool dependencies for selected fetchers (warnings only)
+    check_tool_dependencies(evidence_sets)
+
     # Parse multi-instance configuration
     multi_config = parse_multi_instance_config()
     
@@ -549,7 +828,10 @@ def main():
     
     # Create evidence directory
     evidence_dir = create_evidence_directory()
-    
+
+    # Set EVIDENCE_DIR so fetchers can read it from the environment
+    os.environ["EVIDENCE_DIR"] = str(evidence_dir)
+
     # Run fetchers
     print(f"\nExecuting evidence fetchers...")
     print("-" * 40)
@@ -562,6 +844,7 @@ def main():
     print()
     
     results = {}
+    error_reasons: Dict[str, str] = {}
     instance_info_map = {}  # Map instance_name to instance config
     
     # Get AWS profile and region for standard fetchers
@@ -576,7 +859,7 @@ def main():
     if instances:
         print("Running multi-instance fetchers...")
         for instance in instances:
-            success = run_fetcher_instance(instance, evidence_dir, timeout)
+            success = run_fetcher_instance(instance, evidence_dir, timeout, error_reasons)
             instance_name = instance['instance_name']
             results[instance_name] = success
             # Store instance info for resource extraction
@@ -616,11 +899,19 @@ def main():
                 print(f"  Using additional flags: {' '.join(additional_flags)}")
             
             success = run_fetcher_script(script_name, script_data, evidence_dir, 
-                                       aws_profile, aws_region, timeout, additional_flags)
+                                       aws_profile, aws_region, timeout, additional_flags, error_reasons)
+
+            success = run_fetcher_script(script_name, script_data, evidence_dir,
+                                       aws_profile, aws_region, timeout)
             results[script_name] = success
     
     # Create summary
-    create_summary_file(evidence_dir, results, instance_info_map if instance_info_map else None)
+    create_summary_file(
+        evidence_dir,
+        results,
+        instance_info_map if instance_info_map else None,
+        error_reasons if error_reasons else None,
+    )
     
     # Show results
     print(f"\nExecution Summary:")
@@ -635,7 +926,7 @@ def main():
     print("EXECUTION COMPLETE")
     print(f"{'='*60}")
     print(f"Evidence stored in: {evidence_dir}")
-    print(f"Summary file: {evidence_dir}/execution_summary.json")
+    print(f"Summary file: {evidence_dir}/summary.json")
 
 
 if __name__ == "__main__":

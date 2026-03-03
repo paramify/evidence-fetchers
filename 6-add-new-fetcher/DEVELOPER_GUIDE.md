@@ -72,10 +72,24 @@ Edit the template and replace:
 2. **Command Documentation**: List all AWS CLI commands used
 3. **JSON Output**: Must produce valid JSON output
 4. **Error Handling**: Proper error handling and exit codes
-5. **CSV Output**: Must append to CSV file for summary
-6. **Validation Rules**: Include regex patterns for compliance checking
+5. **Validation Rules**: Include regex patterns for compliance checking
 
-#### Script Structure
+#### Configuration
+All fetcher scripts receive configuration from environment variables (`.env` file).
+No positional CLI arguments are required. Scripts can be run standalone with zero args:
+
+```bash
+# Run standalone (reads config from .env)
+bash fetchers/aws/my_new_script.sh
+
+# Override output directory
+bash fetchers/aws/my_new_script.sh --output-dir /tmp/evidence
+
+# Override all options
+bash fetchers/aws/my_new_script.sh --profile gov_readonly --region us-gov-west-1 --output-dir /tmp/evidence
+```
+
+#### Bash Script Structure
 ```bash
 #!/bin/bash
 # Helper script for [Script Name] validation
@@ -89,15 +103,36 @@ Edit the template and replace:
 
 set -e
 
-# Parameter validation
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
+# Load environment and parse optional named args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
+
+# Available variables after sourcing env_loader.sh:
+#   $PROFILE   - AWS profile (from AWS_PROFILE env var)
+#   $REGION    - AWS region (from AWS_DEFAULT_REGION env var)
+#   $OUTPUT_DIR - Evidence output directory (from EVIDENCE_DIR env var, default: ./evidence)
 
 # Main logic here
-# JSON output to $OUTPUT_JSON
-# CSV summary to $CSV_FILE
+# JSON output to $OUTPUT_DIR/[script_name].json
+```
+
+#### Python Script Structure
+```python
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+# Load env_loader
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common.env_loader import parse_fetcher_args
+
+def main():
+    output_dir, profile, region = parse_fetcher_args()
+
+    # Main logic here
+    # Save evidence JSON to output_dir/[script_name].json
+
+if __name__ == "__main__":
+    main()
 ```
 
 ### Step 3: Add to Catalog
@@ -199,7 +234,7 @@ python generate_evidence_sets.py my_test_config.json test_output.json
 2. **Document Commands**: Include all AWS CLI commands in comments
 3. **Error Handling**: Always handle errors gracefully
 4. **JSON Output**: Ensure valid JSON structure
-5. **CSV Summary**: Include summary data for reporting
+5. **Use env_loader**: Source `env_loader.sh` (Bash) or import `parse_fetcher_args` (Python) for configuration
 6. **Validation Rules**: Add regex patterns for compliance checking
 
 ### Metadata

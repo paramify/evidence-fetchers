@@ -21,16 +21,8 @@
 # Exit on any error
 set -e
 
-# Check if required parameters are provided
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="[SCRIPT_NAME]"
@@ -43,7 +35,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Get caller identity for metadata
+# Get caller identity for metadata (AWS fetchers only - remove for non-AWS)
 CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
 ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
 ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
@@ -73,7 +65,7 @@ echo -e "${BLUE}Collecting [SCRIPT_NAME] evidence...${NC}"
 
 # Example command execution
 # result=$(aws [service] [command] --profile "$PROFILE" --region "$REGION" 2>/dev/null || echo "[]")
-# 
+#
 # # Process results
 # if [ "$result" != "[]" ]; then
 #     echo "$result" | jq -c '.[]' | while read -r item; do
@@ -81,9 +73,6 @@ echo -e "${BLUE}Collecting [SCRIPT_NAME] evidence...${NC}"
 #         jq --argjson item "$item" '.results += [$item]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
 #     done
 # fi
-
-# Add to CSV
-echo "$COMPONENT,[SUMMARY_DATA]" >> "$CSV_FILE"
 
 # Print summary
 echo -e "\n${GREEN}[SCRIPT_NAME] Summary:${NC}"

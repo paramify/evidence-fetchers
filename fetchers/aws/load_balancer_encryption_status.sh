@@ -12,16 +12,8 @@
 # Exit on any error
 set -e
 
-# Check if required parameters are provided
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="load_balancer_encryption"
@@ -175,7 +167,6 @@ end_time=$(date +%s.%N)
 execution_time=$(echo "$end_time - $start_time" | bc)
 
 # Add to CSV with formatted summary
-echo "load_balancer_encryption,$(jq -r '.summary.formatted_summary' "$OUTPUT_JSON")" >> "$CSV_FILE"
 
 # Print final summary
 echo -e "\n${GREEN}Load Balancer Encryption Summary:${NC}"

@@ -7,9 +7,11 @@
 #./eks_pod_inventory.sh AWS_PROFILE # Uses AWS_PROFILE 
 # -----------
 
-# Set AWS profile, default to 'gov_readonly' if not provided
-AWS_PROFILE=${1:-gov_readonly}
-JSON_OUTPUT="eks_all_clusters_pod_inventory.json"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
+
+AWS_PROFILE="$PROFILE"
+JSON_OUTPUT="$OUTPUT_DIR/eks_all_clusters_pod_inventory.json"
 echo "Using AWS profile: $AWS_PROFILE"
 
 # Trigger AWS SSO login

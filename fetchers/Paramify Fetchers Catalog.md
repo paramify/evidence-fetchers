@@ -40,7 +40,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ---
 
-## CNA Family (Cloud Native Architecture)
+## CNA Family (Cloud-Native Architecture)
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -69,7 +69,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ---
 
-## IAM Family (Identity & Access)
+## IAM Family (Identity and Access Management)
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -105,7 +105,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ---
 
-## MLA Family (Monitoring & Logging)
+## MLA Family (Monitoring, Logging and Auditing)
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -123,7 +123,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ---
 
-## PIY Family (Policy)
+## PIY Family (Policy and inventory)
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -139,7 +139,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ---
 
-## RPL Family (Resilience)
+## RPL Family (Recovery Planning)
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -166,7 +166,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ---
 
-## SVC Family (Service Config)
+## SVC Family (Service Configuration)
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |

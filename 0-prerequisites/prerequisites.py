@@ -60,7 +60,7 @@ def check_python_dependencies():
         return False
     
     # Check if required packages are installed
-    required_packages = ["requests", "boto3"]
+    required_packages = ["requests", "boto3", "dotenv"]
     missing_packages = []
     
     for package in required_packages:

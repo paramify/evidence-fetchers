@@ -16,6 +16,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common.env_loader import parse_fetcher_args
+
 
 def current_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -295,12 +298,8 @@ def get_merge_requests_summary(project_id: str, state: str = "merged", days_back
 
 
 def main() -> int:
-    if len(sys.argv) != 5:
-        print("Usage: python gitlab_merge_request_summary.py <profile> <region> <output_dir> <csv_file>")
-        return 1
+    output_dir, _profile, _region = parse_fetcher_args()
 
-    output_dir = sys.argv[3]
-    csv_file = sys.argv[4]
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     project_id = os.environ.get("GITLAB_PROJECT_ID", "group/project")
@@ -339,10 +338,6 @@ def main() -> int:
 
     with open(output_json, "w") as f:
         json.dump(result_with_metadata, f, indent=2, default=str)
-
-    with open(csv_file, "a") as f:
-        status = result.get("status", "unknown")
-        f.write(f"{component},{status},{current_timestamp()},MR summary for {project_id}\n")
 
     return 0 if result.get("status") == "success" else 1
 

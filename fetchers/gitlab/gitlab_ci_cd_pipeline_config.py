@@ -18,6 +18,9 @@ from typing import Any, Dict, Optional
 import requests
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common.env_loader import parse_fetcher_args
+
 
 def current_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -185,15 +188,7 @@ def get_gitlab_ci_config(project_id: str, branch: str = "main") -> Dict[str, Any
 
 
 def main() -> int:
-    # Args from runner: profile, region, output_dir, csv_file
-    if len(sys.argv) != 5:
-        print("Usage: python gitlab_ci_cd_pipeline_config.py <profile> <region> <output_dir> <csv_file>")
-        return 1
-
-    _profile = sys.argv[1]
-    _region = sys.argv[2]
-    output_dir = sys.argv[3]
-    csv_file = sys.argv[4]
+    output_dir, _profile, _region = parse_fetcher_args()
 
     # Inputs via env for consistency with other providers
     project_id = os.environ.get("GITLAB_PROJECT_ID", "group/project")
@@ -230,11 +225,6 @@ def main() -> int:
 
     with open(output_json, "w") as f:
         json.dump(result_with_metadata, f, indent=2, default=str)
-
-    # Append CSV summary
-    with open(csv_file, "a") as f:
-        status = result.get("status", "unknown")
-        f.write(f"{component},{status},{current_timestamp()},CI config retrieved for {project_id}\n")
 
     return 0 if result.get("status") in {"success", "not_found"} else 1
 

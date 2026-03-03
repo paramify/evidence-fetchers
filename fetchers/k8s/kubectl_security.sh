@@ -20,16 +20,8 @@
 # Exit on any error
 set -e
 
-# Check if required parameters are provided
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="kubectl_security"
@@ -249,10 +241,6 @@ while read -r cluster_name; do
         continue
     fi
     mv tmp.json "$OUTPUT_JSON"
-    
-    # Add to CSV with detailed metrics
-    echo "$COMPONENT,cluster,$cluster_name,$(jq -r '.summary.least_privilege_summary | 
-      "\(.total_containers),\(.run_as_non_root),\(.allow_privilege_escalation_false),\(.read_only_root_filesystem),\(.drop_all_capabilities),\(.privileged_containers | length),\(.missing_context_containers | length),\(.excessive_capabilities_containers | length)"' "$OUTPUT_JSON")" >> "$CSV_FILE"
     
     # Clean up temporary files
     rm -f tmp_summary.json

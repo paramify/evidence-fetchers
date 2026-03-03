@@ -10,16 +10,8 @@
 #
 # Output: Creates unique JSON file and appends to directory-based monitoring files
 
-# Check if required parameters are provided
-if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <output_csv>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-OUTPUT_CSV="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="guard_duty"
@@ -83,7 +75,6 @@ if [ "$(echo "$detectors" | jq 'length')" -gt 0 ]; then
         
         # Add to CSV
         status=$(echo "$detector_details" | jq -r '.Status // "DISABLED"')
-        echo "$COMPONENT,detector_$detector_id,$status" >> "$OUTPUT_CSV"
     done
 else
     echo -e "${YELLOW}No GuardDuty detectors found${NC}"
@@ -152,15 +143,6 @@ while read -r detector_id; do
     summary_json=$(echo "$summary_json" | jq --arg id "$detector_id" --argjson detsum "$detector_summary" '.detectors[$id] = $detsum')
     
     # Add detector summary to CSV
-    echo "$COMPONENT,detector_${detector_id}_status,$(echo "$detector_details" | jq -r '.Status')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_created,$(echo "$detector_details" | jq -r '.CreatedAt')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_updated,$(echo "$detector_details" | jq -r '.UpdatedAt')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_frequency,$(echo "$detector_details" | jq -r '.FindingPublishingFrequency')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_cloudtrail_status,$(echo "$data_sources_status" | jq -r '.cloudtrail.status')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_dns_logs_status,$(echo "$data_sources_status" | jq -r '.dns_logs.status')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_flow_logs_status,$(echo "$data_sources_status" | jq -r '.flow_logs.status')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_s3_logs_status,$(echo "$data_sources_status" | jq -r '.s3_logs.status')" >> "$OUTPUT_CSV"
-    echo "$COMPONENT,detector_${detector_id}_kubernetes_status,$(echo "$data_sources_status" | jq -r '.kubernetes.status')" >> "$OUTPUT_CSV"
     
     # Generate console output for this detector
     echo -e "\nDetector ID: $detector_id"
@@ -214,8 +196,6 @@ jq --argjson summary "$summary_json" '.results.summary = $summary' "$UNIQUE_JSON
 
 
 # Add overall summary to CSV
-echo "$COMPONENT,summary_detector_count,$summary_detector_count" >> "$OUTPUT_CSV"
-echo "$COMPONENT,summary_health_status,$(if [ "$all_enabled" = true ]; then echo "HEALTHY"; else echo "REQUIRES_ATTENTION"; fi)" >> "$OUTPUT_CSV"
 
 # Generate summary output
 # Only print details, not 'Processing detector' in the summary section

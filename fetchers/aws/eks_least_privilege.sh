@@ -14,16 +14,8 @@
 #
 # Output: Creates JSON report with EKS security configuration status
 
-# Check if required parameters are provided
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <profile> <region> <output_dir> <csv_file>"
-    exit 1
-fi
-
-PROFILE="$1"
-REGION="$2"
-OUTPUT_DIR="$3"
-CSV_FILE="$4"
+# Load environment and parse args
+source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
 COMPONENT="eks_least_privilege"
@@ -126,8 +118,6 @@ while read -r cluster_name; do
     # Add cluster data to results
     jq --argjson cluster "$cluster_data" '.results += [$cluster]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
     
-    # Add to CSV
-    echo "$COMPONENT,cluster,$cluster_name,$(echo "$cluster_data" | jq -r '.loggingConfig.clusterLogging[0].enabled'),$(echo "$cluster_data" | jq -r '.podIdentities.associations | length // 0')" >> "$CSV_FILE"
 done < <(echo "$clusters" | jq -r '.[]')
 
 # Update summary in JSON
