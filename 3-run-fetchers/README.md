@@ -91,6 +91,39 @@ python run_fetchers.py
 2. **Create Instances**: Generates multiple instances based on `*_FETCHERS` lists
 3. **Run Instances**: Executes each instance with project/region-specific environment variables
 4. **Generate Evidence**: Creates evidence files with instance-specific names
+5. **Create Summary**: Maps each instance to its correct evidence file using the resource identifier
+
+## Evidence File Naming
+
+Multi-instance fetchers name their output files using the sanitized project ID or region:
+
+```
+{fetcher_name}_{sanitized_resource_id}.json
+```
+
+The resource ID is sanitized by replacing `/` with `_` and stripping non-alphanumeric characters
+(except `_` and `-`). For example:
+
+| Project ID | Output File |
+|---|---|
+| `cloudops/change-management` | `checkov_terraform_cloudops_change-management.json` |
+| `paramify/govcloud-infrastructure-in-terraform` | `checkov_terraform_paramify_govcloud-infrastructure-in-terraform.json` |
+
+The summary.json file uses each instance's `GITLAB_PROJECT_ID` (or `AWS_REGION`) to precisely
+match the correct evidence file, ensuring multi-instance fetchers never cross-reference the
+wrong project's evidence.
+
+## Paramify Upload
+
+When evidence is uploaded to Paramify, artifact titles include the repo name for clarity:
+
+```
+Checkov Terraform Security - cloudops/change-management
+Checkov Terraform Security - paramify/govcloud-infrastructure-in-terraform
+```
+
+This replaces the previous opaque naming (`checkov_terraform_project_1`) so that
+evidence artifacts are immediately identifiable in Paramify.
 
 ## Backward Compatibility
 

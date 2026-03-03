@@ -159,19 +159,41 @@ class ParamifyPusher:
         # Create new Evidence Set
         return self.create_evidence_set(reference_id, name, description, instructions)
     
-    def upload_evidence_file(self, evidence_id: str, evidence_file_path: str, check_name: str) -> bool:
+    def _build_artifact_title(self, check_name: str, resource: str, evidence_set_info: Optional[Dict] = None) -> str:
+        """Build a human-readable artifact title for Paramify.
+
+        For multi-instance fetchers (e.g., checkov_terraform_project_1), creates a
+        title like "Checkov Terraform Security - cloudops/change-management" using the
+        evidence set name and the resource (repo name / region).
+
+        For standard fetchers, uses the evidence set name or falls back to check_name.
+        """
+        # Get the evidence set display name if available
+        display_name = evidence_set_info.get("name", check_name) if evidence_set_info else check_name
+
+        # If this is a multi-instance fetcher (has a resource that isn't "unknown"),
+        # append the resource to make it clear which repo/region the evidence is from
+        if resource and resource != "unknown":
+            return f"{display_name} - {resource}"
+
+        return display_name
+
+    def upload_evidence_file(self, evidence_id: str, evidence_file_path: str, check_name: str,
+                             resource: str = "unknown", evidence_set_info: Optional[Dict] = None) -> bool:
         """Upload evidence file as artifact to Evidence Set"""
         if not Path(evidence_file_path).exists():
             print(f"Evidence file not found: {evidence_file_path}")
             return False
-        
+
         print(f"Uploading artifact: {Path(evidence_file_path).name}")
-        
-        # Create artifact metadata
+
+        # Create artifact metadata with a human-readable title
         script_filename = Path(evidence_file_path).name
+        artifact_title = self._build_artifact_title(check_name, resource, evidence_set_info)
         artifact_data = {
-            "title": check_name,
-            "note": f"Evidence file for {check_name}: {script_filename}",
+            "title": artifact_title,
+            "note": f"Evidence for {resource}: {script_filename}" if resource != "unknown"
+                    else f"Evidence file for {check_name}: {script_filename}",
             "effectiveDate": datetime.now().isoformat() + "Z"
         }
         
@@ -258,8 +280,11 @@ class ParamifyPusher:
                 skipped_count += 1
                 continue
             
-            # Upload evidence file
-            upload_success = self.upload_evidence_file(evidence_id, evidence_file, check_name)
+            # Upload evidence file with resource context for meaningful artifact titles
+            upload_success = self.upload_evidence_file(
+                evidence_id, evidence_file, check_name,
+                resource=resource, evidence_set_info=evidence_set_info
+            )
             
             # Record result
             upload_result = {

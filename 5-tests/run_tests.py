@@ -140,6 +140,7 @@ def main():
     test_scripts = [
         (tests_dir / "simple_test.py", "Simple functionality test"),
         (tests_dir / "test_system.py", "System integration test"),
+        (tests_dir / "test_evidence_file_mapping.py", "Evidence file mapping test"),
     ]
     
     for script_path, description in test_scripts:
