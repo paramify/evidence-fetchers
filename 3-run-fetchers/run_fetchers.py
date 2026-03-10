@@ -813,6 +813,32 @@ def create_summary_file(
         # Extract resource identifier
         resource = _extract_resource(script_name, instance)
 
+        # If resource is still unknown but we have an evidence file, try to
+        # derive a better identifier from the evidence metadata.
+        #
+        # Most AWS fetchers (and several others) include a "metadata" object
+        # with fields like "region", "account_id", and "profile". Using these
+        # makes the summary.json more informative for Paramify uploads.
+        if resource == "unknown" and evidence_file:
+            try:
+                with open(Path(evidence_file), "r") as ef:
+                    evidence_data = json.load(ef)
+                metadata = evidence_data.get("metadata", {}) or {}
+
+                # Prefer region, then account_id, then profile
+                meta_resource = None
+                for key in ("region", "account_id", "profile"):
+                    value = metadata.get(key)
+                    if isinstance(value, str) and value and value != "unknown":
+                        meta_resource = value
+                        break
+
+                if meta_resource:
+                    resource = meta_resource
+            except Exception:
+                # If anything goes wrong reading metadata, fall back to "unknown"
+                pass
+
         result_entry = {
             "check": script_name,
             "resource": resource,
