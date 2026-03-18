@@ -23,9 +23,13 @@
 # Load environment and parse args
 source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
+# Common AWS CLI args (always include region)
+AWS_ARGS=(--profile "$PROFILE" --region "$REGION")
+
 # Component identifier
 COMPONENT="backup_validation"
 OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
+RDS_JQ_LOG="${OUTPUT_DIR%/}/.${COMPONENT}_rds_jq_error.log"
 
 # ANSI color codes for better output readability
 GREEN='\033[0;32m'
@@ -35,7 +39,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Get caller identity for metadata
-CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$PROFILE" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
+CALLER_IDENTITY=$(aws sts get-caller-identity "${AWS_ARGS[@]}" --output json 2>/dev/null || echo '{"Account":"unknown","Arn":"unknown"}')
 ACCOUNT_ID=$(echo "$CALLER_IDENTITY" | jq -r '.Account // "unknown"')
 ARN=$(echo "$CALLER_IDENTITY" | jq -r '.Arn // "unknown"')
 DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -68,97 +72,61 @@ jq -n \
     "summary": {}
   }' > "$OUTPUT_JSON"
 
+# Reset jq error log for this run
+: > "$RDS_JQ_LOG"
+
 echo -e "${BLUE}Starting AWS Backup Validation...${NC}"
 
 # 1. RDS Backup Validation
 echo -e "${BLUE}1. Validating RDS Backup Configurations...${NC}"
 
 # Get RDS instances
-rds_instances=$(aws rds describe-db-instances --profile "$PROFILE" --query 'DBInstances[*]' --output json 2>/dev/null)
+rds_instances=$(
+    aws rds describe-db-instances "${AWS_ARGS[@]}" --query 'DBInstances[*]' --output json 2>&1
+)
+aws_rds_rc=$?
+if [ $aws_rds_rc -ne 0 ]; then
+    echo -e "${RED}Failed to query RDS instances (aws exit $aws_rds_rc).${NC}"
+    echo "$rds_instances" >&2
+    exit 1
+fi
 
-if [ $? -eq 0 ] && [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
+if [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
     echo -e "${GREEN}Found $(echo "$rds_instances" | jq -r 'length') RDS instances${NC}"
-    while read -r instance; do
+    # Build all RDS_Backup results in one jq pass (same pattern as other fetchers: transform JSON, merge once)
+    rds_results_json="$(echo "$rds_instances" | jq -c '
+      map(
+        . as $inst
+        | {
+            Type: "RDS_Backup",
+            InstanceId: $inst.DBInstanceIdentifier,
+            BackupEnabled: (($inst.BackupRetentionPeriod // 0) > 0),
+            BackupRetentionPeriod: ($inst.BackupRetentionPeriod // 0),
+            BackupWindow: ($inst.PreferredBackupWindow // ""),
+            BackupTarget: ($inst.BackupTarget // "region"),
+            LatestRestorableTime: ($inst.LatestRestorableTime // "N/A"),
+            CrossRegionReplication: (($inst.DBInstanceAutomatedBackupsReplications // []) | length > 0),
+            ReplicationDestination: (
+              ($inst.DBInstanceAutomatedBackupsReplications // [])[0].DBInstanceAutomatedBackupsArn?
+              | if . then (split(":")[3] // "") else "" end
+            ),
+            StorageEncrypted: ($inst.StorageEncrypted == true),
+            DeletionProtection: ($inst.DeletionProtection == true),
+            KmsKeyId: ($inst.KmsKeyId // "N/A"),
+            InstanceInfo: $inst
+          }
+      )
+    ' 2>> "$RDS_JQ_LOG")"
 
-
-        instance_id=$(echo "$instance" | jq -r '.DBInstanceIdentifier')
-        backup_retention=$(echo "$instance" | jq -r '.BackupRetentionPeriod')
-        backup_window=$(echo "$instance" | jq -r '.PreferredBackupWindow')
-        backup_target=$(echo "$instance" | jq -r '.BackupTarget // "region"')
-
-        ## DEBUG Statements
-        echo -e "${YELLOW}DEBUG: Processing instance raw JSON:${NC} $instance"
-        instance_id=$(echo "$instance" | jq -r '.DBInstanceIdentifier')
-        echo -e "${YELLOW}DEBUG: Instance ID: $instance_id${NC}"
-        
-        # Calculate time that has elapsed since latest restorable point
-        latest_restorable=$(echo "$instance" | jq -r '.LatestRestorableTime // "N/A"')
-        latest_restorable_age_seconds=""
-        latest_restorable_age_hours=""
-
-        if [ "$latest_restorable" != "N/A" ] && [ "$latest_restorable" != "null" ]; then
-            latest_epoch=$(date -u -d "$latest_restorable" +%s 2>/dev/null)
-            if [ -n "$latest_epoch" ]; then
-                latest_restorable_age_seconds=$((NOW_EPOCH - latest_epoch))
-                latest_restorable_age_hours=$(awk "BEGIN { printf \"%.2f\", $latest_restorable_age_seconds/3600 }")
-            fi
-        fi
-
-        storage_encrypted=$(echo "$instance" | jq -r '.StorageEncrypted')
-        deletion_protection=$(echo "$instance" | jq -r '.DeletionProtection')
-        kms_key_id=$(echo "$instance" | jq -r '.KmsKeyId // "N/A"')
-        
-        echo -e "${BLUE}Processing RDS instance: $instance_id${NC}"
-        
-        # Check if automated backups are enabled
-        backup_enabled="false"
-        if [ "$backup_retention" -gt 0 ]; then
-            backup_enabled="true"
-        fi
-        
-        # Check for cross-region backup replication
-        cross_region_replication="false"
-        replication_destination=""
-        replication_arns=$(echo "$instance" | jq -r '.DBInstanceAutomatedBackupsReplications[].DBInstanceAutomatedBackupsArn // empty')
-        if [ -n "$replication_arns" ]; then
-            cross_region_replication="true"
-            # Extract region from ARN (us-gov-east-1)
-            replication_destination=$(echo "$replication_arns" | head -1 | sed 's/.*:\([^:]*\):.*$/\1/')
-        fi
-        ## DEBUG Statement ##
-        echo -e "${YELLOW}DEBUG: JSON object being appended:${NC}"
-        # Add to JSON
-        jq --argjson instance "$instance" \
-           --arg enabled "$backup_enabled" \
-           --arg retention "$backup_retention" \
-           --arg window "$backup_window" \
-           --arg target "$backup_target" \
-           --arg latest "$latest_restorable" \
-           --arg age_seconds "$latest_restorable_age_seconds" \
-           --arg age_hours "$latest_restorable_age_hours" \
-           --arg replication "$cross_region_replication" \
-           --arg destination "$replication_destination" \
-           --arg encrypted "$storage_encrypted" \
-           --arg protection "$deletion_protection" \
-           --arg kms "$kms_key_id" \
-           '.results += [{"Type": "RDS_Backup",
-               "InstanceId": $instance.DBInstanceIdentifier,
-               "BackupEnabled": ($enabled == "true"),
-               "BackupRetentionPeriod": ($retention|tonumber),
-               "BackupWindow": $window, "BackupTarget": $target,
-               "LatestRestorableTime": $latest,
-               "LatestRestorableAgeSeconds": ($age_seconds | tonumber?),
-               "LatestRestorableAgeHours": ($age_hours | tonumber?),
-               "CrossRegionReplication": ($replication == "true"),
-               "ReplicationDestination": $destination,
-               "StorageEncrypted": ($encrypted == "true"),
-               "DeletionProtection": ($protection == "true"),
-               "KmsKeyId": $kms,
-               "InstanceInfo": $instance
-            }]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
-        
-    done < <(echo "$rds_instances" | jq -c '.[]')
+    tmp_out="$(mktemp "${OUTPUT_DIR%/}/.${COMPONENT}.rds_merge.XXXXXX")"
+    jq --argjson rds "$rds_results_json" '.results += $rds' "$OUTPUT_JSON" > "$tmp_out" 2>> "$RDS_JQ_LOG" \
+      && mv "$tmp_out" "$OUTPUT_JSON" \
+      || {
+        rm -f "$tmp_out" 2>/dev/null || true
+        echo -e "${RED}Failed to merge RDS results into $OUTPUT_JSON${NC}"
+        echo -e "${YELLOW}jq error output saved to $RDS_JQ_LOG${NC}"
+        exit 1
+      }
 else
     echo -e "${YELLOW}No RDS instances found${NC}"
 fi
@@ -167,10 +135,7 @@ fi
 echo -e "${BLUE}2. Validating S3 Backup Configurations...${NC}"
 
 # Get S3 buckets
-s3_buckets=$(aws s3api list-buckets --profile "$PROFILE" --query 'Buckets[*].Name' --output json 2>/dev/null)
-## DEBUG STATEMENTS ##
-echo -e "${YELLOW}Buckets returned by list-buckets:${NC}"
-echo "$s3_buckets" | jq -r '.[]'
+s3_buckets=$(aws s3api list-buckets "${AWS_ARGS[@]}" --query 'Buckets[*].Name' --output json 2>/dev/null)
 
 if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
     echo -e "${GREEN}Found $(echo "$s3_buckets" | jq -r 'length') S3 buckets${NC}"
@@ -181,19 +146,19 @@ if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
             
             # Get bucket versioning status
             versioning_status=$(aws s3api get-bucket-versioning \
-                --profile "$PROFILE" \
+                "${AWS_ARGS[@]}" \
                 --bucket "$bucket_name" \
                 --output json 2>/dev/null)
             
             # Get cross-region replication status
             replication_status=$(aws s3api get-bucket-replication \
-                --profile "$PROFILE" \
+                "${AWS_ARGS[@]}" \
                 --bucket "$bucket_name" \
                 --output json 2>/dev/null)
             
             # Get bucket encryption
             encryption_status=$(aws s3api get-bucket-encryption \
-                --profile "$PROFILE" \
+                "${AWS_ARGS[@]}" \
                 --bucket "$bucket_name" \
                 --output json 2>/dev/null)
             
@@ -201,10 +166,6 @@ if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
             versioning_status=${versioning_status:-'{}'}
             replication_status=${replication_status:-'{}'}
             encryption_status=${encryption_status:-'{}'}
-            # DEBUG
-            echo "DEBUG versioning_status=$versioning_status"
-            echo "DEBUG replication_status=$replication_status"
-            echo "DEBUG encryption_status=$encryption_status"
 
             # Check if versioning is enabled
             versioning_enabled="false"
@@ -227,6 +188,7 @@ if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
             fi
             
             # Add to JSON
+            tmp_out="$(mktemp "${OUTPUT_DIR%/}/.${COMPONENT}.XXXXXX")"
             jq --argjson versioning "$versioning_status" \
                --argjson replication "$replication_status" \
                --argjson encryption "$encryption_status" \
@@ -236,7 +198,7 @@ if [ $? -eq 0 ] && [ "$(echo "$s3_buckets" | jq -r 'length')" -gt 0 ]; then
                --arg r_destination "$replication_destination" \
                --arg e_enabled "$encryption_enabled" \
                '.results += [{"Type": "S3_Backup", "BucketName": $bucket, "VersioningEnabled": ($v_enabled == "true"), "ReplicationEnabled": ($r_enabled == "true"), "ReplicationDestination": $r_destination, "EncryptionEnabled": ($e_enabled == "true"), "VersioningInfo": $versioning, "ReplicationInfo": $replication, "EncryptionInfo": $encryption}]' \
-               "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+               "$OUTPUT_JSON" > "$tmp_out" && mv "$tmp_out" "$OUTPUT_JSON"
         else
             echo -e "${YELLOW}Skipping bucket: $bucket_name${NC}"
         fi
@@ -249,11 +211,11 @@ fi
 echo -e "${BLUE}3. Validating AWS Backup Services...${NC}"
 
 # List backup vaults
-backup_vaults=$(aws backup list-backup-vaults --profile "$PROFILE" --output json 2>/dev/null)
+backup_vaults=$(aws backup list-backup-vaults "${AWS_ARGS[@]}" --output json 2>/dev/null)
 
 if [ $? -eq 0 ] && [ "$(echo "$backup_vaults" | jq -r '.BackupVaultList | length')" -gt 0 ]; then
     echo -e "${GREEN}Found $(echo "$backup_vaults" | jq -r '.BackupVaultList | length') backup vaults${NC}"
-    echo "$backup_vaults" | jq -c '.BackupVaultList[]' | while read -r vault; do
+    while read -r vault; do
         vault_name=$(echo "$vault" | jq -r '.BackupVaultName')
         vault_arn=$(echo "$vault" | jq -r '.BackupVaultArn')
         creation_date=$(echo "$vault" | jq -r '.CreationDate')
@@ -262,18 +224,19 @@ if [ $? -eq 0 ] && [ "$(echo "$backup_vaults" | jq -r '.BackupVaultList | length
         
         # Get recovery points for this vault
         recovery_points=$(aws backup list-recovery-points-by-backup-vault \
-            --profile "$PROFILE" \
+            "${AWS_ARGS[@]}" \
             --backup-vault-name "$vault_name" \
             --output json 2>/dev/null || echo '{"RecoveryPoints": []}')
         
         # Add to JSON
+        tmp_out="$(mktemp "${OUTPUT_DIR%/}/.${COMPONENT}.XXXXXX")"
         jq --argjson vault "$vault" \
            --argjson points "$recovery_points" \
            '.results += [{"Type": "AWS_Backup_Vault", "VaultName": $vault.BackupVaultName, "VaultArn": $vault.BackupVaultArn, "CreationDate": $vault.CreationDate, "RecoveryPoints": $points}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$tmp_out" && mv "$tmp_out" "$OUTPUT_JSON"
         
         recovery_count=$(echo "$recovery_points" | jq -r '.RecoveryPoints | length // 0')
-    done
+    done < <(echo "$backup_vaults" | jq -c '.BackupVaultList[]')
 else
     echo -e "${YELLOW}No AWS Backup vaults found${NC}"
 fi
@@ -308,6 +271,7 @@ s3_with_encryption=$(jq '.results[] | select(.Type == "S3_Backup" and .Encryptio
 total_vaults=$(jq '.results[] | select(.Type == "AWS_Backup_Vault") | .VaultName' "$OUTPUT_JSON" 2>/dev/null | wc -l)
 
 # Update summary in JSON
+tmp_summary="$(mktemp "${OUTPUT_DIR%/}/.${COMPONENT}.summary.XXXXXX")"
 jq --arg rds_backups "$rds_with_backups" \
    --arg total_rds "$total_rds" \
    --arg rds_replication "$rds_with_replication" \
@@ -327,7 +291,7 @@ jq --arg rds_backups "$rds_with_backups" \
        "s3_replication_coverage": {"with_replication": ($s3_replication|tonumber), "total": ($total_s3|tonumber)},
        "s3_encryption_coverage": {"with_encryption": ($s3_encryption|tonumber), "total": ($total_s3|tonumber)},
        "backup_vaults": ($vaults|tonumber)
-   }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+   }' "$OUTPUT_JSON" > "$tmp_summary" && mv "$tmp_summary" "$OUTPUT_JSON"
 
 # Display detailed backup summary
 echo -e "${GREEN}Backup Validation completed!${NC}"
@@ -338,9 +302,9 @@ if [ "$total_rds" -gt 0 ]; then
     echo -e "${BLUE}-----------\t----------------\t-------------\t---------------------------\t----------------------${NC}"
     
     jq -r '.results[] | select(.Type == "RDS_Backup") | [.InstanceId, .BackupRetentionPeriod, .BackupTarget, .CrossRegionReplication, .LatestRestorableTime] | @tsv' "$OUTPUT_JSON" 2>/dev/null | while IFS=$'\t' read -r id retention target replication latest; do
-        replication_status="❌ No"
+        replication_status="No"
         if [ "$replication" = "true" ]; then
-            replication_status="✅ Yes"
+            replication_status="Yes"
         fi
         echo -e "${GREEN}$id\t${retention} days\t$target\t$replication_status\t$latest${NC}"
     done
