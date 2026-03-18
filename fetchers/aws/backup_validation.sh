@@ -29,7 +29,6 @@ AWS_ARGS=(--profile "$PROFILE" --region "$REGION")
 # Component identifier
 COMPONENT="backup_validation"
 OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
-RDS_JQ_LOG="${OUTPUT_DIR%/}/.${COMPONENT}_rds_jq_error.log"
 
 # ANSI color codes for better output readability
 GREEN='\033[0;32m'
@@ -72,9 +71,6 @@ jq -n \
     "summary": {}
   }' > "$OUTPUT_JSON"
 
-# Reset jq error log for this run
-: > "$RDS_JQ_LOG"
-
 echo -e "${BLUE}Starting AWS Backup Validation...${NC}"
 
 # 1. RDS Backup Validation
@@ -116,15 +112,14 @@ if [ "$(echo "$rds_instances" | jq -r 'length')" -gt 0 ]; then
             InstanceInfo: $inst
           }
       )
-    ' 2>> "$RDS_JQ_LOG")"
+    ')"
 
     tmp_out="$(mktemp "${OUTPUT_DIR%/}/.${COMPONENT}.rds_merge.XXXXXX")"
-    jq --argjson rds "$rds_results_json" '.results += $rds' "$OUTPUT_JSON" > "$tmp_out" 2>> "$RDS_JQ_LOG" \
+    jq --argjson rds "$rds_results_json" '.results += $rds' "$OUTPUT_JSON" > "$tmp_out" \
       && mv "$tmp_out" "$OUTPUT_JSON" \
       || {
         rm -f "$tmp_out" 2>/dev/null || true
         echo -e "${RED}Failed to merge RDS results into $OUTPUT_JSON${NC}"
-        echo -e "${YELLOW}jq error output saved to $RDS_JQ_LOG${NC}"
         exit 1
       }
 else
