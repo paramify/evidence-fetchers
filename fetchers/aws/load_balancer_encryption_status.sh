@@ -16,7 +16,7 @@ set -e
 source "$(dirname "$0")/../common/env_loader.sh" "$@"
 
 # Component identifier
-COMPONENT="load_balancer_encryption"
+COMPONENT="load_balancer_encryption_status"
 OUTPUT_JSON="$OUTPUT_DIR/$COMPONENT.json"
 
 # ANSI color codes for better output readability

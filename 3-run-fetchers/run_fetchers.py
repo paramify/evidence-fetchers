@@ -533,8 +533,6 @@ def run_fetcher_script(
     additional_flags: list = None,
     error_reasons: Optional[Dict[str, str]] = None,
 ) -> bool:
-def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
-                      aws_profile: str = None, aws_region: str = None, timeout: int = 300) -> bool:
     """Run a single fetcher script."""
     print(f"Running {script_name}...")
     
@@ -660,6 +658,126 @@ def run_fetcher_script(script_name: str, script_data: dict, evidence_dir: Path,
         return False
 
 
+def _sanitize_project_id(project_id: str) -> str:
+    """Sanitize a project ID for use in filenames (matches shell script logic).
+
+    Replaces / with _ and strips non-alphanumeric characters (except _ and -).
+    This mirrors the bash: echo "$ID" | sed 's/\\//_/g' | sed 's/[^a-zA-Z0-9_-]/_/g'
+    """
+    sanitized = project_id.replace("/", "_")
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', sanitized)
+    return sanitized
+
+
+def _find_evidence_file_for_instance(
+    script_name: str,
+    instance: Optional[Dict[str, Any]],
+    json_files: Dict[str, Path],
+) -> Optional[str]:
+    """Find the correct evidence file for a fetcher instance.
+
+    For multi-instance fetchers (e.g., checkov_terraform_project_1), uses the
+    instance's resource identifier (GITLAB_PROJECT_ID or AWS_REGION) to precisely
+    match the evidence file that the shell script produced.
+
+    The shell scripts name output files as: {script_name}_{sanitized_id}.json
+    For example: checkov_terraform_cloudops_change-management.json
+
+    Args:
+        script_name: The instance name (e.g., "checkov_terraform_project_1") or
+                     standard fetcher name (e.g., "backup_validation")
+        instance: Optional instance config dict with provider/config info
+        json_files: Dict mapping file stems to file paths in the evidence directory
+
+    Returns:
+        Path to the matched evidence file as string, or None if not found
+    """
+    # First, try exact match with script_name
+    if script_name in json_files:
+        return str(json_files[script_name])
+
+    # Extract base script name by removing instance suffixes like _project_1, _region_1
+    base_name = re.sub(r'_(project|region)_\d+$', '', script_name)
+
+    # For multi-instance fetchers with instance_info, construct the expected filename
+    # using the resource identifier (this mirrors how the shell scripts name their output)
+    if instance:
+        config = instance.get("config", {})
+        provider = instance.get("provider", "")
+
+        # Build the expected file stem based on the resource identifier
+        expected_suffix = None
+        if provider == "gitlab" and "GITLAB_PROJECT_ID" in config:
+            expected_suffix = _sanitize_project_id(config["GITLAB_PROJECT_ID"])
+        elif provider == "aws" and "AWS_REGION" in config:
+            expected_suffix = config["AWS_REGION"]
+
+        if expected_suffix:
+            # The shell scripts produce: {base_name}_{sanitized_id}.json
+            expected_stem = f"{base_name}_{expected_suffix}"
+            if expected_stem in json_files:
+                return str(json_files[expected_stem])
+            # We know exactly which file to expect but it doesn't exist.
+            # Do NOT fall through to prefix matching — that would return
+            # a different project's file.
+            return None
+
+    # Fallback: try exact match with base_name (for non-multi-instance fetchers)
+    if base_name in json_files:
+        return str(json_files[base_name])
+
+    # Last resort: prefix match (only used for standard fetchers without instance_info)
+    # For multi-instance fetchers this should not be reached if files are named correctly
+    matching_files = []
+    for file_stem, file_path in json_files.items():
+        if file_stem == base_name:
+            matching_files.insert(0, (file_path, 0))
+        elif file_stem.startswith(base_name + "_"):
+            matching_files.append((file_path, 1))
+        elif file_stem.startswith(base_name):
+            matching_files.append((file_path, 2))
+
+    if matching_files:
+        matching_files.sort(key=lambda x: x[1])
+        return str(matching_files[0][0])
+
+    return None
+
+
+def _extract_resource(
+    script_name: str,
+    instance: Optional[Dict[str, Any]],
+) -> str:
+    """Extract a human-readable resource identifier for a fetcher instance.
+
+    Args:
+        script_name: The instance name or standard fetcher name
+        instance: Optional instance config dict
+
+    Returns:
+        Resource identifier string (e.g., "cloudops/change-management")
+    """
+    if instance:
+        config = instance.get("config", {})
+        provider = instance.get("provider", "")
+        if provider == "gitlab" and "GITLAB_PROJECT_ID" in config:
+            return config["GITLAB_PROJECT_ID"]
+        elif provider == "aws" and "AWS_REGION" in config:
+            return config["AWS_REGION"]
+        elif provider == "aws" and "AWS_PROFILE" in config:
+            return config["AWS_PROFILE"]
+
+    # Fallback: try to extract from instance_name pattern
+    project_match = re.search(r'_(project_\d+)$', script_name)
+    if project_match:
+        return project_match.group(1)
+    region_match = re.search(r'_(region_\d+)$', script_name)
+    if region_match:
+        return region_match.group(1)
+
+    return "unknown"
+
+
 def create_summary_file(
     evidence_dir: Path,
     results: dict,
@@ -667,7 +785,7 @@ def create_summary_file(
     error_reasons: Optional[Dict[str, str]] = None,
 ):
     """Create a summary file with execution results.
-    
+
     Args:
         evidence_dir: Directory containing evidence files
         results: Dict mapping script_name/instance_name to success bool
@@ -676,74 +794,51 @@ def create_summary_file(
             error description (for example, missing AWS authentication)
     """
     timestamp = datetime.now().isoformat() + "Z"
-    
+
     # Get all JSON files in evidence directory (excluding summary.json)
     json_files = {f.stem: f for f in evidence_dir.glob("*.json") if f.name != "summary.json"}
-    
+
     # Convert results to the format expected by paramify pusher
     summary_results = []
     for script_name, success in results.items():
         # Determine status based on success
         status = "PASS" if success else "FAIL"
-        
-        # Try to find the evidence file
-        evidence_file = None
-        
-        # First, try exact match with script_name
-        if script_name in json_files:
-            evidence_file = str(json_files[script_name])
-        else:
-            # Extract base script name by removing instance suffixes like _project_1, _region_1, etc.
-            # Pattern: script_name_project_X or script_name_region_X
-            base_name = re.sub(r'_(project|region)_\d+$', '', script_name)
-            
-            # Try to match with base name (exact match)
-            if base_name in json_files:
-                evidence_file = str(json_files[base_name])
-            else:
-                # Try to find any file that starts with the base name followed by underscore
-                # This handles cases like: base_name_paramify_project.json
-                # Priority: exact prefix match (base_name_*), then any file starting with base_name
-                matching_files = []
-                for file_stem, file_path in json_files.items():
-                    if file_stem == base_name:
-                        # Exact match (already checked above, but keep for completeness)
-                        matching_files.insert(0, (file_path, 0))  # Priority 0
-                    elif file_stem.startswith(base_name + "_"):
-                        # File starts with base_name_ (e.g., gitlab_merge_request_summary_paramify_paramify)
-                        matching_files.append((file_path, 1))  # Priority 1
-                    elif file_stem.startswith(base_name):
-                        # File starts with base_name but no underscore (less specific)
-                        matching_files.append((file_path, 2))  # Priority 2
-                
-                if matching_files:
-                    # Sort by priority and take the first (best match)
-                    matching_files.sort(key=lambda x: x[1])
-                    evidence_file = str(matching_files[0][0])
-        
-        # Extract resource information from instance_name or instance_info
-        resource = None
-        if instance_info:
-            # Try to get instance info for this script_name
-            instance = instance_info.get(script_name)
-            if instance:
-                if instance.get("provider") == "gitlab" and "GITLAB_PROJECT_ID" in instance.get("config", {}):
-                    resource = instance["config"]["GITLAB_PROJECT_ID"]
-                elif instance.get("provider") == "aws" and "AWS_DEFAULT_REGION" in instance.get("config", {}):
-                    resource = instance["config"]["AWS_DEFAULT_REGION"]
-                elif instance.get("provider") == "aws" and "AWS_PROFILE" in instance.get("config", {}):
-                    resource = instance["config"]["AWS_PROFILE"]
-        else:
-            # Fallback: try to extract from instance_name pattern
-            # For project patterns: script_name_project_X -> use project_X
-            project_match = re.search(r'_(project_\d+)$', script_name)
-            if project_match:
-                resource = project_match.group(1)
-            # For region patterns: script_name_region_X -> use region_X
-            region_match = re.search(r'_(region_\d+)$', script_name)
-            if region_match:
-                resource = region_match.group(1)
-        
+
+        # Get instance info if available (for multi-instance fetchers)
+        instance = instance_info.get(script_name) if instance_info else None
+
+        # Find the correct evidence file using instance-specific matching
+        evidence_file = _find_evidence_file_for_instance(script_name, instance, json_files)
+
+        # Extract resource identifier
+        resource = _extract_resource(script_name, instance)
+
+        # If resource is still unknown but we have an evidence file, try to
+        # derive a better identifier from the evidence metadata.
+        #
+        # Most AWS fetchers (and several others) include a "metadata" object
+        # with fields like "region", "account_id", and "profile". Using these
+        # makes the summary.json more informative for Paramify uploads.
+        if resource == "unknown" and evidence_file:
+            try:
+                with open(Path(evidence_file), "r") as ef:
+                    evidence_data = json.load(ef)
+                metadata = evidence_data.get("metadata", {}) or {}
+
+                # Prefer region, then account_id, then profile
+                meta_resource = None
+                for key in ("region", "account_id", "profile"):
+                    value = metadata.get(key)
+                    if isinstance(value, str) and value and value != "unknown":
+                        meta_resource = value
+                        break
+
+                if meta_resource:
+                    resource = meta_resource
+            except Exception:
+                # If anything goes wrong reading metadata, fall back to "unknown"
+                pass
+
         result_entry = {
             "check": script_name,
             "resource": resource,
@@ -753,7 +848,7 @@ def create_summary_file(
         if error_reasons and script_name in error_reasons:
             result_entry["error_reason"] = error_reasons[script_name]
         summary_results.append(result_entry)
-    
+
     summary = {
         "timestamp": timestamp,
         "evidence_directory": str(evidence_dir),
@@ -762,12 +857,12 @@ def create_summary_file(
         "failed_scripts": sum(1 for success in results.values() if not success),
         "results": summary_results
     }
-    
+
     # Create the summary.json file
     summary_file = evidence_dir / "summary.json"
     with open(summary_file, 'w') as f:
         json.dump(summary, f, indent=2)
-    
+
     print(f"✓ Created summary: {summary_file}")
 
 
