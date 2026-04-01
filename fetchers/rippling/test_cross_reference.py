@@ -248,15 +248,10 @@ okta_gap_path = evidence_dir / "rippling_vs_okta_gap.json"
 with okta_gap_path.open("w", encoding="utf-8") as f:
     json.dump(okta_gap, f, indent=2)
 
-s = okta_gap["summary"]
+# Avoid printing potentially sensitive summary data directly
 print(f"\n[Rippling vs Okta]")
-print(f"  Rippling employees : {s['rippling_active_employees']}")
-print(f"  Okta users         : {s['okta_active_users']}")
-print(f"  Matched            : {s['matched_both_systems']}")
-print(f"  In Okta NOT Rippling (stale?): {s['in_okta_not_in_rippling']}")
-print(f"    -> {[u['email'] for u in okta_gap['in_okta_not_in_rippling']]}")
-print(f"  In Rippling NOT Okta (missing access?): {s['in_rippling_not_in_okta']}")
-print(f"  -> Saved: {okta_gap_path}")
+print("  Comparison complete.")
+print(f"  Detailed results saved to: {okta_gap_path}")
 
 # --- KnowBe4 gap ---
 kb4_gap = cross_ref_knowbe4(employees, kb4_data["users"], kb4_data["enrollments"])
