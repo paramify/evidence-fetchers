@@ -417,14 +417,7 @@ def main() -> None:
     with gap_path.open("w", encoding="utf-8") as f:
         json.dump(gap, f, indent=2)
 
-    s = gap["summary"]
     print(f"\n\u2713 Gap analysis -> {gap_path}")
-    print(f"  Rippling employees            : {s['rippling_active_employees']}")
-    print(f"  KnowBe4 active users          : {s['knowbe4_active_users']}")
-    print(f"  Not in KnowBe4 at all         : {s['not_in_knowbe4_at_all']}")
-    print(f"  In KnowBe4 but not enrolled   : {s['in_knowbe4_not_enrolled']}")
-    print(f"  Enrolled but not passed       : {s['enrolled_but_not_passed']}")
-    print(f"  Stale KB4 (not in Rippling)   : {s['stale_kb4_accounts_not_in_rippling']}")
 
 
 if __name__ == "__main__":
