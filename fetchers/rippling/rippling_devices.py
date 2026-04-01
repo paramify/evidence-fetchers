@@ -1,33 +1,37 @@
 #!/usr/bin/env python3
 """
-# Helper script for Rippling Current Employees
-# Evidence for list of current active employees
+# Helper script for Rippling Device Inventory
+# Evidence for company-managed device inventory from Rippling MDM
 
-Queries the Rippling Platform API to retrieve all currently active employees.
-Uses offset-based pagination to handle large employee lists.
+Queries the Rippling API to retrieve the full device inventory managed
+through Rippling MDM. Includes laptops, desktops, and mobile devices.
+
+NOTE: Device inventory requires the Rippling MDM add-on to be enabled
+for your account. If you get a 404, confirm MDM is active in your
+Rippling subscription.
 
 API reference: https://developer.rippling.com/documentation/rest-api
-Endpoint: GET /platform/api/employees
+Endpoint: GET /platform/api/devices  (falls back to /v2/devices if needed)
 
 Environment variables required:
-- RIPPLING_API_TOKEN  Bearer token (from Rippling Developer Portal)
+- RIPPLING_API_TOKEN   Bearer token (from Rippling Developer Portal)
 
 Optional:
-- RIPPLING_BASE_URL   Defaults to https://api.rippling.com
-- RIPPLING_PAGE_SIZE  Records per page, defaults to 100
+- RIPPLING_BASE_URL    Defaults to https://api.rippling.com
+- RIPPLING_PAGE_SIZE   Records per page, defaults to 100
 
 Usage:
-    python rippling_current_employees.py [--output-dir <path>]
+    python rippling_devices.py [--output-dir <path>]
 
 Output:
-    rippling_current_employees.json  under the evidence output directory
+    rippling_devices.json  under the evidence output directory
 """
 
 import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -54,6 +58,12 @@ except ModuleNotFoundError:
 
 BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://api.rippling.com").rstrip("/")
 PAGE_SIZE = int(os.getenv("RIPPLING_PAGE_SIZE", "100"))
+
+# Try these endpoints in order - Rippling has had the device endpoint in multiple locations
+DEVICE_ENDPOINTS = [
+    "/platform/api/devices",
+    "/v2/devices",
+]
 
 
 def get_token() -> str:
@@ -87,24 +97,52 @@ def extract_records(payload: Any) -> List[Dict]:
     if isinstance(payload, list):
         return [r for r in payload if isinstance(r, dict)]
     if isinstance(payload, dict):
-        for key in ("results", "data", "employees", "items"):
+        for key in ("results", "data", "devices", "items"):
             value = payload.get(key)
             if isinstance(value, list):
                 return [r for r in value if isinstance(r, dict)]
     return []
 
 
-def fetch_current_employees() -> List[Dict]:
-    """Fetch all active employees using offset-based pagination."""
+def find_working_endpoint() -> Tuple[str, Any]:
+    """Try each known device endpoint and return the first that responds."""
+    for endpoint in DEVICE_ENDPOINTS:
+        try:
+            print(f"Trying endpoint: {BASE_URL}{endpoint} ...")
+            payload = rippling_get(endpoint, params={"limit": 1, "offset": 0})
+            print(f"  Endpoint works: {endpoint}")
+            return endpoint, payload
+        except requests.exceptions.HTTPError as e:
+            print(f"  {endpoint} -> HTTP {e.response.status_code}: {e.response.text[:100]}")
+        except Exception as e:
+            print(f"  {endpoint} -> {e}")
+
+    raise RuntimeError(
+        "No working device endpoint found. "
+        "Confirm that Rippling MDM is enabled for your account and that "
+        "RIPPLING_API_TOKEN has the required device scopes."
+    )
+
+
+def fetch_devices() -> Tuple[str, List[Dict]]:
+    """Fetch all devices using offset-based pagination."""
+    endpoint, first_payload = find_working_endpoint()
+
     results: List[Dict] = []
     offset = 0
 
-    print(f"Fetching active employees from {BASE_URL}/platform/api/employees ...")
+    # Process first page already fetched during endpoint detection
+    first_page = extract_records(first_payload)
+    if first_page:
+        results.extend(first_page)
+        print(f"  Page offset=0: got {len(first_page)} records")
+        if len(first_page) < PAGE_SIZE:
+            return endpoint, results
+        offset = PAGE_SIZE
+
+    # Fetch remaining pages
     while True:
-        payload = rippling_get(
-            "/platform/api/employees",
-            params={"limit": PAGE_SIZE, "offset": offset},
-        )
+        payload = rippling_get(endpoint, params={"limit": PAGE_SIZE, "offset": offset})
         page = extract_records(payload)
         results.extend(page)
         print(f"  Page offset={offset}: got {len(page)} records (total so far: {len(results)})")
@@ -113,7 +151,7 @@ def fetch_current_employees() -> List[Dict]:
             break
         offset += PAGE_SIZE
 
-    return results
+    return endpoint, results
 
 
 def main() -> None:
@@ -122,23 +160,23 @@ def main() -> None:
     evidence_dir = Path(output_dir)
     evidence_dir.mkdir(parents=True, exist_ok=True)
 
-    employees = fetch_current_employees()
+    endpoint, devices = fetch_devices()
 
-    out_path = evidence_dir / "rippling_current_employees.json"
+    out_path = evidence_dir / "rippling_devices.json"
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(
             {
                 "source": "rippling",
-                "endpoint": "/platform/api/employees",
-                "mode": "current_active",
-                "count": len(employees),
-                "results": employees,
+                "endpoint": endpoint,
+                "mode": "device_inventory",
+                "count": len(devices),
+                "results": devices,
             },
             f,
             indent=2,
         )
 
-    print(f"\n\u2713 Saved {len(employees)} active employees -> {out_path}")
+    print(f"\n\u2713 Saved {len(devices)} devices -> {out_path}")
 
 
 if __name__ == "__main__":
