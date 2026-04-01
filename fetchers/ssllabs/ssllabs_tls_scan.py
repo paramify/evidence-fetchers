@@ -42,6 +42,9 @@ from common.env_loader import parse_fetcher_args
 API_V4_URL = "https://api.ssllabs.com/api/v4/analyze"
 POLL_INTERVAL_SECS = 30
 MAX_POLL_ATTEMPTS = 40  # ~20 minutes max per host
+# Retries when SSL Labs returns 429 / 529 / 503 on the initial analyze request (public API capacity).
+INITIAL_REQUEST_CAPACITY_RETRIES = 3
+INITIAL_REQUEST_BACKOFF_SECS = (45, 90, 180)
 
 FORWARD_SECRECY_LABELS = {
     1: "With some browsers (WEAK)",
@@ -61,6 +64,62 @@ def get_env(name: str, default: Optional[str] = None) -> str:
     return value
 
 
+def _api_error_messages_from_json(data: Any) -> Optional[str]:
+    """Join Qualys API `errors[].message` strings when present."""
+    if not isinstance(data, dict):
+        return None
+    errs = data.get("errors")
+    if not isinstance(errs, list):
+        return None
+    parts: List[str] = []
+    for item in errs:
+        if isinstance(item, dict) and item.get("message"):
+            parts.append(str(item["message"]))
+    return " ".join(parts) if parts else None
+
+
+def describe_ssl_labs_http_error(status_code: int, response: requests.Response) -> str:
+    """Human-readable explanation for orchestrator logs and evidence JSON."""
+    api_msg = None
+    try:
+        api_msg = _api_error_messages_from_json(response.json())
+    except (json.JSONDecodeError, ValueError):
+        pass
+    snippet = (response.text or "").strip()[:400]
+
+    if status_code == 529:
+        core = (
+            "Qualys SSL Labs returned HTTP 529 (service at capacity). Their public scan API is temporarily overloaded; "
+            "this is not caused by your certificates or credentials."
+        )
+        return f"{core} {api_msg}".strip() if api_msg else core
+    if status_code == 429:
+        core = (
+            "HTTP 429 from SSL Labs (too many requests). Wait several minutes, reduce how many hosts you scan at once, "
+            "or run again later."
+        )
+        return f"{core} Details: {api_msg}" if api_msg else core
+    if status_code == 503:
+        core = "HTTP 503 from SSL Labs (service unavailable). Try again later."
+        return f"{core} {api_msg}".strip() if api_msg else core
+
+    if api_msg:
+        return f"HTTP {status_code}: {api_msg}"
+    if snippet:
+        return f"HTTP {status_code}: {snippet}"
+    return f"HTTP {status_code} (no response body)"
+
+
+def _print_capacity_guidance(host: str, status_code: int, message: str) -> None:
+    """Use stderr so run_fetchers shows this when a run fails (it surfaces stderr)."""
+    print(f"\n  [{host}] SSL Labs API: HTTP {status_code}", file=sys.stderr)
+    print(f"    {message}", file=sys.stderr)
+    print(
+        "    Tip: Retry after a few minutes, or scan fewer hosts per run.",
+        file=sys.stderr,
+    )
+
+
 def analyze_host(host: str, email: str) -> Dict[str, Any]:
     """Start and poll an SSL Labs scan for a single host until complete."""
     headers = {"email": email}
@@ -75,21 +134,49 @@ def analyze_host(host: str, email: str) -> Dict[str, Any]:
     }
     print(f"  Starting scan for {host}...")
 
-    try:
-        response = requests.get(API_V4_URL, params=params, headers=headers, timeout=30)
-    except requests.exceptions.RequestException as e:
-        return {"status": "error", "host": host, "message": str(e)}
+    response: Optional[requests.Response] = None
+    for attempt in range(INITIAL_REQUEST_CAPACITY_RETRIES + 1):
+        try:
+            response = requests.get(API_V4_URL, params=params, headers=headers, timeout=30)
+        except requests.exceptions.RequestException as e:
+            return {"status": "error", "host": host, "message": str(e)}
 
-    if response.status_code not in (200, 400):
+        if response.status_code in (200, 400):
+            break
+
+        if response.status_code in (429, 529, 503) and attempt < INITIAL_REQUEST_CAPACITY_RETRIES:
+            wait = INITIAL_REQUEST_BACKOFF_SECS[
+                min(attempt, len(INITIAL_REQUEST_BACKOFF_SECS) - 1)
+            ]
+            print(
+                f"  {host}: temporary API limit (HTTP {response.status_code}); "
+                f"waiting {wait}s before retry {attempt + 1}/{INITIAL_REQUEST_CAPACITY_RETRIES}...",
+                file=sys.stderr,
+            )
+            time.sleep(wait)
+            continue
+
+        msg = describe_ssl_labs_http_error(response.status_code, response)
+        _print_capacity_guidance(host, response.status_code, msg)
         return {
             "status": "error",
             "host": host,
-            "message": f"HTTP {response.status_code}: {response.text[:200]}",
+            "message": msg,
+            "http_status": response.status_code,
         }
 
+    assert response is not None
     data = response.json()
     if "errors" in data:
-        return {"status": "error", "host": host, "message": str(data["errors"])}
+        api_msg = _api_error_messages_from_json(data) or str(data["errors"])
+        if response.status_code == 400:
+            _print_capacity_guidance(host, response.status_code, api_msg)
+        return {
+            "status": "error",
+            "host": host,
+            "message": api_msg,
+            "http_status": response.status_code,
+        }
 
     # Poll (drop startNew so we don't restart on each check)
     params.pop("startNew")
@@ -105,21 +192,37 @@ def analyze_host(host: str, email: str) -> Dict[str, Any]:
         except requests.exceptions.RequestException as e:
             return {"status": "error", "host": host, "message": str(e)}
 
-        if response.status_code in (429, 529):
-            print(f"  Rate limited ({response.status_code}), backing off...")
+        if response.status_code in (429, 529, 503):
+            brief = describe_ssl_labs_http_error(response.status_code, response)
+            if len(brief) > 160:
+                brief = brief[:157] + "..."
+            print(
+                f"  {host}: poll hit HTTP {response.status_code}; "
+                f"waiting {POLL_INTERVAL_SECS}s — {brief}",
+                file=sys.stderr,
+            )
             time.sleep(POLL_INTERVAL_SECS)
             continue
 
         if response.status_code != 200:
+            msg = describe_ssl_labs_http_error(response.status_code, response)
+            _print_capacity_guidance(host, response.status_code, msg)
             return {
                 "status": "error",
                 "host": host,
-                "message": f"HTTP {response.status_code}: {response.text[:200]}",
+                "message": msg,
+                "http_status": response.status_code,
             }
 
         data = response.json()
         if "errors" in data:
-            return {"status": "error", "host": host, "message": str(data["errors"])}
+            api_msg = _api_error_messages_from_json(data) or str(data["errors"])
+            return {
+                "status": "error",
+                "host": host,
+                "message": api_msg,
+                "http_status": response.status_code,
+            }
 
     if data.get("status") != "READY":
         return {"status": "timeout", "host": host, "message": "Scan did not complete in time"}
