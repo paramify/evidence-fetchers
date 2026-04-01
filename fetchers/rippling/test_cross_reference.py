@@ -261,13 +261,11 @@ with kb4_gap_path.open("w", encoding="utf-8") as f:
 
 s = kb4_gap["summary"]
 print(f"\n[Rippling vs KnowBe4]")
-print(f"  Rippling employees     : {s['rippling_active_employees']}")
-print(f"  KnowBe4 users          : {s['knowbe4_users']}")
-print(f"  Not in KnowBe4 at all  : {s['not_in_knowbe4_at_all']}")
-print(f"  In KB4 but not enrolled: {s['in_knowbe4_not_enrolled']}")
-print(f"  Enrolled but not passed: {s['enrolled_but_not_passed']}")
-print(f"  Passed                 : {s['passed']}")
-print(f"  -> Saved: {kb4_gap_path}")
+print("  Comparison complete.")
+print(f"  Detailed summary saved to: {kb4_gap_path}")
+
+# (Summary statistics are written to the JSON file but not printed here to avoid
+#  logging potentially sensitive data derived from employee records.)
 
 # ---------------------------------------------------------------------------
 # Step 6: Validate the logic is correct
