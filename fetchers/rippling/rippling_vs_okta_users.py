@@ -364,13 +364,8 @@ def main() -> None:
     with gap_path.open("w", encoding="utf-8") as f:
         json.dump(gap, f, indent=2)
 
-    s = gap["summary"]
-    print(f"\n\u2713 Gap analysis -> {gap_path}")
-    print(f"  Rippling employees : {s['rippling_active_employees']}")  # nosec
-    print(f"  Okta active users  : {s['okta_active_users']}")  # nosec
-    print(f"  Matched            : {s['matched_both_systems']}")  # nosec
-    print(f"  In Okta NOT Rippling (stale?) : {s['in_okta_not_in_rippling']}")  # nosec
-    print(f"  In Rippling NOT Okta (missing?): {s['in_rippling_not_in_okta']}")  # nosec
+    # Avoid logging potentially sensitive summary statistics directly; refer to file instead.
+    print(f"\n\u2713 Gap analysis completed. See {gap_path}")
 
 
 if __name__ == "__main__":
