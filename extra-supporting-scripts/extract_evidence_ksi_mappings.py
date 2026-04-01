@@ -24,6 +24,7 @@ import sys
 import argparse
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
+from urllib.parse import urlparse
 
 def load_yaml_file(file_path: str) -> dict:
     """Load and parse the YAML file."""
@@ -45,8 +46,10 @@ def extract_script_name_from_reference(reference: str) -> str:
     if match:
         return match.group(1)
     
-    # Look for script names in GitHub URLs
-    if 'github.com' in reference:
+    # Look for script names in GitHub URLs by parsing the URL and checking the hostname
+    parsed = urlparse(reference)
+    host = parsed.hostname
+    if host and host.lower() == "github.com":
         match = re.search(r'/([^/]+\.sh)', reference)
         if match:
             return match.group(1)
