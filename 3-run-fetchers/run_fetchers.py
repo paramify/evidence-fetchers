@@ -173,6 +173,24 @@ def load_evidence_sets():
     return evidence_sets
 
 
+def resolve_fetcher_timeout(script_name: str, base_timeout: int) -> int:
+    """Subprocess timeout for a fetcher (may exceed global FETCHER_TIMEOUT for slow APIs)."""
+    env_key = f"{script_name.upper()}_TIMEOUT"
+    if env_key in os.environ:
+        try:
+            return int(os.environ[env_key])
+        except ValueError:
+            pass
+    if script_name == "ssllabs_tls_scan":
+        # Qualys SSL Labs scans poll for several minutes per host; default cap is too low.
+        try:
+            floor = int(os.environ.get("SSLLABS_FETCHER_TIMEOUT", "3600"))
+        except ValueError:
+            floor = 3600
+        return max(base_timeout, floor)
+    return base_timeout
+
+
 def get_aws_region_from_cli(profile: str = None) -> str:
     """Get AWS region from AWS CLI configuration if environment variable is not set."""
     try:
@@ -993,11 +1011,19 @@ def main():
             if additional_flags:
                 print(f"  Using additional flags: {' '.join(additional_flags)}")
             
-            success = run_fetcher_script(script_name, script_data, evidence_dir, 
-                                       aws_profile, aws_region, timeout, additional_flags, error_reasons)
-
-            success = run_fetcher_script(script_name, script_data, evidence_dir,
-                                       aws_profile, aws_region, timeout)
+            script_timeout = resolve_fetcher_timeout(script_name, timeout)
+            if script_timeout != timeout:
+                print(f"  Using timeout {script_timeout}s for {script_name} (slow third-party API)")
+            success = run_fetcher_script(
+                script_name,
+                script_data,
+                evidence_dir,
+                aws_profile,
+                aws_region,
+                script_timeout,
+                additional_flags,
+                error_reasons,
+            )
             results[script_name] = success
     
     # Create summary

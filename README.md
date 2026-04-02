@@ -52,6 +52,7 @@ python main.py
 <a href="fetchers/gitlab/"><img src="fetchers/logos/gitlab.svg" alt="GitLab" width="56" height="56" style="margin: 20px;"></a>
 <a href="fetchers/rippling/"><img src="fetchers/logos/rippling.svg" alt="Rippling" width="56" height="56" style="margin: 20px;"></a>
 <a href="fetchers/checkov/"><img src="fetchers/logos/checkov.png" alt="Checkov" width="56" height="56" style="margin: 20px;"></a>
+<a href="fetchers/ssllabs/"><img src="fetchers/logos/qualys.svg" alt="Qualys SSL Labs" width="56" height="56" style="margin: 20px;"></a>
 <img src="fetchers/logos/paramify.svg" alt="Paramify" width="56" height="56" style="margin: 20px;">
 
 </div>
@@ -64,7 +65,6 @@ More evidence fetchers and integrations are coming soon. To request a new fetche
 
 <img src="fetchers/logos/wiz.jpeg" alt="Wiz" width="56" height="56" style="margin: 20px;">
 <img src="fetchers/logos/crowdstrike.svg" alt="CrowdStrike" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/qualys.svg" alt="Qualys" width="56" height="56" style="margin: 20px;">
 
 Planned Fetchers/Integrations
 
@@ -83,7 +83,8 @@ evidence-fetchers/
 │   ├── okta/                 # Okta scripts (7 available)
 │   ├── gitlab/               # GitLab scripts (3 available)
 │   ├── rippling/             # Rippling scripts (2 available)
-│   └── checkov/              # Checkov scripts (2 available)
+│   ├── checkov/              # Checkov scripts (2 available)
+│   └── ssllabs/              # Qualys SSL Labs API scripts (1 available)
 ├── 0-prerequisites/          # Setup and dependencies
 ├── 1-select-fetchers/        # Fetcher selection
 ├── 2-create-evidence-sets/   # Create evidence sets in Paramify

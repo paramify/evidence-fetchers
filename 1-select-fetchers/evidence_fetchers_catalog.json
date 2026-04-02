@@ -1645,6 +1645,47 @@
             ]
           }
         }
+      },
+      "ssllabs": {
+        "name": "Qualys SSL Labs",
+        "description": "TLS/SSL configuration and certificate scanning via the Qualys SSL Labs API v4",
+        "access_method": "Qualys SSL Labs API v4 with registered email",
+        "access_method_description": "Scans are performed via the public Qualys SSL Labs API v4. A one-time email registration is required at https://api.ssllabs.com/api/v4/register. No credentials beyond the registered email are needed.",
+        "logo": "fetchers/logos/ssllabs.svg",
+        "scripts": {
+          "ssllabs_tls_scan": {
+            "script_file": "fetchers/ssllabs/ssllabs_tls_scan.py",
+            "name": "SSL Labs TLS/SSL Scan",
+            "description": "Scans configured hosts via the Qualys SSL Labs API v4 and collects TLS grade, certificate validity, protocol support, and vulnerability evidence",
+            "id": "EVD-SSLLABS-TLS-SCAN",
+            "instructions": "Script: ssllabs_tls_scan.py. Calls the Qualys SSL Labs API v4 for each host in SSLLABS_HOSTS, polls until complete, and saves per-host JSON and a combined summary. Requires SSLLABS_EMAIL (registered with Qualys) and SSLLABS_HOSTS (comma-separated hostnames).",
+            "dependencies": [
+              "requests"
+            ],
+            "tags": [
+              "tls",
+              "ssl",
+              "certificates",
+              "encryption",
+              "network-security",
+              "qualys"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [
+              "Data in Transit Encryption",
+              "TLS Certificate Management",
+              "Cryptographic Protection"
+            ],
+            "controls": [
+              "SC-8",
+              "SC-8(1)",
+              "SC-17",
+              "SC-28",
+              "AC-17(2)",
+              "CM-6"
+            ]
+          }
+        }
       }
     }
   }
