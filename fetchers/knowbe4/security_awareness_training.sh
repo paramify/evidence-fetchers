@@ -51,7 +51,7 @@ COMPONENT="security_awareness_training"
 UNIQUE_JSON="$OUTPUT_DIR/$COMPONENT.json"
 
 # Exact Security Awareness campaign name
-SECURITY_AWARENESS_CAMPAIGN="Initial Security Awareness Training"
+SECURITY_AWARENESS_CAMPAIGN="2026 Annual Security Awareness Training"
 
 # Date 1 year ago for tracking retraining
 ONE_YEAR_AGO=$(date -d "1 year ago" +%s)
@@ -195,25 +195,24 @@ echo "$users_response" | jq -c '.[] | select(.status == "active")' | while read 
             "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
         done < <(echo "$user_enrollments" | jq -c '.[]')
 
-        # Find most recent Passed completion
-        latest_passed_date=$(echo "$user_enrollments" | jq -r '
-        [ .[] | select(.status == "Passed") | .completion_date ]
-        | max // empty
-        ')
+        # Logic for multiple modules:
+        total_modules=$(echo "$user_enrollments" | jq 'length')
+        passed_modules=$(echo "$user_enrollments" | jq '[.[] | select(.status == "Passed")] | length')
 
-        if [ -n "$latest_passed_date" ]; then
+        if [ "$passed_modules" -eq "$total_modules" ] && [ "$total_modules" -gt 0 ]; then
             user_status="completed"
-
+            
+            # Use the date of the LAST module completed to check retraining
+            latest_passed_date=$(echo "$user_enrollments" | jq -r '[.[] | .completion_date] | max')
             completed_epoch=$(date -d "$latest_passed_date" +%s 2>/dev/null)
             if [ -n "$completed_epoch" ] && [ "$completed_epoch" -lt "$ONE_YEAR_AGO" ]; then
                 needs_retraining=true
             fi
-
-        elif echo "$user_enrollments" | jq -e 'any(.status == "In Progress")' >/dev/null; then
-            user_status="in_progress"
-
         elif echo "$user_enrollments" | jq -e 'any(.status == "Past Due")' >/dev/null; then
             user_status="past_due"
+        elif echo "$user_enrollments" | jq -e 'any(.status == "In Progress" or .status == "Passed")' >/dev/null; then
+            # If they've passed some but not all, or are in progress, status is in_progress
+            user_status="in_progress"
         fi
     fi
 
