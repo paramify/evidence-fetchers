@@ -113,6 +113,23 @@ OKTA_ORG_URL=https://your-org.okta.com
 
 ```
 
+## Validator Parameters
+
+Catalog validators can reference `{{token}}` placeholders for customer-specific
+values (AWS account IDs, security group allowlists, etc.). At push time, the
+pusher substitutes tokens using `config/validator_parameters.json` — gitignored
+and copied from [`config/validator_parameters.example.json`](config/validator_parameters.example.json).
+
+A validator whose tokens are not all present is skipped (the evidence set
+still uploads). To audit which tokens the catalog needs:
+
+```bash
+python scripts/configure_parameters.py
+```
+
+This reports required tokens, missing entries in the config, and validates that
+every AUTOMATED regex compiles after substitution.
+
 ## Dependencies
 
 - Python 3.x
