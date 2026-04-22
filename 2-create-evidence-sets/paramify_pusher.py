@@ -262,7 +262,9 @@ class ParamifyPusher:
         return evidence.get("id") if evidence else None
 
     def create_evidence_set(self, reference_id: str, name: str, description: str,
-                             instructions: str, automated: bool = True) -> Optional[str]:
+                             instructions: str, automated: bool = True,
+                             frequency: Optional[str] = None,
+                             start_date: Optional[str] = None) -> Optional[str]:
         """Create new Evidence Set (or look up the existing one on duplicate referenceId)."""
         print(f"Creating Evidence Set: {name}")
         instructions_string = convert_instructions_to_string(instructions)
@@ -272,27 +274,48 @@ class ParamifyPusher:
             description=description,
             instructions=instructions_string,
             automated=automated,
+            frequency=frequency,
+            start_date=start_date,
         )
         if evidence_id:
             print(f"Evidence Set created (or existing): {evidence_id}")
         return evidence_id
-    
+
     def get_or_create_evidence_set(self, evidence_set_info: Dict) -> Optional[str]:
         """Get or create Evidence Set for a check"""
         reference_id = evidence_set_info["id"]
         name = evidence_set_info["name"]
         description = evidence_set_info["description"]
         instructions = evidence_set_info["instructions"]
+        frequency = evidence_set_info.get("frequency")
+        start_date = evidence_set_info.get("startDate")
 
         print(f"Processing Evidence Set: {reference_id} - {name}")
 
-        # Try to find existing Evidence Set
-        evidence_id = self.find_existing_evidence_set(reference_id)
-        if evidence_id:
+        # Try to find existing Evidence Set (returns full record so we can
+        # skip a redundant PATCH when frequency already matches the server).
+        existing = self.client.find_evidence_by_reference_id(reference_id)
+        if existing:
+            evidence_id = existing.get("id")
             print(f"Found existing Evidence Set: {evidence_id}")
+            patch_freq = frequency if frequency and frequency != existing.get("frequency") else None
+            patch_start = start_date if start_date and start_date != existing.get("startDate") else None
+            if patch_freq or patch_start:
+                if self.client.update_evidence(
+                    evidence_id, frequency=patch_freq, start_date=patch_start
+                ):
+                    changes = []
+                    if patch_freq:
+                        changes.append(f"frequency {existing.get('frequency')} → {patch_freq}")
+                    if patch_start:
+                        changes.append(f"startDate {existing.get('startDate')} → {patch_start}")
+                    print(f"  ↻ Updated {', '.join(changes)}")
         else:
             # Create new Evidence Set
-            evidence_id = self.create_evidence_set(reference_id, name, description, instructions)
+            evidence_id = self.create_evidence_set(
+                reference_id, name, description, instructions,
+                frequency=frequency, start_date=start_date,
+            )
 
         if evidence_id:
             sc_names = evidence_set_info.get("solution_capabilities") or []

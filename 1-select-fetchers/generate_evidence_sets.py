@@ -26,8 +26,9 @@ Features:
 import json
 import sys
 import os
+from datetime import date
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from rich_text_formatter import convert_instructions_to_rich_text
 
 
@@ -183,6 +184,131 @@ def generate_evidence_sets(catalog: Dict[str, Any], customer_config: Dict[str, A
     return evidence_sets
 
 
+FREQUENCY_CHOICES = [
+    ("NOT_SET", "no schedule"),
+    ("DAILY", "every day"),
+    ("THREE_DAY", "every 3 days  (FedRAMP 20x Class C / Moderate)"),
+    ("WEEKLY", "every 7 days  (FedRAMP 20x Class D / Low)"),
+    ("BIWEEKLY", "every 2 weeks"),
+    ("MONTHLY", "every month"),
+    ("QUARTERLY", "every 3 months"),
+    ("BIANNUAL", "every 6 months"),
+    ("ANNUAL", "every year"),
+]
+FREQUENCY_DEFAULT_IDX = 2  # 0-based index of THREE_DAY in FREQUENCY_CHOICES
+
+
+def _prompt_choice(prompt: str, choices: List[str], default_idx: int) -> int:
+    """Ask the user to pick a numbered option. Returns the 1-based index chosen."""
+    while True:
+        raw = input(f"{prompt} [default {default_idx + 1}]: ").strip()
+        if not raw:
+            return default_idx + 1
+        if raw.isdigit() and 1 <= int(raw) <= len(choices):
+            return int(raw)
+        print(f"  Please enter a number 1-{len(choices)}.")
+
+
+def _select_frequency() -> str:
+    """Show the frequency menu and return the chosen enum value."""
+    print("\nChoose frequency:")
+    for i, (value, hint) in enumerate(FREQUENCY_CHOICES, start=1):
+        print(f"  {i}) {value:<10} — {hint}")
+    idx = _prompt_choice("Choice", [c[0] for c in FREQUENCY_CHOICES], FREQUENCY_DEFAULT_IDX)
+    return FREQUENCY_CHOICES[idx - 1][0]
+
+
+def _prompt_start_date() -> Optional[str]:
+    """Ask the user when collection should start. Returns ISO YYYY-MM-DD or None."""
+    today = date.today().isoformat()
+    print()
+    print("Apply a start date to these evidence sets?")
+    print(f"  1) Today ({today}) — start now")
+    print("  2) Pick a future date (YYYY-MM-DD)")
+    print("  3) Skip — leave start date unset")
+    choice = _prompt_choice("Choice", ["today", "future", "skip"], 0)
+
+    if choice == 1:
+        return today
+    if choice == 3:
+        return None
+
+    # choice == 2: accept a YYYY-MM-DD from the user
+    while True:
+        raw = input("Enter start date (YYYY-MM-DD): ").strip()
+        try:
+            parsed = date.fromisoformat(raw)
+        except ValueError:
+            print("  Not a valid YYYY-MM-DD date. Try again.")
+            continue
+        if parsed < date.today():
+            print(f"  {raw} is in the past. Start date must be today or later.")
+            continue
+        return parsed.isoformat()
+
+
+def prompt_frequency_config(evidence_sets: Dict[str, Any]) -> None:
+    """Optionally set a `frequency` on each evidence set in-place.
+
+    Mutates the `evidence_sets` dict directly. Silently returns if stdin is
+    not a TTY (e.g. when called from an orchestrator), leaving frequency unset.
+    """
+    if not sys.stdin.isatty():
+        return
+    if not evidence_sets.get("evidence_sets"):
+        return
+
+    print()
+    print("=" * 60)
+    print("EVIDENCE COLLECTION FREQUENCY (OPTIONAL)")
+    print("=" * 60)
+    print("Set how often each evidence set should be refreshed. This maps to")
+    print("the `frequency` field on POST /evidence and drives the collection")
+    print("schedule shown in Paramify.")
+    print()
+    print("FedRAMP 20x reference cadence for automated (machine-based) evidence:")
+    print("  • Class C (Moderate):  every 3 days   (THREE_DAY)")
+    print("  • Class D (Low):       every 7 days   (WEEKLY)")
+    print()
+    print("How would you like to set frequency?")
+    print("  1) Apply ONE frequency to ALL evidence sets")
+    print("  2) Set frequency per-fetcher (individually)")
+    print("  3) Skip — leave frequency unset (can be set later in the Paramify UI)")
+    mode = _prompt_choice("Choice", ["all", "per-fetcher", "skip"], 2)
+
+    if mode == 3:
+        print("Skipping frequency configuration.")
+        return
+
+    if mode == 1:
+        freq = _select_frequency()
+        if freq == "NOT_SET":
+            print("Leaving frequency unset (NOT_SET will not be sent to Paramify).")
+            return
+        for entry in evidence_sets["evidence_sets"].values():
+            entry["frequency"] = freq
+        print(f"Applied frequency '{freq}' to {len(evidence_sets['evidence_sets'])} evidence sets.")
+    else:
+        # mode == 2: per-fetcher
+        print("\nSetting frequency for each evidence set. Press Enter to accept default.")
+        for script_name, entry in evidence_sets["evidence_sets"].items():
+            print(f"\n--- {script_name} ({entry.get('id', '')}) ---")
+            freq = _select_frequency()
+            if freq != "NOT_SET":
+                entry["frequency"] = freq
+
+    # Shared start date for every entry that ended up with a frequency.
+    scheduled = [e for e in evidence_sets["evidence_sets"].values() if e.get("frequency")]
+    if not scheduled:
+        return
+    start = _prompt_start_date()
+    if not start:
+        return
+    for entry in scheduled:
+        entry["startDate"] = start
+    print(f"Applied start date '{start}' to {len(scheduled)} evidence set{'s' if len(scheduled) != 1 else ''}.")
+
+
 def print_summary(evidence_sets: Dict[str, Any], customer_config: Dict[str, Any]) -> None:
     """Print a summary of the generated evidence sets."""
     customer_name = customer_config['customer_configuration'].get('customer_name', 'Unknown')
@@ -254,7 +380,10 @@ def main():
     # Generate evidence sets
     print("Generating evidence sets...")
     evidence_sets = generate_evidence_sets(catalog, customer_config)
-    
+
+    # Optional: interactive frequency configuration (skipped in non-TTY runs)
+    prompt_frequency_config(evidence_sets)
+
     # Save output
     print(f"Saving to {output_file}...")
     try:

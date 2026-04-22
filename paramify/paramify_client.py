@@ -50,6 +50,9 @@ class ParamifyClient:
     def post_json(self, path: str, body: Dict[str, Any]) -> requests.Response:
         return requests.post(self._url(path), headers=self._json_headers, json=body)
 
+    def patch_json(self, path: str, body: Dict[str, Any]) -> requests.Response:
+        return requests.patch(self._url(path), headers=self._json_headers, json=body)
+
     def post_multipart(self, path: str, files: Dict[str, Any]) -> requests.Response:
         return requests.post(self._url(path), headers=self._auth_only_headers, files=files)
 
@@ -91,6 +94,20 @@ class ParamifyClient:
             print(f"Failed to retrieve Evidence records: {e}")
             return None
 
+    EVIDENCE_FREQUENCIES = frozenset(
+        {
+            "NOT_SET",
+            "DAILY",
+            "THREE_DAY",
+            "WEEKLY",
+            "BIWEEKLY",
+            "MONTHLY",
+            "QUARTERLY",
+            "BIANNUAL",
+            "ANNUAL",
+        }
+    )
+
     def create_evidence(
         self,
         reference_id: str,
@@ -98,6 +115,8 @@ class ParamifyClient:
         description: Optional[str],
         instructions: Optional[str],
         automated: bool = True,
+        frequency: Optional[str] = None,
+        start_date: Optional[str] = None,
     ) -> Optional[str]:
         """Create a new evidence record. Returns the new internal UUID, or
         None on failure. If the referenceId already exists, looks up the
@@ -110,6 +129,15 @@ class ParamifyClient:
             "instructions": instructions,
             "automated": automated,
         }
+        if frequency:
+            if frequency not in self.EVIDENCE_FREQUENCIES:
+                raise ValueError(
+                    f"Invalid frequency {frequency!r}; "
+                    f"must be one of {sorted(self.EVIDENCE_FREQUENCIES)}"
+                )
+            body["frequency"] = frequency
+        if start_date:
+            body["startDate"] = start_date
 
         try:
             resp = self.post_json("/evidence", body)
@@ -130,6 +158,40 @@ class ParamifyClient:
 
         print(f"Failed to create evidence (HTTP {resp.status_code}): {resp.text}")
         return None
+
+    def update_evidence(
+        self,
+        evidence_id: str,
+        frequency: Optional[str] = None,
+        start_date: Optional[str] = None,
+    ) -> bool:
+        """PATCH /evidence/{id}. Returns True on 2xx. Only the fields passed
+        in are sent; omitted fields are left untouched on the server."""
+        body: Dict[str, Any] = {}
+        if frequency:
+            if frequency not in self.EVIDENCE_FREQUENCIES:
+                raise ValueError(
+                    f"Invalid frequency {frequency!r}; "
+                    f"must be one of {sorted(self.EVIDENCE_FREQUENCIES)}"
+                )
+            body["frequency"] = frequency
+        if start_date:
+            body["startDate"] = start_date
+        if not body:
+            return True
+
+        try:
+            resp = self.patch_json(f"/evidence/{evidence_id}", body)
+        except requests.exceptions.RequestException as e:
+            print(f"Error updating evidence {evidence_id}: {e}")
+            return False
+        if 200 <= resp.status_code < 300:
+            return True
+        print(
+            f"Failed to update evidence {evidence_id} "
+            f"(HTTP {resp.status_code}): {self._extract_error_message(resp) or resp.text}"
+        )
+        return False
 
     # ----- Solution Capabilities -----------------------------------------
 
