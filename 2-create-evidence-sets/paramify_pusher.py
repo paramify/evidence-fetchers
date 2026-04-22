@@ -27,6 +27,14 @@ from rich_text_formatter import convert_instructions_to_string
 # Shared Paramify API client lives at the repo root under paramify/
 sys.path.append(str(Path(__file__).parent.parent))
 from paramify.paramify_client import ParamifyClient
+from paramify.parameter_substitution import (
+    MissingParameterError,
+    find_tokens,
+    substitute,
+)
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_PARAM_CONFIG = REPO_ROOT / "config" / "validator_parameters.json"
 
 
 def load_env_file():
@@ -40,7 +48,12 @@ def load_env_file():
 
 
 class ParamifyPusher:
-    def __init__(self, api_token: str, base_url: str = None):
+    def __init__(
+        self,
+        api_token: str,
+        base_url: str = None,
+        param_config_path: Optional[Path] = None,
+    ):
         self.client = ParamifyClient(api_token, base_url)
         # Keep legacy attributes for any external callers that read them.
         self.api_token = api_token
@@ -50,8 +63,12 @@ class ParamifyPusher:
             "Content-Type": "application/json"
         }
         self.upload_log = []
-        # Lazily-populated name -> UUID map for solution capabilities.
+        # Lazily-populated name -> UUID maps.
         self._sc_index: Optional[Dict[str, str]] = None
+        self._validator_index: Optional[Dict[str, str]] = None
+        # Validator parameter config is loaded lazily on first validator push.
+        self._param_config_path = param_config_path or DEFAULT_PARAM_CONFIG
+        self._validator_params: Optional[Dict[str, str]] = None
 
     @staticmethod
     def _normalize_name(name: str) -> str:
@@ -97,6 +114,117 @@ class ParamifyPusher:
             ):
                 connected += 1
         return connected, unmatched
+
+    # ----- Validators -----------------------------------------------------
+
+    def _get_validator_index(self) -> Dict[str, str]:
+        """Return (and cache) a normalized-name -> UUID map for validators."""
+        if self._validator_index is None:
+            try:
+                validators = self.client.list_validators()
+            except Exception as e:
+                print(f"Warning: failed to fetch validators: {e}")
+                self._validator_index = {}
+                return self._validator_index
+            self._validator_index = {
+                self._normalize_name(v.get("name", "")): v["id"]
+                for v in validators
+                if v.get("id") and v.get("name")
+            }
+        return self._validator_index
+
+    def _get_validator_params(self) -> Dict[str, str]:
+        """Load customer validator parameters from disk on first use."""
+        if self._validator_params is None:
+            if self._param_config_path.exists():
+                with self._param_config_path.open() as f:
+                    raw = json.load(f)
+                self._validator_params = {
+                    k: v for k, v in raw.items() if not k.startswith("_")
+                }
+            else:
+                self._validator_params = {}
+        return self._validator_params
+
+    def _sanitize_validator_for_api(self, validator: Dict) -> Dict:
+        """Strip internal/catalog-only fields so the API gets exactly what it
+        expects. The catalog may carry extras we don't want to send."""
+        allowed_automated = {
+            "name", "statement", "type", "regex", "validationRules",
+        }
+        allowed_attestation = {
+            "name", "statement", "type", "attestationRules",
+        }
+        vtype = validator.get("type")
+        allowed = allowed_automated if vtype == "AUTOMATED" else allowed_attestation
+        return {k: v for k, v in validator.items() if k in allowed}
+
+    def _substitute_validator(self, validator: Dict) -> Optional[Dict]:
+        """Sub `{{tokens}}` in a validator using the loaded params. Returns
+        the substituted definition, or None if any token is missing (logged)."""
+        tokens = find_tokens(validator)
+        if not tokens:
+            return validator
+        params = self._get_validator_params()
+        missing = sorted(tokens - set(params.keys()))
+        if missing:
+            print(
+                f"  ✗ Skipping validator {validator.get('name')!r}: "
+                f"missing parameters {missing}"
+            )
+            return None
+        try:
+            return substitute(validator, params)
+        except MissingParameterError as e:
+            print(f"  ✗ Skipping validator {validator.get('name')!r}: missing {e}")
+            return None
+
+    def get_or_create_validator(self, validator: Dict) -> Optional[str]:
+        """Return the UUID of a validator matching `validator['name']`. Creates
+        the validator in the workspace if it doesn't already exist."""
+        name = validator.get("name")
+        if not name:
+            return None
+
+        validator_index = self._get_validator_index()
+        existing_id = validator_index.get(self._normalize_name(name))
+        if existing_id:
+            return existing_id
+
+        subbed = self._substitute_validator(validator)
+        if subbed is None:
+            return None
+        payload = self._sanitize_validator_for_api(subbed)
+
+        created = self.client.create_validator(payload)
+        if not created:
+            return None
+        new_id = created.get("id")
+        if new_id:
+            validator_index[self._normalize_name(name)] = new_id
+            print(f"  + Created validator {name!r} [{new_id}]")
+        return new_id
+
+    def associate_validators(
+        self, evidence_id: str, validators: List[Dict]
+    ) -> Tuple[int, int]:
+        """Create/lookup each validator and associate it with the evidence.
+
+        Returns (connected_count, skipped_count). Skipped means we couldn't
+        get a UUID (missing params or API error).
+        """
+        connected = 0
+        skipped = 0
+        for v in validators or []:
+            vid = self.get_or_create_validator(v)
+            if not vid:
+                skipped += 1
+                continue
+            if self.client.associate_evidence(evidence_id, "VALIDATOR", vid):
+                connected += 1
+            else:
+                skipped += 1
+        return connected, skipped
 
     def load_evidence_sets(self, evidence_sets_file: str = "evidence_sets.json") -> Dict:
         """Load evidence sets configuration"""
@@ -176,6 +304,14 @@ class ParamifyPusher:
                     print(f"  ↔ Associated {connected} solution capabilit{'y' if connected == 1 else 'ies'}")
                 if unmatched:
                     print(f"  ⚠ Unmatched solution capabilities (not in workspace): {unmatched}")
+
+            validators = evidence_set_info.get("validators") or []
+            if validators:
+                connected, skipped = self.associate_validators(evidence_id, validators)
+                if connected:
+                    print(f"  ↔ Associated {connected} validator{'s' if connected != 1 else ''}")
+                if skipped:
+                    print(f"  ⚠ Skipped {skipped} validator{'s' if skipped != 1 else ''} (see above)")
 
         return evidence_id
     
