@@ -35,6 +35,68 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Auto Scaling Group Multi-AZ",
+                "statement": "",
+                "type": "AUTOMATED",
+                "regex": "AvailabilityZones\":\\s*\\[[\\s\\S]*?\"us-gov-west-1([a-c])\",[\\s]*\"us-gov-west-1([a-c])\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "NOT_EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              }
             ]
           },
           "aws_component_ssl_enforcement": {
@@ -73,6 +135,139 @@
             "controls": [
               "CNA-02",
               "CNA-03"
+            ],
+            "validators": [
+              {
+                "name": "RDS SSL Enforcement Status Validator",
+                "statement": "Validator to ensure RDS databases are enforcing SSL",
+                "type": "AUTOMATED",
+                "regex": "\"rds_total\":\\s*(\\d+)[\\s\\S]*?\"rds_ssl_enforced\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "S3 SSL Enforcement Status Validator",
+                "statement": "Validator to ensure S3 bucket are enforcing SSL",
+                "type": "AUTOMATED",
+                "regex": "\"s3_total\":\\s*(\\d+)[\\s\\S]*?\"s3_ssl_enforced\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "SSL/TLS Enforcement",
+                "statement": "This validator verifies that SSL/TLS (encryption in transit) is enforced for the AWS S3 buckets and RDS database instances included in the evidence JSON. It evaluates the summary counters to confirm that the evidence covers at least one S3 bucket and at least one RDS instance, then checks that enforcement is complete by requiring the number of S3 buckets with SSL/TLS enforced to equal the total number of S3 buckets evaluated (s3_ssl_enforced = s3_total) and the number of RDS instances with SSL/TLS enforced to equal the total number of RDS instances evaluated (rds_ssl_enforced = rds_total). The validator passes only when these totals match, indicating 100% SSL/TLS enforcement for all evaluated resources; it fails if any mismatch suggests at least one evaluated resource may permit non\u2011TLS connections and requires remediation or further review.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{[\\s\\S]*?\"s3_total\"\\s*:\\s*(\\d+)[\\s\\S]*?\"s3_ssl_enforced\"\\s*:\\s*(\\d+)[\\s\\S]*?\"rds_total\"\\s*:\\s*(\\d+)[\\s\\S]*?\"rds_ssl_enforced\"\\s*:\\s*(\\d+)[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    }
+                  }
+                ]
+              }
             ]
           },
           "aws_config_conformance_packs": {
@@ -97,6 +292,49 @@
             ],
             "controls": [
               "SVC-04"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "aws_config_monitoring": {
@@ -121,6 +359,26 @@
             ],
             "controls": [
               "SVC-04"
+            ],
+            "validators": [
+              {
+                "name": "AWS Config Monitoring",
+                "statement": "Validates that recording is enabled and status is healthy",
+                "type": "AUTOMATED",
+                "regex": "\"recording_enabled\":\\s*\"true\"[\\s\\S]*?\"status\":\\s*\"HEALTHY\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "backup_recovery_high_availability": {
@@ -147,6 +405,134 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "EBS Snapshots Encrypted",
+                "statement": "Validates all EBS snapshots are encrypted with KMS",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"EBS_Snapshot\"[\\s\\S]*?\"Encrypted\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "EBS Snapshots KMS Encrypted",
+                "statement": "Validates EBS snapshots are encrypted using KMS keys in GovCloud",
+                "type": "AUTOMATED",
+                "regex": "\"KmsKeyId\":\\s*\"(arn:aws-us-gov:kms:[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "EBS Snapshots Completed Successfully",
+                "statement": "Validates EBS snapshots have completed successfully with 100% progress",
+                "type": "AUTOMATED",
+                "regex": "\"State\":\\s*\"(completed)\"[\\s\\S]*?\"Progress\":\\s*\"(100%)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "completed"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "100%"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "EBS Snapshots Exist",
+                "statement": "Validates that EBS snapshots exist for backup purposes",
+                "type": "AUTOMATED",
+                "regex": "\"SnapshotId\":\\s*\"(snap-[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "backup_validation": {
@@ -165,7 +551,233 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "S3 Bucket Versioning Enabled",
+                "statement": "Validates all S3 buckets have versioning enabled for data protection",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"S3_Backup\"[\\s\\S]*?\"VersioningEnabled\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "6"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "S3 Primary Buckets Cross-Region Replication",
+                "statement": "Validates primary S3 buckets have replication enabled to backup buckets",
+                "type": "AUTOMATED",
+                "regex": "\"BucketName\":\\s*\"(paramify-gov-(?:pre|prod)-(?:s3|gitlab-backups))\"[\\s\\S]*?\"ReplicationEnabled\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "3"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "S3 Replication KMS Encryption",
+                "statement": "Validates S3 replication uses KMS encryption in destination region us-gov-east-1",
+                "type": "AUTOMATED",
+                "regex": "\"ReplicaKmsKeyID\":\\s*\"(arn:aws-us-gov:kms:us-gov-east-1[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-east-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "AWS Backup Vault Configured",
+                "statement": "Validates AWS Backup vault exists in GovCloud",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"AWS_Backup_Vault\"[\\s\\S]*?\"VaultArn\":\\s*\"(arn:aws-us-gov:backup[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Backup Coverage Complete",
+                "statement": "Validates summary shows all RDS instances have backups configured",
+                "type": "AUTOMATED",
+                "regex": "\"rds_backup_coverage\":\\s*\\{[^}]*\"with_backups\":\\s*(\\d+)[^}]*\"total\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Backups Enabled",
+                "statement": "Validates all RDS databases have automated backups enabled",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"RDS_Backup\"[\\s\\S]*?\"BackupEnabled\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "3"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Cross-Region Replication",
+                "statement": "Validates RDS databases have cross-region replication to us-gov-east-1",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"RDS_Backup\"[\\s\\S]*?\"CrossRegionReplication\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "3"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Storage Encrypted",
+                "statement": "Validates all RDS databases have storage encryption enabled",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"RDS_Backup\"[\\s\\S]*?\"StorageEncrypted\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "3"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Backup Retention Minimum 7 Days",
+                "statement": "Validates RDS databases have backup retention of at least 7 days",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"RDS_Backup\"[^}]*\"BackupRetentionPeriod\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "7"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "S3 Bucket storage encrypted",
+                "statement": "Validates all S3 buckets have server-side encryption enabled",
+                "type": "AUTOMATED",
+                "regex": "\"Type\":\\s*\"S3_Backup\"[\\s\\S]*?\"EncryptionEnabled\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "6"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "block_storage_encryption_status": {
             "script_file": "fetchers/aws/block_storage_encryption_status.sh",
@@ -194,6 +806,67 @@
             "controls": [
               "SVC-02",
               "SVC-05"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Block Storage Encryption Status",
+                "statement": "Validates that all (100% of) EBS volumes and EFS system storage is encrypted.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\":\\s*\\{[\\s\\S]*?\"encryption_percentage\":\\s*100",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "cloudwatch_high_availability": {
@@ -221,6 +894,49 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "cloudtrail_configuration": {
@@ -248,6 +964,175 @@
               "MLA-01",
               "MLA-02",
               "MLA-07"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "CloudTrail Actively Logging",
+                "statement": "Validates at least one CloudTrail trail exists and is actively logging. Checks the IsLogging field is true, ensuring audit data is being captured.",
+                "type": "AUTOMATED",
+                "regex": "\"IsLogging\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "CloudTrail Multi-Region Coverage",
+                "statement": "Validates trails have multi-region logging enabled (IsMultiRegionTrail: true). Required for API activity auditing across all AWS regions.",
+                "type": "AUTOMATED",
+                "regex": "\"IsMultiRegionTrail\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "CloudTrail Global Service Events Enabled",
+                "statement": "Validates trails include global service events (IncludeGlobalServiceEvents: true). Required for logging IAM, STS, and CloudFront API calls.",
+                "type": "AUTOMATED",
+                "regex": "\"IncludeGlobalServiceEvents\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "CloudTrail Log File Validation Enabled",
+                "statement": "Validates log file validation is enabled (cryptographic signing). Ensures audit logs cannot be tampered with undetected.",
+                "type": "AUTOMATED",
+                "regex": "\"LogFileValidationEnabled\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "CloudTrail Resources in GovCloud",
+                "statement": "Validates all trail resources are in FedRAMP-authorized GovCloud regions. Checks TrailARN contains aws-us-gov prefix for compliance boundary enforcement.",
+                "type": "AUTOMATED",
+                "regex": "\"TrailARN\":\\s*\"(arn:aws-us-gov:[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "CloudTrail CloudWatch Logs Integration",
+                "statement": "Validates CloudTrail deliver logs to CloudWatch (CloudWatchLogsLogGroupArn configured). Enables real-time monitoring, alerting, and SIEM integration.",
+                "type": "AUTOMATED",
+                "regex": "\"CloudWatchLogsLogGroupArn\":\\s*\"(arn:aws[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "CloudTrail Logs Encrypted with KMS",
+                "statement": "Validates trails use KMS encryption for log files (KmsKeyId configured). Ensures audit data is encrypted at rest in S3.",
+                "type": "AUTOMATED",
+                "regex": "\"KmsKeyId\":\\s*\"(arn:aws[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "database_high_availability": {
@@ -276,6 +1161,187 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Cross-Region Backup Replication to us-gov-east-1",
+                "statement": "Confirms each RDS DB instance has a paired cross-region backup ARN in us-gov-east-1. If a DB instance lacks one, match count drops.",
+                "type": "AUTOMATED",
+                "regex": "\"DBInstanceIdentifier\":\\s*\"([^\"]+)\"[\\s\\S]*?\"DBInstanceAutomatedBackupsArn\":\\s*\"(arn:aws-us-gov:rds:us-gov-east-1[^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "3"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Multi-AZ Enabled",
+                "statement": "Validates RDS subnet groups span multiple availability zones for failover capability.",
+                "type": "AUTOMATED",
+                "regex": "\"SubnetAvailabilityZone\":\\s*\\{\\s*\"Name\":\\s*\"us-gov-west-1([a-c])\"[\\s\\S]*?\"SubnetAvailabilityZone\":\\s*\\{\\s*\"Name\":\\s*\"us-gov-west-1([a-c])\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "NOT_EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Subnet Group Multi-AZ",
+                "statement": "Validates RDS subnet groups span multiple availability zones for failover capability.",
+                "type": "AUTOMATED",
+                "regex": "\"SubnetAvailabilityZone\":\\s*\\{\\s*\"Name\":\\s*\"us-gov-west-1([a-c])\"[\\s\\S]*?\"SubnetAvailabilityZone\":\\s*\\{\\s*\"Name\":\\s*\"us-gov-west-1([a-c])\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "NOT_EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Pre/Dev Backup Retention (7 days)",
+                "statement": "Validates RDS pre/dev databases have backup retention period of at least 7 days.",
+                "type": "AUTOMATED",
+                "regex": "\"DBInstanceIdentifier\":\\s*\"([^\"]*-pre-[^\"]*)\"[\\s\\S]*?\"Address\":\\s*\"([^\"]*-pre-[^\"]*)\"[\\s\\S]*?\"BackupRetentionPeriod\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "7"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "pre"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "pre"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "RDS Production Backup Retention (30 days)",
+                "statement": "Validates RDS production databases have backup retention period of at least 30 days.",
+                "type": "AUTOMATED",
+                "regex": "\"DBInstanceIdentifier\":\\s*\"([^\"]*-prod-[^\"]*)\"[\\s\\S]*?\"Address\":\\s*\"([^\"]*-prod-[^\"]*)\"[\\s\\S]*?\"BackupRetentionPeriod\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "30"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "prod"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "prod"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "detect_new_aws_resource": {
@@ -306,6 +1372,49 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "efs_high_availability": {
@@ -333,6 +1442,79 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "EFS Multi-AZ Mount Targets",
+                "statement": "Validates EFS file systems have 2+ mount targets and the mounts are in multiple us-gov-west-1 availability zones for high availability.",
+                "type": "AUTOMATED",
+                "regex": "\"NumberOfMountTargets\":\\s*(\\d+)[\\s\\S]*?\"AvailabilityZoneName\":\\s*\"us-gov-west-1([a-c])\"[\\s\\S]*?\"AvailabilityZoneName\":\\s*\"us-gov-west-1([a-c])\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "NOT_EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "2"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "eks_high_availability": {
@@ -360,6 +1542,68 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "EKS Cluster Multi-AZ Subnets",
+                "statement": "Validates EKS clusters have subnets in multiple availability zones.",
+                "type": "AUTOMATED",
+                "regex": "\"SubnetDetails\":\\s*\\[[\\s\\S]*?\"(us-gov-west-1[a-c])\"[\\s\\S]*?\"(us-gov-west-1[a-c])\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "NOT_EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              }
             ]
           },
           "eks_least_privilege": {
@@ -380,7 +1624,50 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [],
+            "validators": [
+              {
+                "name": "EKS least privilege Logging Configuration Validator",
+                "statement": "This validator verifies that EKS clusters meet least privilege and audit requirements by confirming control plane logging is enabled, pod identity associations are reviewable, and required add-ons such as vpc-cni are installed",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{[\\s\\S]*?\"clusters\"\\s*:\\s*\\{[\\s\\S]*?\"total\"\\s*:\\s*(\\d+)[\\s\\S]*?\"logging_enabled\"\\s*:\\s*(\\d+)[\\s\\S]*?\"pod_identities\"\\s*:\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "guard_duty": {
             "script_file": "fetchers/aws/guard_duty.sh",
@@ -404,6 +1691,49 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "iam_identity_center": {
@@ -443,6 +1773,67 @@
               "IAM-03",
               "IAM-04",
               "IAM-05"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Identity Center SSO via SAML",
+                "statement": "Validates that Identity Center (AWS SSO) has a SAML provider configured for federated authentication.",
+                "type": "AUTOMATED",
+                "regex": "\"saml\":\\s*\\[[\\s\\S]*?\"Arn\":\\s*\"(arn:aws[^\"]*:saml-provider/AWSSSO[^\"]*)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "iam_policies": {
@@ -483,6 +1874,103 @@
               "IAM-04",
               "IAM-05",
               "SVC-04"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "IAM Policies Not Attached to Users",
+                "statement": "Validates that IAM policies are attached to roles or groups, not directly to users (AWS best practice).",
+                "type": "AUTOMATED",
+                "regex": "\"AttachedUsers\":\\s*\\[\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "IAM MFA Enforcement Policy Exists",
+                "statement": "Validates that an MFA enforcement policy exists with proper deny conditions.",
+                "type": "AUTOMATED",
+                "regex": "\"aws:MultiFactorAuthPresent\":\\s*\"false\"[\\s\\S]*?\"Effect\":\\s*\"Deny\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "IAM Policies No Wildcard Resources",
+                "statement": "Validates that IAM policies do not use \"Resource\": \"*\" which grants overly broad permissions. Excludes Deny statements (which are acceptable with wildcards).",
+                "type": "AUTOMATED",
+                "regex": "\"Effect\":\\s*\"Allow\"[^}]*\"Resource\":\\s*\"\\*\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "iam_roles": {
@@ -522,6 +2010,96 @@
               "IAM-03",
               "IAM-04",
               "IAM-05"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "No Cross-Account Trust Besides Approved Accounts",
+                "statement": "Counts external AWS account trusts (non-Paramify accounts) and only allows approved connections. Currently only SentinelOne Gov: 773463581296 is allowed.",
+                "type": "AUTOMATED",
+                "regex": "\"AWS\":\\s*\"arn:aws[^\"]*:iam::(?!214149890209)(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "2"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "773463581296"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "IAM External IDs Configured",
+                "statement": "Counts ExternalId conditions configured, today only 2 approved for SentinelOne external access.",
+                "type": "AUTOMATED",
+                "regex": "\"sts:ExternalId\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "2"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "iam_users_groups": {
@@ -563,6 +2141,67 @@
               "IAM-04",
               "IAM-05",
               "SVC-04"
+            ],
+            "validators": [
+              {
+                "name": "AWS IAM User and Group Validator",
+                "statement": "",
+                "type": "AUTOMATED",
+                "regex": "\"GroupName\":\\s*\"(?!Administrators\")([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "kms_key_rotation": {
@@ -586,6 +2225,46 @@
             ],
             "controls": [
               "SVC-06"
+            ],
+            "validators": [
+              {
+                "name": "KMS Key Rotation (summary)",
+                "statement": "Checks if the percent of KMS keys that have rotation set to be true is greater than or equal to 90%",
+                "type": "AUTOMATED",
+                "regex": "\"rotation_percentage\"\\s*:\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "90"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "KMS Rotation Config Rule",
+                "statement": "Checks if the AWS Config rule for key rotation is passing (from cmk-backing-key-rotation-enabled-conformance-pack https://docs.aws.amazon.com/config/latest/developerguide/cmk-backing-key-rotation-enabled.html)",
+                "type": "AUTOMATED",
+                "regex": "\"ConfigRuleName\": \"cmk-backing-key-rotation-enabled-conformance-pack[^]*\"ComplianceType\": \"([^]*)\"\\n",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "COMPLIANT"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "load_balancer_encryption_status": {
@@ -618,6 +2297,147 @@
               "SVC-02",
               "SVC-05",
               "SVC-09"
+            ],
+            "validators": [
+              {
+                "name": "NLB Encryption In Transit",
+                "statement": "Ensures that all network load balancers are encrypting data in transit.",
+                "type": "AUTOMATED",
+                "regex": "\"nlb_total\":\\s*(\\d+)[\\s\\S]*?\"nlb_encrypted\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "ALB Encryption In Transit",
+                "statement": "Ensures that all application load balancers are encrypting data in transit.",
+                "type": "AUTOMATED",
+                "regex": "\"alb_total\":\\s*(\\d+)[\\s\\S]*?\"alb_encrypted\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Load Balancers using FIPS & TLS 1.3",
+                "statement": "Ensures that all load balancers are using TLS 1.3 for encryption",
+                "type": "AUTOMATED",
+                "regex": "\\s*\"ssl_policy\":\\s*\"([\\s\\S]*?)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "FIPS"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "TLS13"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Load Balancer Encryption Status Validator",
+                "statement": "Validates that all load balancers are encrypted",
+                "type": "AUTOMATED",
+                "regex": "\"alb_total\":\\s*(\\d+)[\\s\\S]*?\"alb_encrypted\":\\s*(\\d+)[\\s\\S]*?\"nlb_total\":\\s*(\\d+)[\\s\\S]*?\"nlb_encrypted\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              }
             ]
           },
           "load_balancer_high_availability": {
@@ -644,6 +2464,68 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Load Balancer Multi-AZ",
+                "statement": "Validates load balancers are deployed across multiple availability zones.",
+                "type": "AUTOMATED",
+                "regex": "\"AvailabilityZones\":\\s*\\[[\\s\\S]*?\"ZoneName\":\\s*\"(us-gov-west-1[a-c])\"[\\s\\S]*?\"ZoneName\":\\s*\"(us-gov-west-1[a-c])\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "NOT_EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              }
             ]
           },
           "network_resilience_high_availability": {
@@ -671,6 +2553,68 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "VPC Subnets Span Multiple AZs",
+                "statement": "Validates VPC has subnets deployed across multiple availability zones.",
+                "type": "AUTOMATED",
+                "regex": "\"AvailabilityZoneId\":\\s*\"(usgw1-az1)\"[\\s\\S]*?\"AvailabilityZoneId\":\\s*\"(usgw1-az2)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "NOT_EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              }
             ]
           },
           "rds_encryption_status": {
@@ -699,6 +2643,68 @@
             "controls": [
               "SVC-02",
               "SVC-05"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "All RDS DBs Encrypted",
+                "statement": "Validates that all (100% of) RDS databases are encrypted at rest",
+                "type": "AUTOMATED",
+                "regex": "\"summary\":\\s*\\{[\\s\\S]*?\"encryption_percentage\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "100"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "route53_high_availability": {
@@ -726,6 +2732,49 @@
             "controls": [
               "CNA-06",
               "RPL-03"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "s3_encryption_status": {
@@ -755,6 +2804,68 @@
             "controls": [
               "SVC-02",
               "SVC-05"
+            ],
+            "validators": [
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "All S3 Buckets Encrypted",
+                "statement": "Validates that all (100% of) S3 buckets are encrypted at rest",
+                "type": "AUTOMATED",
+                "regex": "\"summary\":\\s*\\{[\\s\\S]*?\"encryption_percentage\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "100"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "security_groups": {
@@ -783,6 +2894,81 @@
               "CNA-03",
               "CNA-05",
               "SVC-02"
+            ],
+            "validators": [
+              {
+                "name": "Outbound Port Allowlist",
+                "statement": "Outbound to 0.0.0.0/0 only on approved ports HTTP (80), HTTPS (443), Email (25, 465)",
+                "type": "AUTOMATED",
+                "regex": "\"Direction\":\\s*\"OUTBOUND RULES\"[^}]*\"FromPort\":\\s*(?!80|443|25|465\\b)(\\d+)[^}]*\"CIDRs\":\\s*\"[^\"]*0\\.0\\.0\\.0\\/0\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Outbound SG Allowlist",
+                "statement": "Only approved SGs can have ANY outbound to 0.0.0.0/0 (sg-083f sg-09c5 and sg-0377)",
+                "type": "AUTOMATED",
+                "regex": "\"GroupId\":\\s*\"(sg-(?!083f71084f584b1bd|09c5ac651df806a6a|03773c51d003b2c8d)[^\"]+)\"[^{]*\"Rules\":\\s*\\[[^\\]]*\"Direction\":\\s*\"OUTBOUND RULES\"[^}]*\"CIDRs\":\\s*\"[^\"]*0\\.0\\.0\\.0\\/0\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "SG Inbound no 0.0.0.0/0 other than HTTPS",
+                "statement": "Validates that no security groups have inbound rules open to 0.0.0.0/0 on ports other than 443 (HTTPS)",
+                "type": "AUTOMATED",
+                "regex": "\"Direction\":\\s*\"INBOUND RULES\"[^}]*\"FromPort\":\\s*(?!443)(\\d+)[^}]*\"CIDRs\":\\s*\"([^\"]*)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "DOES_NOT_CONTAIN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0.0.0.0/0"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Inbound SG Allowlist for Internet-Exposed",
+                "statement": "Validates that only approved security groups (ALB/NLB sg-0f64, sg-0a1c and sg-05d1) have inbound rules open to 0.0.0.0/0. Any other security group with internet exposure fails.",
+                "type": "AUTOMATED",
+                "regex": "\"GroupId\":\\s*\"(sg-(?!0f649e71f59493c0b|0a1cf74d01b9905cc|05d1ce4f553cabea6|0380f6ce164b81144)[^\"]*)\"[^}]*\"Rules\":\\s*\\[[^\\]]*\"Direction\":\\s*\"INBOUND RULES\"[^}]*\"CIDRs\":\\s*\"([^\"]*0\\.0\\.0\\.0\\/0[^\"]*)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "waf_all_rules": {
@@ -811,6 +2997,158 @@
               "CNA-05",
               "CNA-06",
               "CNA-07"
+            ],
+            "validators": [
+              {
+                "name": "WAF Rules Configured",
+                "statement": "",
+                "type": "AUTOMATED",
+                "regex": "\"Rules\"\\s*:\\s*\\[\\s*\\{",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Minimum Assessment Scope AWS",
+                "statement": "Validates that all regions are within scope of the authorization and that no data is in a different region and therefore not being audited",
+                "type": "AUTOMATED",
+                "regex": "\"metadata\":\\s*\\{[\\s\\S]*?\"region\":\\s*\"([^\"]+)\"[\\s\\S]*?\"account_id\":\\s*\"(\\d+)\"[\\s\\S]*?\"arn\":\\s*\"([^\"]+)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "214149890209"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "us-gov-west-1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "WAF DoS Rules",
+                "statement": "This validator verifies that the evidence includes at least one AWS WAF WebACL entry with a Rules array present, indicating that WAF rule configuration data is being collected and available for review as part of Denial\u2011of\u2011Service protection monitoring. It does this by matching occurrences of the \"Rules\": [ pattern in the evidence and passing when at least one match is found, confirming the artifact contains WAF rules context",
+                "type": "AUTOMATED",
+                "regex": "\"Rules\"\\s*:\\s*\\[",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "WAF CloudWatch Metrics Enabled",
+                "statement": "Validates AWS WAF has CloudWatch metrics enabled for visibility into attack patterns and DoS attempts.",
+                "type": "AUTOMATED",
+                "regex": "\"CloudWatchMetricsEnabled\":\\s*(true)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "true"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "WAF IP Reputation List Enabled",
+                "statement": "Ensures AWS WAF includes the AWS Managed IP Reputation List and/or the AWSManagedRulesAnonymousIpList to block known malicious IPs, botnets, VPNs, proxies, and tor exit nodes commonly used to flood in DoS attacks.",
+                "type": "AUTOMATED",
+                "regex": "\"Name\":\\s*\"(AWSManagedRulesAmazonIpReputationList|AWSManagedRulesAnonymousIpList)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "2"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "WAF Known Bad Inputs Protection Enabled",
+                "statement": "Validates WAF includes Known Bad Inputs rule set to block request patterns associated with exploitation.",
+                "type": "AUTOMATED",
+                "regex": "\"Name\":\\s*\"(AWSManagedRulesKnownBadInputsRuleSet)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "AWS WAF Common Rule Set Enabled",
+                "statement": "Validates AWS WAF includes AWS Common Rule Set for protection against common web exploits including size restrictions and request flooding.",
+                "type": "AUTOMATED",
+                "regex": "\"Name\":\\s*\"(AWSManagedRulesCommonRuleSet)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "waf_dos_rules": {
@@ -839,6 +3177,26 @@
               "CNA-05",
               "CNA-06",
               "CNA-07"
+            ],
+            "validators": [
+              {
+                "name": "WAF DoS Rules",
+                "statement": "This validator verifies that the evidence includes at least one AWS WAF WebACL entry with a Rules array present, indicating that WAF rule configuration data is being collected and available for review as part of Denial\u2011of\u2011Service protection monitoring. It does this by matching occurrences of the \"Rules\": [ pattern in the evidence and passing when at least one match is found, confirming the artifact contains WAF rules context",
+                "type": "AUTOMATED",
+                "regex": "\"Rules\"\\s*:\\s*\\[",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              }
             ]
           }
         }
@@ -878,7 +3236,28 @@
               }
             ],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [],
+            "validators": [
+              {
+                "name": "SentinelOne User Fetcher Validator",
+                "statement": "Validates that all users have 2FA enabled",
+                "type": "AUTOMATED",
+                "regex": "\"total_user_count\":\\s*(\\d+)[\\s\\S]*?\"two_factor_authentication_enabled_count\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "sentinelone_xdr_assets": {
             "script_file": "fetchers/sentinelone/sentinelone_xdr_assets.py",
@@ -913,6 +3292,38 @@
             ],
             "controls": [
               "MLA-05"
+            ],
+            "validators": [
+              {
+                "name": "SentinelOne XDR Asset Fetcher Validator",
+                "statement": "Validates that XDR assets are healthy and active",
+                "type": "AUTOMATED",
+                "regex": "\"total_asset_count\":\\s*(\\d+)[\\s\\S]*?\"healthy_infection_status_count\":\\s*(\\d+)[\\s\\S]*?\"active_asset_status_count\":\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    }
+                  }
+                ]
+              }
             ]
           },
           "sentinelone_agents": {
@@ -948,6 +3359,27 @@
             ],
             "controls": [
               "MLA-05"
+            ],
+            "validators": [
+              {
+                "name": "SentinelOne Agent Fetcher Validator",
+                "statement": "Validates that majority of agents have completed a full successful scan",
+                "type": "AUTOMATED",
+                "regex": "\"last_successful_scan_percentage\":\\s*(\\d+\\.?\\d*)[\\s\\S]*?",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": ".8"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "sentinelone_cloud_detection_rules": {
@@ -987,6 +3419,44 @@
               "IAM-06",
               "MLA-01",
               "MLA-02"
+            ],
+            "validators": [
+              {
+                "name": "SentinelOne Custom Cloud Detection Rules",
+                "statement": "Validates existence of essential custom cloud detection rules (eg: Root login, stop logging, RDS DB modification, S3 encryption deletion)",
+                "type": "AUTOMATED",
+                "regex": "\"s1ql\":\\s*\"dataSource\\.name = 'CloudTrail' and (?:activity_source = 'signin\\.amazonaws\\.com' and activity_name = 'ConsoleLogin' and actor\\.user\\.type = 'Root' and unmapped\\.responseElements\\.ConsoleLogin = '(?:Failure|Success)'|activity_source = 'cloudtrail\\.amazonaws\\.com' and activity_name = 'StopLogging'|activity_source = 'iam\\.amazonaws\\.com' and activity_name = 'CreateAccessKey'|activity_source = 'rds\\.amazonaws\\.com' and activity_name = 'ModifyDBInstance'|activity_source = 's3\\.amazonaws\\.com' and activity_name = 'DeleteBucketEncryption'|activity_source = 'iam\\.amazonaws\\.com' and activity_name in \\('CreateLoginProfile', 'UpdateLoginProfile'\\) and unmapped\\.requestParameters\\.passwordResetRequired = false)\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "7"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "SentinelOne Cloud Logging Sources",
+                "statement": "Validates ongoing ingestion of logging from multiple sources (SentinelOne agents (K8s) | AWS VPC Flow | AWS Load Balancer | S3 Access | CloudTrail Audit logs)",
+                "type": "AUTOMATED",
+                "regex": "\"(SentinelOne|AWS VPC Flow|AWS Load Balancer|S3|asset|CloudTrail)\"\\s*,\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "6"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "sentinelone_activities": {
@@ -1022,6 +3492,27 @@
             ],
             "controls": [
               "MLA-02"
+            ],
+            "validators": [
+              {
+                "name": "SentinelOne Activity Fetcher Validator",
+                "statement": "Validates that excessive activity is not occurring outside of normal company activity",
+                "type": "AUTOMATED",
+                "regex": "\"total_activities_collected\":\\s*(\\d+)[\\s\\S]*?",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "LESS_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "10"
+                    }
+                  }
+                ]
+              }
             ]
           }
         }
@@ -1125,6 +3616,27 @@
             ],
             "controls": [
               "CED-02"
+            ],
+            "validators": [
+              {
+                "name": "High Risk User Training Validator",
+                "statement": "Confirms the completion of role-specific security training for high risk users",
+                "type": "AUTOMATED",
+                "regex": "completion_rate\"\\s*:\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "80"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "security_awareness_training": {
@@ -1150,6 +3662,27 @@
             ],
             "controls": [
               "CED-01"
+            ],
+            "validators": [
+              {
+                "name": "Security Awareness Training Validator",
+                "statement": "Validates completion rate of Security Awareness Training",
+                "type": "AUTOMATED",
+                "regex": "completion_rate\"\\s*:\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "80"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "developer_specific_training": {
@@ -1172,7 +3705,28 @@
             "solution_capabilities": [
               "Developer Specific Training"
             ],
-            "controls": []
+            "controls": [],
+            "validators": [
+              {
+                "name": "Developer Specific Training Validator",
+                "statement": "Validates completion rate of Developer Specific Training as reported by KnowBe4 system.",
+                "type": "AUTOMATED",
+                "regex": "completion_rate\"\\s*:\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "80"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "module_based_summary": {
             "script_file": "fetchers/knowbe4/module_based_summary.sh",
@@ -1192,7 +3746,28 @@
             ],
             "validation_rules": [],
             "solution_capabilities": [],
-            "controls": []
+            "controls": [],
+            "validators": [
+              {
+                "name": "Incident Response Training Validator",
+                "statement": "Confirms the completion rate of Role specific Incident Response and Disaster Recovery training.",
+                "type": "AUTOMATED",
+                "regex": "\"Incident Response: First Steps\"\\s*:\\s*\\{[\\s\\S]*?\"completion_rate\"\\s*:\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "80"
+                    }
+                  }
+                ]
+              }
+            ]
           }
         }
       },
@@ -1235,6 +3810,90 @@
             "controls": [
               "IAM-01",
               "IAM-05"
+            ],
+            "validators": [
+              {
+                "name": "Okta Phishing Resistant MFA",
+                "statement": "This validator provides a portable baseline signal that phishing\u2011resistant MFA capability exists in Okta and that there is at least some real adoption, without requiring a FedRAMP\u2011specific security\u2011key\u2011only enforcement posture or 100% rollout. It reads the evidence summary to confirm that at least one phishing\u2011resistant authenticator type is configured (phishing_resistant_authenticator_types_count \u2265 1) and that at least one user is enrolled or using phishing\u2011resistant MFA (users_with_phishing_resistant_mfa > 0). Because it does not require full user coverage, specific key models, or additional FedRAMP\u2011specific constraints, it remains applicable across different organizational maturity levels and implementation choices.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"phishing_resistant_authenticator_types_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"users_with_phishing_resistant_mfa\"\\s*:\\s*(\\d+))[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "All Okta Users Have Security Key for Phishing Resistant MFA",
+                "statement": "This validator is intended to demonstrate a strict, FedRAMP\u2011aligned phishing\u2011resistant MFA posture by showing that phishing\u2011resistant authentication is configured, that the configured phishing\u2011resistant method includes security keys, and that phishing\u2011resistant MFA is applied across the full user population. It evaluates the evidence to confirm at least one phishing\u2011resistant authenticator type is configured (phishing_resistant_authenticator_types_count \u2265 1), that the organization\u2019s configured phishing\u2011resistant methods explicitly include security_key (phishing_resistant_types contains security_key), and that enforcement is complete by requiring the number of users with phishing\u2011resistant MFA to equal the total number of users evaluated (users_with_phishing_resistant_mfa = total_users). It also corroborates organization\u2011wide coverage using the script\u2019s computed metric (phishing_resistant_mfa_percentage = 100), while the count equality check prevents pass outcomes caused by rounding or formatting. The validator passes only when security\u2011key\u2011based phishing\u2011resistant MFA is both present and fully adopted, supporting an audit narrative that strong possession\u2011factor MFA is enforced consistently for all users.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"phishing_resistant_authenticator_types_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"users_with_phishing_resistant_mfa\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"total_users\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"phishing_resistant_mfa_percentage\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?))(?=[\\s\\S]*?\"phishing_resistant_types\"\\s*:\\s*\\[[^\\]]*?\"(security_key)\"[^\\]]*\\])[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "100"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 5
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "security_key"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "okta_passwordless_authentication": {
@@ -1263,6 +3922,79 @@
             ],
             "controls": [
               "IAM-03"
+            ],
+            "validators": [
+              {
+                "name": "Okta Passwordless Authentication-FedRAMP 20x Mod",
+                "statement": "This validator is intended to demonstrate a strict, FedRAMP\u2011aligned passwordless posture where passwordless authentication is not merely available, but is enforced specifically through security keys for application sign\u2011on and is fully adopted across the evaluated user population. It evaluates the evidence to confirm that the organization\u2019s sign\u2011on policy explicitly requires security keys (security_key_enforced_for_application_sign_on = true), that a real population was assessed (total_active_users_checked > 0), and that every evaluated user is enrolled with a security key by requiring the enrolled count to equal the checked population (users_with_security_key_enrolled = total_active_users_checked). It also uses the script\u2019s computed percentage (security_key_enrollment_percentage = 100) as an additional corroborating signal, while the count equality check prevents pass outcomes caused by rounding or formatting. The validator passes only when enforcement and full coverage are both demonstrated, supporting an audit narrative that passwordless access is implemented organization\u2011wide using a phishing\u2011resistant possession factor consistent with strict FedRAMP expectations.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"security_key_enforced_for_application_sign_on\"\\s*:\\s*(true|false))(?=[\\s\\S]*?\"security_key_enrollment_percentage\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?))(?=[\\s\\S]*?\"users_with_security_key_enrolled\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"total_active_users_checked\"\\s*:\\s*(\\d+))[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "100"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "true"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Okta Passwordless Authentication",
+                "statement": "This validator provides a portable baseline signal that the organization has at least one passwordless\u2011capable authenticator configured in Okta, without requiring FedRAMP\u2019s security\u2011key\u2011only enforcement posture or organization\u2011wide adoption. It reads the evidence summary and extracts the number of configured passwordless authenticators (passwordless_authenticators_count), then passes if that value is at least one (passwordless_authenticators_count \u2265 1).",
+                "type": "AUTOMATED",
+                "regex": "\"passwordless_authenticators_count\"\\s*:\\s*(\\d+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "okta_non_user_accounts_authentication": {
@@ -1292,6 +4024,60 @@
             ],
             "controls": [
               "IAM-03"
+            ],
+            "validators": [
+              {
+                "name": "Okta Non-User Accounts Authentication-FedRAMP 20x Mod",
+                "statement": "This validator is intended to demonstrate a strict, FedRAMP\u2011aligned posture for non\u2011user (service/automation) identities by showing that service accounts exist, that automation credentials exist, that those credentials can be attributed to specific owning identities, and that at least one service account was identified through a strong and auditable linkage to real automation artifacts rather than naming heuristics. It evaluates the evidence to confirm that service accounts were detected (service_accounts_count), that API tokens used for non\u2011interactive automation are present (api_tokens_count), and that token owners were enumerated (api_token_owners_count) so automation credentials can be tied back to accountable identities. For strict assurance, it also requires evidence that at least one service account was identified specifically via the api_token_owner detection method (service_accounts_by_detection_method.api_token_owner), which strengthens the audit story by directly linking the non\u2011user identity population to concrete automation credentials discovered in Okta.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"service_accounts_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"api_tokens_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"api_token_owners_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"service_accounts_by_detection_method\"\\s*:\\s*\\{[\\s\\S]*?\"(api_token_owner)\"\\s*:)[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "api_token_owner"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "okta_just_in_time_authorization": {
@@ -1326,6 +4112,60 @@
             ],
             "controls": [
               "IAM-04"
+            ],
+            "validators": [
+              {
+                "name": "Okta Just-In-Time Authorization",
+                "statement": "This validator provides a portable baseline signal that the organization is collecting the key measurable indicators associated with \u201cJIT\u2011ish\u201d access patterns in Okta, without imposing maturity\u2011dependent thresholds. It checks that the evidence includes numeric fields for group\u2011based access coverage, the presence of conditional rules, the presence of contextual conditions within policies, and recent access events; in other words, it confirms the dataset contains the core telemetry needed to evaluate context\u2011aware authorization and group\u2011mediated access.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"group_based_access_percentage\"\\s*:\\s*([\\d.]+))(?=[\\s\\S]*?\"policies_with_conditional_rules\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"policies_with_conditions\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"access_events_last_7_days\"\\s*:\\s*(\\d+))[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "okta_least_privilege": {
@@ -1357,6 +4197,71 @@
             ],
             "controls": [
               "IAM-05"
+            ],
+            "validators": [
+              {
+                "name": "Okta Least Privilege-FedRAMP 20x Mod",
+                "statement": "This validator is intended to demonstrate a strict, FedRAMP\u2011aligned least\u2011privilege posture for privileged administration in Okta by showing that privileged access is clearly defined, operationally viable, and free of unexpected admin role types. It evaluates the evidence to confirm the script assessed a real population (total_active_users > 0), that at least one Super Admin exists for secure operations and break\u2011glass administration (super_admin_count \u2265 1), and that at least one restricted read\u2011only admin identity exists to support least\u2011privilege operational patterns such as auditing or automation (read_only_admin_count \u2265 1). It further enforces that there are no \u201cother\u201d or uncategorized admin types (other_admin_count = 0), which supports an audit narrative that privileged roles are intentionally scoped and categorized rather than accruing ad\u2011hoc administrative access. Finally, it includes a sanity consistency check that the total number of admin users is not greater than the total evaluated users (admin_users_count \u2264 total_active_users), ensuring the reported counts are coherent.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"total_active_users\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"admin_users_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"super_admin_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"read_only_admin_count\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"other_admin_count\"\\s*:\\s*(\\d+))[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 5
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "LESS_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    }
+                  }
+                ]
+              }
             ]
           },
           "okta_suspicious_activity_management": {
@@ -1383,6 +4288,71 @@
             ],
             "controls": [
               "IAM-06"
+            ],
+            "validators": [
+              {
+                "name": "Okta Suspicious Activity Management-FedRAMP 20x Mod",
+                "statement": "This validator is intended to demonstrate a strict, FedRAMP\u2011aligned suspicious activity management posture by showing that the organization has multiple automated detection mechanisms enabled, that advanced anomaly/behavior detection is explicitly part of the monitoring program, and that monitoring is operational and producing auditable security telemetry. It evaluates the evidence to confirm that at least two detection mechanisms are configured (mechanisms_configured \u2265 2), that the configured mechanisms explicitly include \u201cBehavior Detection\u201d (showing anomaly detection is in scope, not only basic logging), and that behavior detection is actively configured through at least one active rule (active_rules \u2265 1). It also requires evidence that the monitoring pipeline is operational by checking for recent security event volume in the window (security_events_last_30_days > 0), and it validates that core suspicious-activity signals such as failed authentication attempts are being tracked as a numeric metric (failed_auth_attempts \u2265 0, optionally stricter if desired). The validator passes only when these conditions are met, supporting an audit narrative that suspicious activity detection is layered, configured, and actively producing monitoring data suitable for FedRAMP-level evidence.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"security_events_last_30_days\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"failed_auth_attempts\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"active_rules\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"mechanisms_configured\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"mechanisms\"\\s*:\\s*\\[[\\s\\S]*?\"(Behavior Detection)\"[\\s\\S]*?\\])[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 5
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "Behavior Detection"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 4
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "2"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "okta_automated_account_management": {
@@ -1407,7 +4377,50 @@
             "solution_capabilities": [
               "Automated Account Management: Okta"
             ],
-            "controls": []
+            "controls": [],
+            "validators": [
+              {
+                "name": "Okta Automated Account Management-FedRAMP 20x Mod",
+                "statement": "This validator is intended to demonstrate strong, FedRAMP\u2011aligned automated account management hygiene by showing that the organization is actively managing its account population, maintaining high account \u201chealth,\u201d and preventing long\u2011inactive accounts from persisting. It evaluates the evidence to confirm that a real user population was assessed (total_users > 0), that the environment is in a strict operational posture where all evaluated users are active (active_accounts = total_users), that overall account health is high (account_health_percentage \u2265 80, where \u201chealth\u201d is defined by the script as recent login activity), and that there are no users who have been inactive for 90+ days (inactive_90_plus_days = 0). The validator passes only when these conditions are met, supporting an audit narrative that accounts are continuously governed, monitored, and kept within a clean lifecycle boundary consistent with strong compliance expectations.",
+                "type": "AUTOMATED",
+                "regex": "\"summary\"\\s*:\\s*\\{(?=[\\s\\S]*?\"active_accounts\"\\s*:\\s*(\\d+))(?=[\\s\\S]*?\"account_health_percentage\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?))(?=[\\s\\S]*?\"inactive_90_plus_days\"\\s*:\\s*(\\d+))[\\s\\S]*?\\}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 3
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 2
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "100.0"
+                    }
+                  },
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "0"
+                    }
+                  }
+                ]
+              }
+            ]
           }
         }
       },
@@ -1447,6 +4460,243 @@
               "VDR-01",
               "VDR-AY-05",
               "VDR-AY-06"
+            ],
+            "validators": [
+              {
+                "name": "CI/CD Pipeline Configuration Exists",
+                "statement": "Confirms that a GitLab CI/CD pipeline configuration is defined for the repository.",
+                "type": "AUTOMATED",
+                "regex": "\"file_name\"\\s*:\\s*\"\\.gitlab-ci\\.yml\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Automated Functional Testing Executed",
+                "statement": "Confirms that automated tests are executed as part of the CI/CD pipeline.",
+                "type": "AUTOMATED",
+                "regex": "\"status\"\\s*:\\s*\"success\"[\\s\\S]*\"analysis\"\\s*:\\s*\\{[\\s\\S]*\"has_test_stage\"\\s*:\\s*true",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Controlled Deployment Through CI/CD Pipeline",
+                "statement": "",
+                "type": "AUTOMATED",
+                "regex": "(stage:\\s+deploy|environment:)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Grype CVE Suppression List Contains Only Approved Entries (Total Count)",
+                "statement": "Confirms the total number of suppressed vulnerability IDs in the Grype ignore config matches exactly the approved list. Any addition of an unapproved CVE or GHSA will increase the count and fail this check. Works in tandem with the approved-entries-only check.",
+                "type": "AUTOMATED",
+                "regex": "vulnerability: ((?:CVE|GHSA)-[\\w-]+)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "108"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Pipeline Restricted to MRs and Protected Branches",
+                "statement": "Confirms the CI/CD pipeline is gated to only run on merge request events or protected branches preventing arbitrary pipeline execution outside of the controlled change process.",
+                "type": "AUTOMATED",
+                "regex": "CI_PIPELINE_SOURCE.*merge_request_event",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Container Images Sourced from Private ECR Registry",
+                "statement": "Confirms that container images used in the pipeline are sourced from the organization's private AWS ECR registry rather than public registries ensuring image provenance and access control.",
+                "type": "AUTOMATED",
+                "regex": "041462616641\\.dkr\\.ecr\\.",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Container Image Built with Kaniko (No Privileged Docker Daemon)",
+                "statement": "Confirms container images are built using Kaniko which eliminates the need for a privileged Docker socket reducing build-time attack surface and container escape risk.",
+                "type": "AUTOMATED",
+                "regex": "/kaniko/executor",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Container Vulnerability Scanning Enforces Medium+ Severity Threshold",
+                "statement": "Confirms container images are scanned with Grype and the pipeline is configured to fail on medium or higher severity vulnerabilities. Captures the severity level in group 1 and verifies it is set to 'medium' (not weakened to high or critical).",
+                "type": "AUTOMATED",
+                "regex": "grype --fail-on (medium|high|critical|low)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "CONTAINS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "medium"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Grype CVE Suppression List Contains Only Approved Entries (Approved IDs Only)",
+                "statement": "Confirms every suppressed vulnerability ID in the Grype ignore config is on the approved false-positive list. If an unapproved CVE or GHSA is substituted in, the approved-match count will drop below 108 and this check fails. Works in tandem with the total count check.",
+                "type": "AUTOMATED",
+                "regex": "vulnerability: (CVE-2023-6237|CVE-2024-4603|CVE-2024-13176|CVE-2023-5363|CVE-2023-5678|CVE-2024-0727|CVE-2024-2511|CVE-2024-4741|CVE-2024-5535|CVE-2024-6119|CVE-2024-9143|CVE-2024-12797|CVE-2025-4575|CVE-2025-9230|CVE-2025-9231|CVE-2025-9232|CVE-2025-11187|CVE-2025-15467|CVE-2025-15468|CVE-2025-15469|CVE-2025-66199|CVE-2025-68160|CVE-2025-69418|CVE-2025-69419|CVE-2025-69420|CVE-2025-69421|CVE-2026-22795|CVE-2026-22796|GHSA-299c-jvhc-gxj8|GHSA-2cj7-mg3x-9mhq|GHSA-4fc7-mvrr-wv2c|GHSA-76r2-c3cg-f5r9|GHSA-7m4m-pwhv-49c5|GHSA-85xr-ghj6-6m46|GHSA-9mrx-mqmg-gwj9|GHSA-9v9h-cgj8-h64p|GHSA-hvc4-mjv4-5mw6|GHSA-q764-r57m-9wp9|GHSA-r9fv-h47r-823f|GHSA-v8qh-5c5w-48pp|GHSA-xw78-pcr6-wrg8|GHSA-3vqq-45qg-2xf6|GHSA-5888-36j9-c92p|GHSA-78qr-24v5-7q73|GHSA-79v4-65xg-pq4g|GHSA-g78j-46j5-97cr|GHSA-hpc7-gcqm-58fv|GHSA-r9hf-rxjm-gv2f|GHSA-rhx3-fg8p-f9m4|GHSA-v2vr-926q-29fr|GHSA-w42r-ph9f-9x66|GHSA-w9rv-xc8m-cmqp|GHSA-wvhq-3h88-rf6g|GHSA-x77r-97gw-wh89)",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "108"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Controlled Application Deployment via CI/CD Pipeline",
+                "statement": "Confirms that application deployments are performed exclusively through the CI/CD pipeline using kubectl image updates ensuring all production changes flow through the automated controlled deployment process.",
+                "type": "AUTOMATED",
+                "regex": "kubectl.*set image",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Deployment Health Verified via Rollout Status Check",
+                "statement": "Confirms the pipeline actively monitors Kubernetes rollout status after each deployment and fails if pods do not reach a healthy state providing automated deployment verification.",
+                "type": "AUTOMATED",
+                "regex": "rollout status",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Automated Functional Tests Executed in Pipeline",
+                "statement": "Confirms automated tests run in the CI/CD pipeline before deployment. Applies to Node.js (npm run test:build:unit) and .NET (dotnet test) projects. Admission controller has no automated test job - a known gap.",
+                "type": "AUTOMATED",
+                "regex": "npm run test:build:unit|dotnet test",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Pipeline Base Images Pinned to Immutable SHA256 Digest",
+                "statement": "Confirms that base images used within the CI/CD pipeline are pinned to a specific immutable SHA256 digest rather than a mutable tag. Admission controller currently uses mutable tags - a known gap.",
+                "type": "AUTOMATED",
+                "regex": "@sha256:[a-f0-9]{64}",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "gitlab_project_summary": {
@@ -1508,6 +4758,26 @@
               "MLA-05",
               "SVC-01",
               "SVC-04"
+            ],
+            "validators": [
+              {
+                "name": "Change Management Active",
+                "statement": "Validates that change management is active, approval process is enabled, and that it meets minimum review.",
+                "type": "AUTOMATED",
+                "regex": "\"change_management_active\":\\s*true[\\s\\S]*?\"approval_process_enabled\":\\s*true[\\s\\S]*?\"review_process_active\":\\s*true[\\s\\S]*?\"meets_minimum_review\":\\s*true",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "EQUALS",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              }
             ]
           }
         }
@@ -1605,6 +4875,45 @@
               "SVC-01",
               "SVC-04",
               "SVC-05"
+            ],
+            "validators": [
+              {
+                "name": "Infrastructure-as-Code Compliance Scan (Terraform)",
+                "statement": "Confirms the evidence is a Checkov scan targeting Terraform infrastructure-as-code.",
+                "type": "AUTOMATED",
+                "regex": "\"check_type\"\\s*:\\s*\"terraform\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Compliance Threshold Met (\u2265 84%) (Terraform)",
+                "statement": "Passes only if the overall Terraform compliance score is 84% or higher.",
+                "type": "AUTOMATED",
+                "regex": "\"aggregate_percentage\"\\s*:\\s*(\\d+.\\d+)?",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "84"
+                    }
+                  }
+                ]
+              }
             ]
           },
           "checkov_kubernetes": {
@@ -1642,6 +4951,45 @@
               "SVC-01",
               "SVC-04",
               "SVC-05"
+            ],
+            "validators": [
+              {
+                "name": "Kubernetes Configuration Compliance Scan",
+                "statement": "Validates that a Checkov scan was performed against Kubernetes manifests to assess configuration security compliance.",
+                "type": "AUTOMATED",
+                "regex": "\"check_type\"\\s*:\\s*\"kubernetes\"",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_COUNT"
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Compliance Threshold Met (\u2265 85%) (Kubernetes)",
+                "statement": "Passes only if the Kubernetes configuration compliance score meets or exceeds 85%.",
+                "type": "AUTOMATED",
+                "regex": "\"passed_percentage\"\\s*:\\s*(\\d+.\\d+)?",
+                "validationRules": [
+                  {
+                    "regexOperation": {
+                      "type": "MATCH_GROUP",
+                      "groupNumber": 1
+                    },
+                    "criteria": "GREATER_THAN_OR_EQUAL_TO",
+                    "value": {
+                      "type": "CUSTOM_TEXT",
+                      "customText": "85"
+                    }
+                  }
+                ]
+              }
             ]
           }
         }
