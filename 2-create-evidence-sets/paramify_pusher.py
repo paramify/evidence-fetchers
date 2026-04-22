@@ -13,7 +13,6 @@ import argparse
 import json
 import os
 import re
-import requests
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -24,6 +23,10 @@ from dotenv import load_dotenv
 # Add the rich text formatter to the path
 sys.path.append(str(Path(__file__).parent.parent / "1-select-fetchers"))
 from rich_text_formatter import convert_instructions_to_string
+
+# Shared Paramify API client lives at the repo root under paramify/
+sys.path.append(str(Path(__file__).parent.parent))
+from paramify.paramify_client import ParamifyClient
 
 
 def load_env_file():
@@ -38,9 +41,10 @@ def load_env_file():
 
 class ParamifyPusher:
     def __init__(self, api_token: str, base_url: str = None):
+        self.client = ParamifyClient(api_token, base_url)
+        # Keep legacy attributes for any external callers that read them.
         self.api_token = api_token
-        # Use provided base_url, environment variable, or default
-        self.base_url = base_url or os.environ.get("PARAMIFY_API_BASE_URL", "https://app.paramify.com/api/v0")
+        self.base_url = self.client.base_url
         self.headers = {
             "Authorization": f"Bearer {api_token}",
             "Content-Type": "application/json"
@@ -78,66 +82,25 @@ class ParamifyPusher:
         return None
     
     def find_existing_evidence_set(self, reference_id: str) -> Optional[str]:
-        """Find existing Evidence Set by reference ID"""
-        try:
-            response = requests.get(f"{self.base_url}/evidence", headers=self.headers)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            for evidence in data.get("evidences", []):
-                if evidence.get("referenceId") == reference_id:
-                    evidence_id = evidence.get("id")
-                    return evidence_id
-            
-            return None
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Failed to retrieve Evidence Sets: {e}")
-            return None
-    
-    def create_evidence_set(self, reference_id: str, name: str, description: str, 
+        """Find existing Evidence Set by reference ID (returns internal UUID)."""
+        evidence = self.client.find_evidence_by_reference_id(reference_id)
+        return evidence.get("id") if evidence else None
+
+    def create_evidence_set(self, reference_id: str, name: str, description: str,
                              instructions: str, automated: bool = True) -> Optional[str]:
-        """Create new Evidence Set"""
+        """Create new Evidence Set (or look up the existing one on duplicate referenceId)."""
         print(f"Creating Evidence Set: {name}")
-        
-        # Convert rich text instructions to string format for Paramify API
         instructions_string = convert_instructions_to_string(instructions)
-        
-        data = {
-            "referenceId": reference_id,
-            "name": name,
-            "description": description,
-            "instructions": instructions_string,
-            "automated": automated
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/evidence", headers=self.headers, json=data)
-            
-            if response.status_code in [200, 201]:
-                result = response.json()
-                evidence_id = result.get("id")
-                print(f"Evidence Set created successfully: {evidence_id}")
-                return evidence_id
-            elif response.status_code == 400:
-                # Check if it's a "Reference ID already exists" error
-                error_data = response.json()
-                error_msg = error_data.get("message") or error_data.get("error", "Unknown error")
-                if "Reference ID already exists" in error_msg:
-                    print("Evidence Set already exists, attempting to find it...")
-                    return self.find_existing_evidence_set(reference_id)
-                else:
-                    print(f"Failed to create Evidence Set (HTTP {response.status_code}): {error_msg}")
-                    return None
-            else:
-                print(f"Failed to create Evidence Set (HTTP {response.status_code})")
-                print(response.text)
-                return None
-                
-        except requests.exceptions.RequestException as e:
-            print(f"Error creating evidence set: {e}")
-            return None
+        evidence_id = self.client.create_evidence(
+            reference_id=reference_id,
+            name=name,
+            description=description,
+            instructions=instructions_string,
+            automated=automated,
+        )
+        if evidence_id:
+            print(f"Evidence Set created (or existing): {evidence_id}")
+        return evidence_id
     
     def get_or_create_evidence_set(self, evidence_set_info: Dict) -> Optional[str]:
         """Get or create Evidence Set for a check"""
@@ -185,55 +148,21 @@ class ParamifyPusher:
 
         print(f"Uploading artifact: {Path(evidence_file_path).name}")
 
-        # Create artifact metadata with a human-readable title
         script_filename = Path(evidence_file_path).name
         artifact_title = self._build_artifact_title(check_name, resource, evidence_set_info)
         artifact_data = {
             "title": artifact_title,
             "note": f"Evidence for {resource}: {script_filename}" if resource != "unknown"
                     else f"Evidence file for {check_name}: {script_filename}",
-            "effectiveDate": datetime.now().isoformat() + "Z"
+            "effectiveDate": datetime.now().isoformat() + "Z",
         }
-        
-        try:
-            # Create temporary artifact JSON file
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_artifact:
-                json.dump(artifact_data, temp_artifact)
-                temp_artifact_path = temp_artifact.name
-            
-            # Upload using multipart form data
-            with open(evidence_file_path, 'rb') as f, open(temp_artifact_path, 'rb') as artifact_f:
-                files = {
-                    'file': f,
-                    'artifact': ('artifact.json', artifact_f, 'application/json')
-                }
-                
-                headers = {"Authorization": f"Bearer {self.api_token}"}
-                
-                response = requests.post(
-                    f"{self.base_url}/evidence/{evidence_id}/artifacts/upload",
-                    headers=headers,
-                    files=files
-                )
-                
-                # Clean up temp file
-                os.unlink(temp_artifact_path)
-                
-                if response.status_code in [200, 201]:
-                    print(f"✓ Artifact uploaded successfully")
-                    return True
-                else:
-                    print(f"✗ Failed to upload artifact (HTTP {response.status_code})")
-                    print(response.text)
-                    return False
-                    
-        except requests.exceptions.RequestException as e:
-            print(f"Error uploading evidence file: {e}")
-            return False
-        except Exception as e:
-            print(f"Error in upload process: {e}")
-            return False
+
+        ok = self.client.upload_artifact(evidence_id, evidence_file_path, artifact_data)
+        if ok:
+            print("✓ Artifact uploaded successfully")
+        else:
+            print("✗ Failed to upload artifact")
+        return ok
     
     def process_summary(self, summary_path: str) -> Tuple[List[Dict], int]:
         """Process summary.json and upload evidence
@@ -327,177 +256,53 @@ class ParamifyPusher:
         return evidence_id is not None
     
     def script_artifact_exists(self, evidence_object_id: str, filename: str) -> bool:
-        """Check if a fetcher script artifact with the given filename already exists in the evidence set.
-        
-        This only checks for fetcher script artifacts (identified by the note field containing
-        "Automated evidence collection script:"). Evidence files are allowed to have duplicate
-        names as they represent multiple versions/runs.
+        """Check whether a fetcher script artifact with the given filename already
+        exists on this evidence record. Only matches artifacts whose `note`
+        marks them as a script artifact (so that multiple runs of an evidence
+        file with the same filename are still allowed).
         """
-        try:
-            # Get all artifacts for this evidence set (filtering by filename)
-            response = requests.get(
-                f"{self.base_url}/evidence/{evidence_object_id}/artifacts",
-                headers=self.headers,
-                params={"originalFileName": [filename]}
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Handle different response structures:
-                # 1. Direct array: [artifact1, artifact2, ...]
-                # 2. Object with artifacts array: {"artifacts": [artifact1, artifact2, ...]}
-                if isinstance(data, list):
-                    artifacts = data
-                else:
-                    artifacts = data.get("artifacts", [])
-                
-                # Check if any artifact is a fetcher script with the same filename
-                # Only match artifacts that are script artifacts (identified by note field)
-                for artifact in artifacts:
-                    artifact_filename = artifact.get("originalFileName")
-                    artifact_title = artifact.get("title")
-                    artifact_note = artifact.get("note", "")
-                    
-                    # Match by filename/title AND verify it's a script artifact (not an evidence file)
-                    # Script artifacts have a note containing "Automated evidence collection script:"
-                    is_script_artifact = "Automated evidence collection script:" in artifact_note
-                    
-                    if is_script_artifact and (artifact_filename == filename or artifact_title == filename):
-                        return True
-                
-                return False
-            else:
-                # If we can't check, assume it doesn't exist and try to upload
-                return False
-                
-        except requests.exceptions.RequestException:
-            # If we can't check, assume it doesn't exist and try to upload
-            return False
+        artifacts = self.client.list_artifacts(evidence_object_id, original_file_name=filename)
+        for artifact in artifacts:
+            artifact_filename = artifact.get("originalFileName")
+            artifact_title = artifact.get("title")
+            artifact_note = artifact.get("note", "")
+            is_script_artifact = "Automated evidence collection script:" in artifact_note
+            if is_script_artifact and (artifact_filename == filename or artifact_title == filename):
+                return True
+        return False
     
     def upload_script_artifact(self, evidence_object_id: str, script_path: str) -> bool:
-        """Upload script file as artifact to Evidence Object"""
+        """Upload script file as artifact to Evidence Object (idempotent on filename)."""
         if not Path(script_path).exists():
             print(f"Script file not found: {script_path}")
             return False
-        
+
         script_name = Path(script_path).name
-        
-        # Check if fetcher script artifact already exists (only check for script artifacts, not evidence files)
         if self.script_artifact_exists(evidence_object_id, script_name):
             print(f"  ⊘ Script artifact already exists: {script_name} (skipping upload)")
             return True
-        
+
         print(f"  Uploading script artifact: {script_name}")
-        
-        # Create artifact metadata
         artifact_data = {
             "title": script_name,
             "note": f"Automated evidence collection script: {script_name}",
-            "effectiveDate": datetime.now().isoformat() + "Z"
+            "effectiveDate": datetime.now().isoformat() + "Z",
         }
-        
-        try:
-            # Create temporary artifact JSON file
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_artifact:
-                json.dump(artifact_data, temp_artifact)
-                temp_artifact_path = temp_artifact.name
-            
-            # Upload using multipart form data
-            with open(script_path, 'rb') as f, open(temp_artifact_path, 'rb') as artifact_f:
-                files = {
-                    'file': f,
-                    'artifact': ('artifact.json', artifact_f, 'application/json')
-                }
-                
-                headers = {"Authorization": f"Bearer {self.api_token}"}
-                
-                response = requests.post(
-                    f"{self.base_url}/evidence/{evidence_object_id}/artifacts/upload",
-                    headers=headers,
-                    files=files
-                )
-                
-                # Clean up temp file
-                os.unlink(temp_artifact_path)
-                
-                if response.status_code in [200, 201]:
-                    print(f"✓ Script artifact uploaded successfully")
-                    return True
-                else:
-                    print(f"✗ Failed to upload script artifact (HTTP {response.status_code})")
-                    print(response.text)
-                    return False
-                    
-        except requests.exceptions.RequestException as e:
-            print(f"Error uploading script artifact: {e}")
-            return False
-        except Exception as e:
-            print(f"Error in script upload process: {e}")
-            return False
+        ok = self.client.upload_artifact(evidence_object_id, script_path, artifact_data)
+        if ok:
+            print("✓ Script artifact uploaded successfully")
+        else:
+            print("✗ Failed to upload script artifact")
+        return ok
 
+    # Backwards-compatible aliases: "Evidence Object" was the old name for the
+    # same Paramify resource. Keep them pointing at the unified implementations.
     def find_existing_evidence_object(self, reference_id: str) -> Optional[str]:
-        """Find existing Evidence Object by reference ID"""
-        try:
-            response = requests.get(f"{self.base_url}/evidence", headers=self.headers)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            for evidence in data.get("evidences", []):
-                if evidence.get("referenceId") == reference_id:
-                    evidence_id = evidence.get("id")
-                    return evidence_id
-            
-            return None
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Failed to retrieve Evidence Objects: {e}")
-            return None
-    
-    def create_evidence_object(self, reference_id: str, name: str, description: str, 
+        return self.find_existing_evidence_set(reference_id)
+
+    def create_evidence_object(self, reference_id: str, name: str, description: str,
                               instructions: str, automated: bool = True) -> Optional[str]:
-        """Create new Evidence Object"""
-        print(f"Creating Evidence Object: {name}")
-        
-        # Convert rich text instructions to string format for Paramify API
-        instructions_string = convert_instructions_to_string(instructions)
-        
-        data = {
-            "referenceId": reference_id,
-            "name": name,
-            "description": description,
-            "instructions": instructions_string,
-            "automated": automated
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/evidence", headers=self.headers, json=data)
-            
-            if response.status_code in [200, 201]:
-                result = response.json()
-                evidence_id = result.get("id")
-                print(f"Evidence Object created successfully: {evidence_id}")
-                return evidence_id
-            elif response.status_code == 400:
-                # Check if it's a "Reference ID already exists" error
-                error_data = response.json()
-                error_msg = error_data.get("message") or error_data.get("error", "Unknown error")
-                if "Reference ID already exists" in error_msg:
-                    print("Evidence Object already exists, attempting to find it...")
-                    return self.find_existing_evidence_object(reference_id)
-                else:
-                    print(f"Failed to create Evidence Object (HTTP {response.status_code}): {error_msg}")
-                    return None
-            else:
-                print(f"Failed to create Evidence Object (HTTP {response.status_code})")
-                print(response.text)
-                return None
-                
-        except requests.exceptions.RequestException as e:
-            print(f"Error creating evidence object: {e}")
-            return None
+        return self.create_evidence_set(reference_id, name, description, instructions, automated)
 
     def find_summary_file(self, evidence_dir: str) -> Optional[str]:
         """Find a valid summary file in the evidence directory"""
