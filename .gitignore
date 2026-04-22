@@ -1,5 +1,6 @@
 .env
 .DS_Store
+config/validator_parameters.json
 *.pyc
 */old_example_process/*
 evidence/*

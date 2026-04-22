@@ -51,7 +51,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -62,7 +62,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -189,7 +189,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -200,7 +200,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -308,7 +308,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -319,7 +319,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -421,7 +421,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -432,7 +432,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -567,7 +567,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -578,7 +578,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -822,7 +822,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -833,7 +833,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -910,7 +910,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -921,7 +921,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -980,7 +980,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -991,7 +991,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -1177,7 +1177,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -1188,7 +1188,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -1388,7 +1388,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -1399,7 +1399,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -1458,7 +1458,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -1469,7 +1469,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -1558,7 +1558,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -1569,7 +1569,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -1707,7 +1707,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -1718,7 +1718,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -1789,7 +1789,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -1800,7 +1800,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -1890,7 +1890,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -1901,7 +1901,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2026,7 +2026,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2037,7 +2037,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2055,9 +2055,9 @@
               },
               {
                 "name": "No Cross-Account Trust Besides Approved Accounts",
-                "statement": "Counts external AWS account trusts (non-Paramify accounts) and only allows approved connections. Currently only SentinelOne Gov: 773463581296 is allowed.",
+                "statement": "Counts external AWS account trusts (non-Paramify accounts) and only allows approved connections. Currently only SentinelOne Gov: {{aws_approved_cross_account_ids}} is allowed.",
                 "type": "AUTOMATED",
-                "regex": "\"AWS\":\\s*\"arn:aws[^\"]*:iam::(?!214149890209)(\\d+)",
+                "regex": "\"AWS\":\\s*\"arn:aws[^\"]*:iam::(?!{{aws_account_id}})(\\d+)",
                 "validationRules": [
                   {
                     "regexOperation": {
@@ -2077,7 +2077,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "773463581296"
+                      "customText": "{{aws_approved_cross_account_ids}}"
                     }
                   }
                 ]
@@ -2175,7 +2175,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2186,7 +2186,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2381,7 +2381,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2392,7 +2392,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2480,7 +2480,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2491,7 +2491,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2569,7 +2569,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2580,7 +2580,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2659,7 +2659,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2670,7 +2670,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2748,7 +2748,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2759,7 +2759,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2820,7 +2820,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -2831,7 +2831,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -2918,7 +2918,7 @@
                 "name": "Outbound SG Allowlist",
                 "statement": "Only approved SGs can have ANY outbound to 0.0.0.0/0 (sg-083f sg-09c5 and sg-0377)",
                 "type": "AUTOMATED",
-                "regex": "\"GroupId\":\\s*\"(sg-(?!083f71084f584b1bd|09c5ac651df806a6a|03773c51d003b2c8d)[^\"]+)\"[^{]*\"Rules\":\\s*\\[[^\\]]*\"Direction\":\\s*\"OUTBOUND RULES\"[^}]*\"CIDRs\":\\s*\"[^\"]*0\\.0\\.0\\.0\\/0\"",
+                "regex": "\"GroupId\":\\s*\"(sg-(?!{{aws_outbound_sg_allowlist}})[^\"]+)\"[^{]*\"Rules\":\\s*\\[[^\\]]*\"Direction\":\\s*\"OUTBOUND RULES\"[^}]*\"CIDRs\":\\s*\"[^\"]*0\\.0\\.0\\.0\\/0\"",
                 "validationRules": [
                   {
                     "regexOperation": {
@@ -2955,7 +2955,7 @@
                 "name": "Inbound SG Allowlist for Internet-Exposed",
                 "statement": "Validates that only approved security groups (ALB/NLB sg-0f64, sg-0a1c and sg-05d1) have inbound rules open to 0.0.0.0/0. Any other security group with internet exposure fails.",
                 "type": "AUTOMATED",
-                "regex": "\"GroupId\":\\s*\"(sg-(?!0f649e71f59493c0b|0a1cf74d01b9905cc|05d1ce4f553cabea6|0380f6ce164b81144)[^\"]*)\"[^}]*\"Rules\":\\s*\\[[^\\]]*\"Direction\":\\s*\"INBOUND RULES\"[^}]*\"CIDRs\":\\s*\"([^\"]*0\\.0\\.0\\.0\\/0[^\"]*)\"",
+                "regex": "\"GroupId\":\\s*\"(sg-(?!{{aws_inbound_sg_allowlist_internet_exposed}})[^\"]*)\"[^}]*\"Rules\":\\s*\\[[^\\]]*\"Direction\":\\s*\"INBOUND RULES\"[^}]*\"CIDRs\":\\s*\"([^\"]*0\\.0\\.0\\.0\\/0[^\"]*)\"",
                 "validationRules": [
                   {
                     "regexOperation": {
@@ -3031,7 +3031,7 @@
                     "criteria": "CONTAINS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209:assumed-role/AWSReservedSSO"
+                      "customText": "{{aws_account_id}}:assumed-role/AWSReservedSSO"
                     }
                   },
                   {
@@ -3042,7 +3042,7 @@
                     "criteria": "EQUALS",
                     "value": {
                       "type": "CUSTOM_TEXT",
-                      "customText": "214149890209"
+                      "customText": "{{aws_account_id}}"
                     }
                   },
                   {
@@ -4556,7 +4556,7 @@
                 "name": "Container Images Sourced from Private ECR Registry",
                 "statement": "Confirms that container images used in the pipeline are sourced from the organization's private AWS ECR registry rather than public registries ensuring image provenance and access control.",
                 "type": "AUTOMATED",
-                "regex": "041462616641\\.dkr\\.ecr\\.",
+                "regex": "{{aws_ecr_account_id}}\\.dkr\\.ecr\\.",
                 "validationRules": [
                   {
                     "regexOperation": {

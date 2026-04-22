@@ -1,0 +1,10 @@
+{
+  "_comment": "Customer-specific values substituted into validator definitions before they are pushed to Paramify. Copy this file to `config/validator_parameters.json` (gitignored) and fill in real values. Every `{{token}}` referenced in the catalog must have a matching key here, or the push will fail fast with MissingParameterError.",
+
+  "aws_account_id": "123456789012",
+  "aws_approved_cross_account_ids": "123456789012|234567890123",
+  "aws_ecr_account_id": "123456789012",
+
+  "aws_outbound_sg_allowlist": "sg-0abc123|sg-0def456",
+  "aws_inbound_sg_allowlist_internet_exposed": "sg-0aaa111|sg-0bbb222"
+}
