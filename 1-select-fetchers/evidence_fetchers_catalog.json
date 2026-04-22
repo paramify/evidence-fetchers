@@ -2250,7 +2250,7 @@
                 "name": "KMS Rotation Config Rule",
                 "statement": "Checks if the AWS Config rule for key rotation is passing (from cmk-backing-key-rotation-enabled-conformance-pack https://docs.aws.amazon.com/config/latest/developerguide/cmk-backing-key-rotation-enabled.html)",
                 "type": "AUTOMATED",
-                "regex": "\"ConfigRuleName\": \"cmk-backing-key-rotation-enabled-conformance-pack[^]*\"ComplianceType\": \"([^]*)\"\\n",
+                "regex": "\"ConfigRuleName\": \"cmk-backing-key-rotation-enabled-conformance-pack[^\"]*\"ComplianceType\": \"([^\"]*)\"\\n",
                 "validationRules": [
                   {
                     "regexOperation": {
