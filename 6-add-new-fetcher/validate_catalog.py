@@ -11,6 +11,7 @@ Usage:
 """
 
 import json
+import re
 import sys
 import os
 import argparse
@@ -240,6 +241,147 @@ def validate_customer_template(catalog: Dict[str, Any], repo_root: Path) -> bool
     return True
 
 
+def validate_validators(catalog: Dict[str, Any]) -> bool:
+    """Shape-check the `validators` field on each fetcher.
+
+    Optional field — older fetchers may not have it yet — but if present,
+    each validator must match the Paramify API's POST /validators shape so
+    the pusher can forward it without error.
+    """
+    print("Validating validators structure...")
+
+    ok = True
+    categories = catalog["evidence_fetchers_catalog"]["categories"]
+    for category_data in categories.values():
+        for script_name, script_data in category_data["scripts"].items():
+            validators = script_data.get("validators")
+            if validators is None:
+                continue
+            if not isinstance(validators, list):
+                print(f"✗ {script_name}: `validators` must be a list")
+                ok = False
+                continue
+            seen_names: Set[str] = set()
+            for i, v in enumerate(validators):
+                if not isinstance(v, dict):
+                    print(f"✗ {script_name}: validator[{i}] must be an object")
+                    ok = False
+                    continue
+                name = v.get("name")
+                vtype = v.get("type")
+                if not name or not isinstance(name, str):
+                    print(f"✗ {script_name}: validator[{i}] missing `name`")
+                    ok = False
+                if name in seen_names:
+                    print(f"✗ {script_name}: duplicate validator name {name!r}")
+                    ok = False
+                seen_names.add(name)
+                if vtype not in ("AUTOMATED", "ATTESTATION"):
+                    print(
+                        f"✗ {script_name}: validator {name!r} has invalid "
+                        f"type {vtype!r}"
+                    )
+                    ok = False
+                    continue
+                if vtype == "AUTOMATED":
+                    if not isinstance(v.get("regex"), str):
+                        print(f"✗ {script_name}: {name!r} AUTOMATED validator needs `regex` string")
+                        ok = False
+                    if not isinstance(v.get("validationRules"), list):
+                        print(f"✗ {script_name}: {name!r} needs `validationRules` list")
+                        ok = False
+                elif vtype == "ATTESTATION":
+                    if not isinstance(v.get("attestationRules"), list):
+                        print(f"✗ {script_name}: {name!r} ATTESTATION validator needs `attestationRules` list")
+                        ok = False
+    if ok:
+        print("✓ Validators structure is valid")
+    return ok
+
+
+def validate_parameter_tokens(catalog: Dict[str, Any], repo_root: Path) -> bool:
+    """Every {{token}} in the catalog must have a key in the example config.
+
+    This way a customer who copies `validator_parameters.example.json` to
+    `validator_parameters.json` and fills in real values has every required
+    parameter enumerated. Tokens added to the catalog without updating the
+    example would fail silently on customer push.
+    """
+    print("Validating validator parameters...")
+    try:
+        sys.path.insert(0, str(repo_root))
+        from paramify.parameter_substitution import find_tokens
+    except ImportError as e:
+        print(f"⚠ Warning: could not import parameter_substitution ({e}); skipping")
+        return True
+
+    example_path = repo_root / "config" / "validator_parameters.example.json"
+    if not example_path.exists():
+        print(f"⚠ Warning: {example_path} not found; skipping")
+        return True
+    with example_path.open() as f:
+        example = json.load(f)
+    example_keys = {k for k in example.keys() if not k.startswith("_")}
+
+    referenced: Set[str] = set()
+    for category_data in catalog["evidence_fetchers_catalog"]["categories"].values():
+        for script_data in category_data["scripts"].values():
+            for v in script_data.get("validators") or []:
+                referenced.update(find_tokens(v))
+
+    missing = sorted(referenced - example_keys)
+    if missing:
+        print(f"✗ Tokens referenced in catalog but missing from example config: {missing}")
+        return False
+    unused = sorted(example_keys - referenced)
+    if unused:
+        print(f"⚠ Warning: example config has unused keys: {unused}")
+    print(f"✓ All {len(referenced)} validator parameter tokens are declared in the example config")
+    return True
+
+
+def validate_regex_compiles(catalog: Dict[str, Any], repo_root: Path) -> bool:
+    """Every AUTOMATED validator regex must compile (after substituting example params)."""
+    print("Validating regex compilation...")
+    try:
+        sys.path.insert(0, str(repo_root))
+        from paramify.parameter_substitution import substitute, MissingParameterError
+    except ImportError:
+        return True
+
+    example_path = repo_root / "config" / "validator_parameters.example.json"
+    example = {}
+    if example_path.exists():
+        with example_path.open() as f:
+            example = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+
+    failed: List[str] = []
+    compiled = 0
+    for category_data in catalog["evidence_fetchers_catalog"]["categories"].values():
+        for script_name, script_data in category_data["scripts"].items():
+            for v in script_data.get("validators") or []:
+                if v.get("type") != "AUTOMATED":
+                    continue
+                try:
+                    subbed = substitute(v, example)
+                except MissingParameterError:
+                    continue
+                pattern = subbed.get("regex", "")
+                try:
+                    re.compile(pattern)
+                    compiled += 1
+                except re.error as e:
+                    failed.append(f"{script_name} / {v.get('name')}: {e}")
+
+    for f in failed:
+        print(f"✗ Regex failed to compile: {f}")
+    if failed:
+        print(f"✗ {len(failed)} regex(es) failed to compile")
+        return False
+    print(f"✓ All {compiled} AUTOMATED regexes compiled successfully")
+    return True
+
+
 def validate_id_uniqueness(catalog: Dict[str, Any]) -> bool:
     """Validate that all script IDs are unique."""
     print("Validating ID uniqueness...")
@@ -366,7 +508,10 @@ def main():
         ("Structure", lambda: validate_catalog_structure(catalog)),
         ("Categories", lambda: validate_categories(catalog)),
         ("ID Uniqueness", lambda: validate_id_uniqueness(catalog)),
-        ("Customer Template", lambda: validate_customer_template(catalog, repo_root))
+        ("Customer Template", lambda: validate_customer_template(catalog, repo_root)),
+        ("Validators", lambda: validate_validators(catalog)),
+        ("Validator Parameters", lambda: validate_parameter_tokens(catalog, repo_root)),
+        ("Regex Compilation", lambda: validate_regex_compiles(catalog, repo_root)),
     ]
     
     all_passed = True
