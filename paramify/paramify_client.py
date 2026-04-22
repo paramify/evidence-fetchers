@@ -53,6 +53,26 @@ class ParamifyClient:
     def post_multipart(self, path: str, files: Dict[str, Any]) -> requests.Response:
         return requests.post(self._url(path), headers=self._auth_only_headers, files=files)
 
+    @staticmethod
+    def _extract_error_message(resp: requests.Response) -> str:
+        """Pull a human-readable message from a Paramify error response.
+
+        Paramify wraps errors as `{error: {message, path, timestamp}}`, but
+        sometimes returns a flat `{message|error: "..."}`. Handle both.
+        """
+        try:
+            body = resp.json()
+        except ValueError:
+            return resp.text or ""
+        if not isinstance(body, dict):
+            return resp.text or ""
+        err = body.get("error")
+        if isinstance(err, dict):
+            return str(err.get("message") or "")
+        if isinstance(err, str):
+            return err
+        return str(body.get("message") or "")
+
     # ----- Evidence -------------------------------------------------------
 
     def list_evidence(self) -> List[Dict[str, Any]]:
@@ -101,11 +121,7 @@ class ParamifyClient:
             return resp.json().get("id")
 
         if resp.status_code == 400:
-            try:
-                err = resp.json()
-            except ValueError:
-                err = {}
-            msg = err.get("message") or err.get("error") or ""
+            msg = self._extract_error_message(resp)
             if "Reference ID already exists" in msg:
                 existing = self.find_evidence_by_reference_id(reference_id)
                 return existing.get("id") if existing else None
@@ -188,13 +204,10 @@ class ParamifyClient:
         if 200 <= resp.status_code < 300:
             return True
         if resp.status_code in (400, 409):
-            # Treat "already associated" as success. The API returns 400 on
-            # idempotent reconnects in some cases; inspect the message.
-            try:
-                msg = (resp.json().get("message") or resp.json().get("error") or "").lower()
-            except ValueError:
-                msg = resp.text.lower()
-            if "already" in msg or "duplicate" in msg or "exists" in msg:
+            # Treat "already associated" as success. Paramify returns 400 on
+            # idempotent reconnects.
+            msg = self._extract_error_message(resp).lower()
+            if "already" in msg or "duplicate" in msg or "connected" in msg:
                 return True
         print(
             f"Failed to associate evidence {evidence_id} -> {subject_type} {subject_id} "
