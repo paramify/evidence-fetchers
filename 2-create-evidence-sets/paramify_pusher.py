@@ -50,7 +50,54 @@ class ParamifyPusher:
             "Content-Type": "application/json"
         }
         self.upload_log = []
-    
+        # Lazily-populated name -> UUID map for solution capabilities.
+        self._sc_index: Optional[Dict[str, str]] = None
+
+    @staticmethod
+    def _normalize_name(name: str) -> str:
+        """Lowercase + collapse whitespace. Match the API 'name' field loosely."""
+        return re.sub(r"\s+", " ", (name or "").strip()).lower()
+
+    def _get_sc_index(self) -> Dict[str, str]:
+        """Return (and cache) a normalized-name -> UUID map for SCs."""
+        if self._sc_index is None:
+            try:
+                scs = self.client.list_solution_capabilities()
+            except Exception as e:
+                print(f"Warning: failed to fetch solution capabilities: {e}")
+                self._sc_index = {}
+                return self._sc_index
+            self._sc_index = {
+                self._normalize_name(sc.get("name", "")): sc["id"]
+                for sc in scs
+                if sc.get("id") and sc.get("name")
+            }
+        return self._sc_index
+
+    def associate_solution_capabilities(
+        self, evidence_id: str, sc_names: List[str]
+    ) -> Tuple[int, List[str]]:
+        """Associate an evidence record with each named solution capability.
+
+        Returns (connected_count, unmatched_names). Unmatched names are ones
+        the catalog referenced but the Paramify workspace doesn't have.
+        """
+        if not sc_names:
+            return 0, []
+        sc_index = self._get_sc_index()
+        connected = 0
+        unmatched: List[str] = []
+        for name in sc_names:
+            sc_id = sc_index.get(self._normalize_name(name))
+            if not sc_id:
+                unmatched.append(name)
+                continue
+            if self.client.associate_evidence(
+                evidence_id, "SOLUTION_CAPABILITY", sc_id
+            ):
+                connected += 1
+        return connected, unmatched
+
     def load_evidence_sets(self, evidence_sets_file: str = "evidence_sets.json") -> Dict:
         """Load evidence sets configuration"""
         with open(evidence_sets_file, 'r') as f:
@@ -108,17 +155,29 @@ class ParamifyPusher:
         name = evidence_set_info["name"]
         description = evidence_set_info["description"]
         instructions = evidence_set_info["instructions"]
-        
+
         print(f"Processing Evidence Set: {reference_id} - {name}")
-        
+
         # Try to find existing Evidence Set
         evidence_id = self.find_existing_evidence_set(reference_id)
         if evidence_id:
             print(f"Found existing Evidence Set: {evidence_id}")
-            return evidence_id
-        
-        # Create new Evidence Set
-        return self.create_evidence_set(reference_id, name, description, instructions)
+        else:
+            # Create new Evidence Set
+            evidence_id = self.create_evidence_set(reference_id, name, description, instructions)
+
+        if evidence_id:
+            sc_names = evidence_set_info.get("solution_capabilities") or []
+            if sc_names:
+                connected, unmatched = self.associate_solution_capabilities(
+                    evidence_id, sc_names
+                )
+                if connected:
+                    print(f"  ↔ Associated {connected} solution capabilit{'y' if connected == 1 else 'ies'}")
+                if unmatched:
+                    print(f"  ⚠ Unmatched solution capabilities (not in workspace): {unmatched}")
+
+        return evidence_id
     
     def _build_artifact_title(self, check_name: str, resource: str, evidence_set_info: Optional[Dict] = None) -> str:
         """Build a human-readable artifact title for Paramify.

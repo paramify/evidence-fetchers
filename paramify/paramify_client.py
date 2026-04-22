@@ -115,6 +115,93 @@ class ParamifyClient:
         print(f"Failed to create evidence (HTTP {resp.status_code}): {resp.text}")
         return None
 
+    # ----- Solution Capabilities -----------------------------------------
+
+    def list_solution_capabilities(self) -> List[Dict[str, Any]]:
+        """GET /solution-capabilities -> list of {id, name, family, subfamily}."""
+        resp = self.get("/solution-capabilities")
+        resp.raise_for_status()
+        return resp.json().get("solutionCapabilities", [])
+
+    # ----- Validators -----------------------------------------------------
+
+    def list_validators(
+        self,
+        ids: Optional[List[str]] = None,
+        validator_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """GET /validators -> list of Validator records."""
+        params: Dict[str, Any] = {}
+        if ids:
+            params["ids"] = ids
+        if validator_type:
+            params["type"] = validator_type
+        resp = self.get("/validators", params=params)
+        resp.raise_for_status()
+        return resp.json().get("validators", [])
+
+    def create_validator(self, definition: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """POST /validators. Returns the created record, or None on failure."""
+        try:
+            resp = self.post_json("/validators", definition)
+        except requests.exceptions.RequestException as e:
+            print(f"Error creating validator: {e}")
+            return None
+        if resp.status_code in (200, 201):
+            return resp.json()
+        print(
+            f"Failed to create validator {definition.get('name')!r} "
+            f"(HTTP {resp.status_code}): {resp.text}"
+        )
+        return None
+
+    # ----- Associations ---------------------------------------------------
+
+    VALID_SUBJECT_TYPES = frozenset(
+        {"CONTROL_IMPLEMENTATION", "SOLUTION_CAPABILITY", "ELEMENT", "VALIDATOR"}
+    )
+
+    def associate_evidence(
+        self,
+        evidence_id: str,
+        subject_type: str,
+        subject_id: str,
+        connect: bool = True,
+    ) -> bool:
+        """POST /evidence/{id}/associate. Returns True on 2xx or when the
+        association already exists (duplicate 400/409 swallowed)."""
+        if subject_type not in self.VALID_SUBJECT_TYPES:
+            raise ValueError(
+                f"Invalid subject_type {subject_type!r}; "
+                f"must be one of {sorted(self.VALID_SUBJECT_TYPES)}"
+            )
+        body = {
+            "associationType": "CONNECT" if connect else "DISCONNECT",
+            "subjectType": subject_type,
+            "subjectId": subject_id,
+        }
+        try:
+            resp = self.post_json(f"/evidence/{evidence_id}/associate", body)
+        except requests.exceptions.RequestException as e:
+            print(f"Error associating evidence {evidence_id} -> {subject_type} {subject_id}: {e}")
+            return False
+        if 200 <= resp.status_code < 300:
+            return True
+        if resp.status_code in (400, 409):
+            # Treat "already associated" as success. The API returns 400 on
+            # idempotent reconnects in some cases; inspect the message.
+            try:
+                msg = (resp.json().get("message") or resp.json().get("error") or "").lower()
+            except ValueError:
+                msg = resp.text.lower()
+            if "already" in msg or "duplicate" in msg or "exists" in msg:
+                return True
+        print(
+            f"Failed to associate evidence {evidence_id} -> {subject_type} {subject_id} "
+            f"(HTTP {resp.status_code}): {resp.text}"
+        )
+        return False
+
     # ----- Artifacts ------------------------------------------------------
 
     def list_artifacts(

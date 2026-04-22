@@ -162,7 +162,11 @@ def generate_evidence_sets(catalog: Dict[str, Any], customer_config: Dict[str, A
                 "validationRules": processed_validation_rules,
                 # Include script_file from catalog for proper script path resolution
                 "script_file": script_info.get("script_file", ""),
-                # "expected_outcome" field removed
+                # Carry forward catalog associations so the pusher can wire them
+                # up against the Paramify API at runtime.
+                "solution_capabilities": script_info.get("solution_capabilities", []),
+                "controls": script_info.get("controls", []),
+                "validators": script_info.get("validators", []),
             }
             
             evidence_sets["evidence_sets"][script_name] = evidence_set_entry
