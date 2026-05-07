@@ -124,7 +124,7 @@ The Wiz CSV columns are mapped to Paramify fields automatically by the mechanism
 
 ### Severity Mapping
 
-Wiz uses 5 severity levels; Paramify uses 4:
+Wiz uses 5 severity levels; Paramify uses 5:
 
 | Wiz Severity | → | Paramify Level |
 |---|---|---|
@@ -132,9 +132,7 @@ Wiz uses 5 severity levels; Paramify uses 4:
 | HIGH | → | High |
 | MEDIUM | → | Moderate |
 | LOW | → | Low |
-| INFORMATIONAL | → | (not imported) |
-
-⚠️ **Note**: Wiz `INFORMATIONAL` issues are not imported into Paramify, as they typically don't require POA&M tracking.
+| INFORMATIONAL | → | Chill 20x |
 
 ## Customer Workflow
 
