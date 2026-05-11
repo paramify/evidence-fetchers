@@ -34,15 +34,18 @@ from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
+# Add fetchers/ to path so we can import common utilities
+
 import requests
-from dotenv import load_dotenv
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common.env_loader import init_fetcher_env
 
 csv.field_size_limit(sys.maxsize)
 
 # ============================================================
 # Load configuration from .env
 # ============================================================
-load_dotenv()
+init_fetcher_env()
 
 WIZ_CLIENT_ID = os.environ['WIZ_CLIENT_ID']
 WIZ_CLIENT_SECRET = os.environ['WIZ_CLIENT_SECRET']
@@ -51,7 +54,7 @@ WIZ_API_ENDPOINT = os.environ['WIZ_API_ENDPOINT']
 
 PARAMIFY_API_BASE_URL = os.environ['PARAMIFY_API_BASE_URL']
 PARAMIFY_API_TOKEN = os.environ['PARAMIFY_API_TOKEN']
-PARAMIFY_ASSESSMENT_ID = os.environ['PARAMIFY_ASSESSMENT_ID']
+WIZ_PARAMIFY_ASSESSMENT_ID = os.environ['WIZ_PARAMIFY_ASSESSMENT_ID']
 
 # Delta mode: when True, filter CSV to only changed issues
 DELTA_MODE = os.environ.get('DELTA_MODE', 'false').lower() == 'true'
@@ -369,10 +372,10 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
     today = datetime.now()
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
     logging.info('  API:        %s', PARAMIFY_API_BASE_URL)
-    logging.info('  Assessment: %s', PARAMIFY_ASSESSMENT_ID)
+    logging.info('  Assessment: %s',WIZ_PARAMIFY_ASSESSMENT_ID)
     with open(csv_path, 'rb') as f:
         response = requests.post(
-            f"{PARAMIFY_API_BASE_URL}/assessment/{PARAMIFY_ASSESSMENT_ID}/intake",
+            f"{PARAMIFY_API_BASE_URL}/assessment/{WIZ_PARAMIFY_ASSESSMENT_ID}/intake",
             headers={
                 "Authorization": f"Bearer {PARAMIFY_API_TOKEN}",
                 "Accept": "application/json",
