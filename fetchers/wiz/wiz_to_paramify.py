@@ -43,7 +43,7 @@ from common.env_loader import init_fetcher_env
 csv.field_size_limit(sys.maxsize)
 
 # ============================================================
-# Load configuration from .env
+# Load configuration from common.env_loader
 # ============================================================
 init_fetcher_env()
 
