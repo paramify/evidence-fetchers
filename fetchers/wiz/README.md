@@ -38,10 +38,24 @@ In your Wiz console:
 1. Go to **Settings → Service Accounts**
 2. Create a new service account
 3. Assign these permissions:
-   - `read:issues`
-   - `create:reports`
-   - `update:reports`
-4. Save the **Client ID** and **Client Secret** — you will need them for `.env`
+   - `read:reports` — View Report configurations
+   - `create:reports` — Create new Reports
+   - `update:reports` — Update Report configurations (only when filters change)
+   - `read:issues` — Read Issues data
+   - `read:threat_issues` — Required by Wiz Reports API
+4. Save the **Client ID** and **Client Secret**
+
+> **Note: Your Wiz Issues are not modified**
+
+> This fetcher only **reads** Issues and manages **Report configurations**.
+
+> **Does:** Create/run Reports, export CSV, upload to Paramify
+
+> **Does NOT:** Change Issue status, add comments, assign users, or modify any Issue data
+
+> Modifying Issues requires the `update:issues` permission — this fetcher doesn't use it.
+
+> Think of `update:reports` like editing a saved Excel filter: you change *what's shown*, not the data itself.
 
 ### Step 2: Find Your Wiz API Endpoint
 
