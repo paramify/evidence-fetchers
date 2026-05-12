@@ -21,8 +21,8 @@ API reference:
   https://developer.knowbe4.com/rest/reporting
 
 Environment variables required (live API mode):
-  RIPPLING_API_TOKEN    Bearer token for Rippling
-  KNOWBE4_API_TOKEN     API token for KnowBe4 Reporting API
+  RIPPLING_API_TOKEN    API token for Rippling (sent as Bearer)
+  KNOWBE4_API_KEY       API key for KnowBe4 Reporting API
   KNOWBE4_BASE_URL      KnowBe4 API base, e.g. https://us.api.knowbe4.com
 
 Optional:
@@ -31,10 +31,10 @@ Optional:
   KNOWBE4_CAMPAIGN_ID   If set, only checks enrollment in this specific campaign ID
 
 Usage:
-    # Live API mode (requires tokens)
+    # Live API mode (requires Rippling API token + KnowBe4 API key)
     python rippling_vs_knowbe4_training.py [--output-dir <path>]
 
-    # Evidence file mode (no tokens needed - use Paramify downloaded JSON)
+    # Evidence file mode (no KnowBe4 live credentials needed — use Paramify downloaded JSON)
     python rippling_vs_knowbe4_training.py --kb4-evidence-file security_awareness_training.json [--output-dir <path>]
 
 Output:
@@ -177,10 +177,10 @@ def rippling_email(emp: Dict) -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 def get_knowbe4_config():
-    token = os.getenv("KNOWBE4_API_TOKEN", "").strip()
+    token = os.getenv("KNOWBE4_API_KEY", "").strip()
     base_url = os.getenv("KNOWBE4_BASE_URL", "https://us.api.knowbe4.com").strip().rstrip("/")
     if not token:
-        raise RuntimeError("KNOWBE4_API_TOKEN is not set.")
+        raise RuntimeError("KNOWBE4_API_KEY is not set.")
     return base_url, token
 
 
@@ -387,7 +387,7 @@ def main() -> None:
     # --- File 2: KnowBe4 source of truth ---
     kb4_evidence_file = extra["kb4_evidence_file"] or os.getenv("KB4_EVIDENCE_FILE", "").strip() or None
     if kb4_evidence_file:
-        # Evidence file mode: load from downloaded Paramify JSON (no API token needed)
+        # Evidence file mode: load from downloaded Paramify JSON (no KnowBe4 live API key needed in env)
         kb4_users, kb4_enrollments, kb4_summary = load_kb4_from_evidence_file(kb4_evidence_file)
         mode_label = f"evidence_file:{Path(kb4_evidence_file).name}"
     else:

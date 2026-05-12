@@ -1516,7 +1516,7 @@
         "name": "Rippling",
         "description": "Rippling HR evidence collection scripts",
         "access_method": "Rippling API via Bearer Token",
-        "access_method_description": "The evidence fetcher scripts use the Rippling REST API which requires RIPPLING_API_TOKEN environment variable. Authentication uses Bearer token authorization.",
+        "access_method_description": "The evidence fetcher scripts use the Rippling REST API which requires the RIPPLING_API_TOKEN environment variable. Authentication uses Bearer token authorization (same pattern as OKTA_API_TOKEN).",
         "logo": "fetchers/logos/rippling.svg",
         "scripts": {
           "rippling_current_employees": {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick connectivity and token test for Rippling API.
+Quick connectivity test for Rippling API (validates RIPPLING_API_TOKEN).
 Run this first to confirm your RIPPLING_API_TOKEN is valid before
 running the full fetcher scripts.
 
@@ -27,7 +27,7 @@ BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://api.rippling.com").rstrip("/"
 TOKEN = os.getenv("RIPPLING_API_TOKEN", "").strip()
 
 print(f"\nBase URL : {BASE_URL}")
-print(f"Token    : {'SET (' + TOKEN[:8] + '...)' if TOKEN else 'NOT SET \u2717'}\n")
+print(f"API token: {'SET (' + TOKEN[:8] + '...)' if TOKEN else 'NOT SET \u2717'}\n")
 
 if not TOKEN:
     print("\u2717 RIPPLING_API_TOKEN is not set. Add it to your .env file.")

@@ -21,7 +21,7 @@ API references:
   https://developer.okta.com/docs/reference/api/users/
 
 Environment variables required (live API mode):
-  RIPPLING_API_TOKEN   Bearer token for Rippling
+  RIPPLING_API_TOKEN   API token for Rippling (sent as Bearer; same idea as OKTA_API_TOKEN)
   OKTA_API_TOKEN       Bearer token for Okta (SSWS token)
   OKTA_ORG_URL         Your Okta org URL, e.g. https://paramify.okta.com
 
@@ -30,10 +30,10 @@ Optional:
   RIPPLING_PAGE_SIZE   Defaults to 100
 
 Usage:
-    # Live API mode (requires tokens)
+    # Live API mode (requires Rippling + Okta API tokens)
     python rippling_vs_okta_users.py [--output-dir <path>]
 
-    # Evidence file mode (no tokens needed - use Paramify downloaded JSON)
+    # Evidence file mode (no Okta live API token needed — use Paramify downloaded JSON)
     python rippling_vs_okta_users.py --okta-evidence-file okta_least_privilege.json [--output-dir <path>]
 
 Output:
@@ -340,7 +340,7 @@ def main() -> None:
     # --- File 2: Okta source of truth ---
     okta_evidence_file = extra["okta_evidence_file"] or os.getenv("OKTA_EVIDENCE_FILE", "").strip() or None
     if okta_evidence_file:
-        # Evidence file mode: load from downloaded Paramify JSON (no API token needed)
+        # Evidence file mode: load from downloaded Paramify JSON (no Okta live API token needed)
         okta_users = load_okta_from_evidence_file(okta_evidence_file)
         mode_label = f"evidence_file:{Path(okta_evidence_file).name}"
     else:

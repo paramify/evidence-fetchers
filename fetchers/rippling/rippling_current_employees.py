@@ -10,7 +10,7 @@ API reference: https://developer.rippling.com/documentation/rest-api
 Endpoint: GET /platform/api/employees
 
 Environment variables required:
-- RIPPLING_API_TOKEN  Bearer token (from Rippling Developer Portal)
+- RIPPLING_API_TOKEN  API token (from Rippling Developer Portal; sent as Bearer)
 
 Optional:
 - RIPPLING_BASE_URL   Defaults to https://api.rippling.com
