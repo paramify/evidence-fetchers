@@ -116,7 +116,7 @@ while read -r cluster_name; do
         }')
     
     # Add cluster data to results
-    jq --argjson cluster "$cluster_data" '.results += [$cluster]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson cluster "$cluster_data" '.results += [$cluster]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done < <(echo "$clusters" | jq -r '.[]')
 
@@ -128,6 +128,6 @@ jq --arg total "$total_clusters" \
        "total": ($total | tonumber),
        "logging_enabled": ($logging | tonumber),
        "pod_identities": ($identities | tonumber)
-   }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+   }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 exit 0

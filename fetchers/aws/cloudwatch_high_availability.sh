@@ -65,7 +65,7 @@ if [ $? -eq 0 ]; then
         # Add to JSON
         jq --argjson policy "$policy" \
            '.results += [{"Type": "ScalingPolicy", "PolicyInfo": $policy}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi
@@ -84,7 +84,7 @@ if [ $? -eq 0 ]; then
         # Add to JSON
         jq --argjson alarm "$alarm" \
            '.results += [{"Type": "CloudWatch_Alarm", "AlarmInfo": $alarm}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi

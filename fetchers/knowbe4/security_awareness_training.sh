@@ -175,7 +175,7 @@ echo "$users_response" | jq -c '.[] | select(.status == "active")' | while read 
     
     # Add minimal user info to users array (excluding policy_acknowledged)
     minimal_user=$(echo "$user" | jq '{id: .id, email: .email, status: .status}')
-    jq --argjson user "$minimal_user" '.results.users += [$user]' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+    jq --argjson user "$minimal_user" '.results.users += [$user]' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
     
     # Get user's enrollments for this campaign
     user_enrollments=$(echo "$security_awareness_enrollments" | jq -c \
@@ -192,7 +192,7 @@ echo "$users_response" | jq -c '.[] | select(.status == "active")' | while read 
         while read -r enrollment; do
             jq --argjson enrollment "$enrollment" \
             '.results.enrollments += [$enrollment]' \
-            "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+            "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
         done < <(echo "$user_enrollments" | jq -c '.[]')
 
         # Logic for multiple modules:
@@ -225,7 +225,7 @@ echo "$users_response" | jq -c '.[] | select(.status == "active")' | while read 
         '
         .results.user_training_status[$email] = $status |
         .results.user_retraining_required[$email] = $retrain
-        ' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON" 
+        ' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON" 
 
 done
 
@@ -257,7 +257,7 @@ jq --arg total "$total_users" \
        "not_started": ($not_started|tonumber),
        "needs_retraining": ($needs_retraining|tonumber),
        "completion_rate": ($rate|tonumber)
-   }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+   }' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 # Generate summary
 echo -e "\n${GREEN}Validation Summary:${NC}"

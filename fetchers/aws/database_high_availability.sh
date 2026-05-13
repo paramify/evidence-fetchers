@@ -69,7 +69,7 @@ if [ $? -eq 0 ]; then
         # Add to JSON
         jq --argjson instance "$instance" \
            '.results += [{"Type": "RDS_Instance", "InstanceInfo": $instance}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi
@@ -87,7 +87,7 @@ if [ $? -eq 0 ]; then
         # Add to JSON
         jq --argjson cluster "$cluster" \
            '.results += [{"Type": "Aurora_Cluster", "ClusterInfo": $cluster}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi

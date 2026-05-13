@@ -114,7 +114,7 @@ echo "$users" | jq -c '.[]' | while read -r user; do
         }')
     
     # Add to JSON
-    jq --argjson user "$user_info" '.results.users += [$user]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson user "$user_info" '.results.users += [$user]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 
@@ -144,7 +144,7 @@ echo "$groups" | jq -c '.[]' | while read -r group; do
         }')
     
     # Add to JSON
-    jq --argjson group "$group_info" '.results.groups += [$group]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson group "$group_info" '.results.groups += [$group]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 

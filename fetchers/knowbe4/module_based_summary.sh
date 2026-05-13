@@ -175,7 +175,7 @@ fi
 echo "$enrollments_response" | jq -c '.[] | del(.policy_acknowledged)' | while read -r enrollment; do
     jq --argjson e "$enrollment" \
       '.results.enrollments += [$e]' \
-      "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+      "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 done
 
 # Build per-module training summary
@@ -213,7 +213,7 @@ module_summary=$(jq '
 # Store module summary
 jq --argjson module_summary "$module_summary" \
   '.results.summary.training_module_summary = $module_summary' \
-  "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+  "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 # Output summary
 echo -e "\n${GREEN}Module-Based Training Summary:${NC}"

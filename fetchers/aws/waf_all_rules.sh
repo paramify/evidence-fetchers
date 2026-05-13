@@ -94,7 +94,7 @@ while IFS=$'\t' read -r acl_id acl_name; do
     if [ "$rules_count" -eq 0 ]; then
         echo -e "${YELLOW}No rules found for this Web ACL.${NC}"
         # Store the full WebACL even if it has no rules (includes all metadata)
-        jq --argjson webacl "$webacl_full" '.results += [$webacl]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        jq --argjson webacl "$webacl_full" '.results += [$webacl]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         continue
     fi
     
@@ -138,7 +138,7 @@ while IFS=$'\t' read -r acl_id acl_name; do
     done
     
     # Store the complete WebACL object with ALL its data (including full rule objects with all fields)
-    jq --argjson webacl "$webacl_full" '.results += [$webacl]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson webacl "$webacl_full" '.results += [$webacl]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     echo ""
 done <<< "$web_acls"
 

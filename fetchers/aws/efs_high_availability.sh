@@ -68,7 +68,7 @@ if [ $? -eq 0 ]; then
         jq --argjson efs "$efs" \
            --argjson targets "$mount_targets" \
            '.results += [{"Type": "EFS_FileSystem", "EFSInfo": $efs, "MountTargets": $targets}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi

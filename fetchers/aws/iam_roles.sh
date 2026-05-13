@@ -117,7 +117,7 @@ echo "$roles" | jq -c '.[]' | while read -r role; do
         }')
     
     # Add to JSON
-    jq --argjson role "$role_info" '.results += [$role]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson role "$role_info" '.results += [$role]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 
@@ -126,7 +126,7 @@ echo -e "${BLUE}Retrieving account password policy...${NC}"
 password_policy=$(aws iam get-account-password-policy --profile "$PROFILE" --query 'PasswordPolicy' --output json)
 
 # Add password policy to results
-jq --argjson policy "$password_policy" '.results += [{"Type": "PasswordPolicy", "Policy": $policy}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+jq --argjson policy "$password_policy" '.results += [{"Type": "PasswordPolicy", "Policy": $policy}]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 
 exit 0 

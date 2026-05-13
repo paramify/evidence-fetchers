@@ -123,7 +123,7 @@ jq --argjson status "$recorder_status" \
            "issues": (if $rec_status != "true" then ["recording_disabled"] else [] end + if $ch_count == "0" then ["no_delivery_channel"] else [] end)
          }
        }
-   }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+   }' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 
 
