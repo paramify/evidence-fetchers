@@ -1,0 +1,32 @@
+# Environment variables (contains secrets)
+.env
+
+# State file (per-customer report ID)
+state.json
+
+# Output files (contains vulnerability data)
+wiz_issues.csv
+wiz_issues_delta.csv
+*.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backups
+*.bak
+*.backup
+
+# Logs
+*.log
