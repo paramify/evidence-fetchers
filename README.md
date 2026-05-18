@@ -54,6 +54,7 @@ python main.py
 <a href="fetchers/checkov/"><img src="fetchers/logos/checkov.png" alt="Checkov" width="56" height="56" style="margin: 20px;"></a>
 <a href="fetchers/ssllabs/"><img src="fetchers/logos/qualys.svg" alt="Qualys SSL Labs" width="56" height="56" style="margin: 20px;"></a>
 <img src="fetchers/logos/paramify.svg" alt="Paramify" width="56" height="56" style="margin: 20px;">
+<img src="fetchers/logos/wiz.jpeg" alt="Wiz" width="56" height="56" style="margin: 20px;">
 
 </div>
 
