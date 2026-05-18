@@ -98,6 +98,7 @@ CHECK_INTERVAL_FOR_DOWNLOAD = 20
 COGNITO_URLS = [
     'https://auth.app.wiz.io/oauth/token',
     'https://auth.gov.wiz.io/oauth/token',
+    'https://auth.app.wiz.us/oauth/token', 
 ]
 
 global_token = ''
