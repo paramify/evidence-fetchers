@@ -72,7 +72,6 @@ REPORT_CONFIG = {
     "name": "Paramify-Wiz-Fetcher",
     "type": "ISSUES",
     "projectId": "*",
-    "compressionMethod": "GZIP",
     "issueParams": {
         "type": "DETAILED",
         "issueFilters": {
@@ -98,7 +97,7 @@ CHECK_INTERVAL_FOR_DOWNLOAD = 20
 COGNITO_URLS = [
     'https://auth.app.wiz.io/oauth/token',
     'https://auth.gov.wiz.io/oauth/token',
-    'https://auth.app.wiz.us/oauth/token', 
+    'https://auth.app.wiz.us/oauth/token'
 ]
 
 global_token = ''
@@ -292,7 +291,18 @@ def get_report_download_url(report_id: str) -> str:
         logging.info('Waiting %ds for report to complete', CHECK_INTERVAL_FOR_DOWNLOAD)
         time.sleep(CHECK_INTERVAL_FOR_DOWNLOAD)
         response = query_wiz(DOWNLOAD_REPORT_QUERY, {'reportId': report_id})
+
+        # Defensive: handle case where report or lastRun is None
+        if response.get('report') is None or response['report'].get('lastRun') is None:
+            logging.info('DEBUG raw response: %s', response)
+            logging.info('Report lastRun is None (attempt %d/%d) - waiting...',
+                         retries + 1, MAX_RETRIES_FOR_DOWNLOAD)
+            retries += 1
+            continue
+
         status = response['report']['lastRun']['status']
+        logging.info('Report status: %s (attempt %d/%d)',
+                     status, retries + 1, MAX_RETRIES_FOR_DOWNLOAD)
         if status == 'COMPLETED':
             url = response['report']['lastRun']['url']
             logging.info('Report ready: %s', url[:80] + '...')
@@ -301,7 +311,7 @@ def get_report_download_url(report_id: str) -> str:
             logging.warning('Report status %s - rerunning', status)
             rerun_report(report_id)
             time.sleep(RETRY_TIME_FOR_DOWNLOAD)
-            retries += 1
+        retries += 1
     raise Exception('Report download failed after max retries')
 
 def download_csv(download_url: str) -> Path:
