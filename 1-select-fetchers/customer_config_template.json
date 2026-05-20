@@ -73,7 +73,10 @@
         "enabled": false,
         "selected_scripts": [
           "rippling_current_employees",
-          "rippling_all_employees"
+          "rippling_all_employees",
+          "rippling_devices",
+          "rippling_vs_okta_users",
+          "rippling_vs_knowbe4_training"
         ]
       },
       "checkov": {

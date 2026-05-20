@@ -52,6 +52,9 @@ except ModuleNotFoundError:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         return output_dir, "", ""
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _friendly_errors import run_with_friendly_errors
+
 BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://api.rippling.com").rstrip("/")
 PAGE_SIZE = int(os.getenv("RIPPLING_PAGE_SIZE", "100"))
 
@@ -150,4 +153,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_with_friendly_errors(main, primary_service="Rippling")

@@ -70,6 +70,9 @@ except ModuleNotFoundError:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         return output_dir, "", ""
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _friendly_errors import run_with_friendly_errors
+
 
 def _parse_extra_args() -> Dict[str, Optional[str]]:
     """Parse extra CLI flags not handled by parse_fetcher_args."""
@@ -369,4 +372,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_with_friendly_errors(main, primary_service="Rippling")

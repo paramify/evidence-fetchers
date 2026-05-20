@@ -56,6 +56,9 @@ except ModuleNotFoundError:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         return output_dir, "", ""
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _friendly_errors import run_with_friendly_errors
+
 BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://api.rippling.com").rstrip("/")
 PAGE_SIZE = int(os.getenv("RIPPLING_PAGE_SIZE", "100"))
 
@@ -105,22 +108,30 @@ def extract_records(payload: Any) -> List[Dict]:
 
 
 def find_working_endpoint() -> Tuple[str, Any]:
-    """Try each known device endpoint and return the first that responds."""
+    """Try each known device endpoint and return the first that responds.
+
+    Only HTTP 404 ("endpoint not on this URL") is treated as a fall-through
+    to the next candidate. Other status codes (e.g. 401/403) apply to every
+    Rippling endpoint, so they're re-raised immediately to surface a single
+    accurate error to the user.
+    """
     for endpoint in DEVICE_ENDPOINTS:
+        print(f"Trying endpoint: {BASE_URL}{endpoint} ...")
         try:
-            print(f"Trying endpoint: {BASE_URL}{endpoint} ...")
             payload = rippling_get(endpoint, params={"limit": 1, "offset": 0})
             print(f"  Endpoint works: {endpoint}")
             return endpoint, payload
         except requests.exceptions.HTTPError as e:
-            print(f"  {endpoint} -> HTTP {e.response.status_code}: {e.response.text[:100]}")
-        except Exception as e:
-            print(f"  {endpoint} -> {e}")
+            status = e.response.status_code if e.response is not None else None
+            if status != 404:
+                raise
+            print(f"  {endpoint} -> HTTP 404 (not on this URL, trying next)")
 
     raise RuntimeError(
-        "No working device endpoint found. "
-        "Confirm that Rippling MDM is enabled for your account and that "
-        "RIPPLING_API_TOKEN has the required device scopes."
+        "Rippling returned HTTP 404 on every known device endpoint "
+        f"({', '.join(DEVICE_ENDPOINTS)}). This usually means the Rippling "
+        "MDM add-on is not enabled on the account, or RIPPLING_API_TOKEN "
+        "does not have the devices scope. See fetchers/rippling/API_KEY_SETUP.md."
     )
 
 
@@ -180,4 +191,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_with_friendly_errors(main, primary_service="Rippling")

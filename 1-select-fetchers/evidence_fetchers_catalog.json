@@ -1560,6 +1560,71 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": []
+          },
+          "rippling_devices": {
+            "script_file": "fetchers/rippling/rippling_devices.py",
+            "name": "Rippling Device Inventory",
+            "description": "Evidence for company-managed device inventory (laptops, desktops, mobile) from Rippling MDM",
+            "id": "EVD-RIPPLING-DEVICES",
+            "instructions": "Script: rippling_devices.py. Commands executed: GET /platform/api/devices (falls back to /v2/devices) with limit/offset pagination. Requires Rippling MDM add-on enabled on the account.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "rippling",
+              "mdm",
+              "devices",
+              "inventory",
+              "asset-management"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
+          },
+          "rippling_vs_okta_users": {
+            "script_file": "fetchers/rippling/rippling_vs_okta_users.py",
+            "name": "Rippling vs Okta User Cross-Reference",
+            "description": "Evidence for access review: identifies gaps between Rippling HR roster and Okta users (orphaned Okta accounts, employees missing SSO access)",
+            "id": "EVD-RIPPLING-VS-OKTA",
+            "instructions": "Script: rippling_vs_okta_users.py. Commands executed: GET /platform/api/employees from Rippling and GET /api/v1/users from Okta, then diffs by email. Live API mode requires RIPPLING_API_TOKEN, OKTA_API_TOKEN, and OKTA_ORG_URL. Supports --okta-evidence-file flag to use a previously downloaded Okta JSON instead of live API.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "rippling",
+              "okta",
+              "access-review",
+              "cross-reference",
+              "identity",
+              "hr"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
+          },
+          "rippling_vs_knowbe4_training": {
+            "script_file": "fetchers/rippling/rippling_vs_knowbe4_training.py",
+            "name": "Rippling vs KnowBe4 Training Cross-Reference",
+            "description": "Evidence for security awareness training compliance: identifies Rippling employees not enrolled in or not completed KnowBe4 training, and KnowBe4 users not in Rippling HR",
+            "id": "EVD-RIPPLING-VS-KNOWBE4",
+            "instructions": "Script: rippling_vs_knowbe4_training.py. Commands executed: GET /platform/api/employees from Rippling and KnowBe4 Reporting API user/enrollment endpoints, then diffs by email. Live API mode requires RIPPLING_API_TOKEN, KNOWBE4_API_KEY, and KNOWBE4_BASE_URL. Optional KNOWBE4_CAMPAIGN_ID restricts the check to a specific training campaign. Supports --kb4-evidence-file flag to use a previously downloaded KnowBe4 JSON instead of live API.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "rippling",
+              "knowbe4",
+              "training",
+              "security-awareness",
+              "cross-reference",
+              "hr"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
           }
         }
       },
