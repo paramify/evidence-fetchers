@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import sys
 from typing import Callable, Iterable, NoReturn, Optional
+from urllib.parse import urlparse
 
 import requests
 
@@ -51,14 +52,30 @@ class FriendlyApiError(RuntimeError):
     """
 
 
+def _host_matches(host: str, domain: str) -> bool:
+    """Return True if `host` equals `domain` or is a subdomain of it.
+
+    Compares against the parsed hostname (not a substring of the full URL),
+    so an attacker-controlled URL like https://evil.com/?fake=rippling.com
+    will not be misclassified as a known service.
+    """
+    return host == domain or host.endswith(f".{domain}")
+
+
 def _service_for_url(url: str) -> str:
     if not url:
         return ""
-    if "rippling.com" in url:
+    try:
+        host = (urlparse(url).hostname or "").lower()
+    except ValueError:
+        return ""
+    if not host:
+        return ""
+    if _host_matches(host, "rippling.com"):
         return "Rippling"
-    if "knowbe4.com" in url:
+    if _host_matches(host, "knowbe4.com"):
         return "KnowBe4"
-    if "okta.com" in url or "oktapreview.com" in url:
+    if _host_matches(host, "okta.com") or _host_matches(host, "oktapreview.com"):
         return "Okta"
     return ""
 
