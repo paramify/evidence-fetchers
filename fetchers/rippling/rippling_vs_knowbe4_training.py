@@ -1,10 +1,24 @@
 #!/usr/bin/env python3
 """
 # Helper script for Rippling <-> KnowBe4 Training Cross-Reference
+
 Compares Rippling "Everyone" supergroup members against KnowBe4 enrollments.
-Match key: work_email (lowercased).
-Outputs 3 files: rippling_everyone_members.json,
-knowbe4_module_enrollments.json, rippling_vs_knowbe4_gap.json.
+Match key: work_email (lowercased), with name fallback for unmatched accounts.
+
+Outputs three files to the evidence directory:
+- rippling_everyone_members.json
+- knowbe4_module_enrollments.json
+- rippling_vs_knowbe4_gap.json
+
+# Security
+- Evidence file paths are restricted to the working directory and evidence/
+  subdirectory to prevent path traversal (e.g. --kb4-evidence-file /etc/passwd).
+- RIPPLING_BASE_URL must be HTTPS and on an allowlisted hostname pattern to
+  prevent SSRF (e.g. pointing the bearer token at an attacker-controlled host).
+- Evidence files larger than EVIDENCE_FILE_MAX_BYTES are rejected to mitigate
+  memory-exhaustion attacks via crafted JSON.
+- HTTP redirects are disabled on API calls (a redirected request would leak
+  the bearer token to the redirect target).
 """
 
 import json
@@ -12,7 +26,8 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 import requests
 
@@ -21,6 +36,7 @@ try:
     from common.env_loader import parse_fetcher_args
 except ModuleNotFoundError:
     from dotenv import load_dotenv
+
     def parse_fetcher_args():
         for p in [Path(__file__).parent] + list(Path(__file__).parents):
             if (p / ".env").exists():
@@ -36,6 +52,115 @@ except ModuleNotFoundError:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         return output_dir, "", ""
 
+
+# ---------------------------------------------------------------------------
+# Security helpers
+# ---------------------------------------------------------------------------
+
+# Evidence file path constraints (path-traversal mitigation).
+# We refuse to open files outside the working directory tree.
+def _evidence_path_roots() -> List[Path]:
+    """Allowed root directories for --*-evidence-file arguments."""
+    cwd = Path.cwd().resolve()
+    return [cwd, (cwd / "evidence").resolve()]
+
+
+# Max bytes for any evidence file we will read (JSON-bomb mitigation).
+EVIDENCE_FILE_MAX_BYTES = int(os.getenv("EVIDENCE_FILE_MAX_BYTES", str(50 * 1024 * 1024)))
+
+# Allowlisted Rippling API hosts (SSRF mitigation).
+# RIPPLING_BASE_URL must match one of these patterns.
+RIPPLING_HOST_ALLOWLIST = (
+    "rest.ripplingapis.com",
+    "api.rippling.com",
+)
+
+
+def safe_evidence_path(user_path: str, role: str) -> Path:
+    """Validate an evidence file path.
+
+    Prevents path traversal: rejects anything outside CWD or ./evidence/.
+    Also requires the file to exist, be a regular file, end in .json,
+    and be under EVIDENCE_FILE_MAX_BYTES.
+
+    role is just a string used in error messages ('Rippling' / 'KnowBe4').
+    """
+    if not user_path:
+        raise RuntimeError(f"{role} evidence path is empty")
+
+    candidate = Path(user_path).expanduser().resolve()
+
+    # 1. Confine to allowed roots.
+    roots = _evidence_path_roots()
+    if not any(_is_within(candidate, root) for root in roots):
+        raise RuntimeError(
+            f"Refused to open {role} evidence file outside allowed directories.\n"
+            f"  Requested: {candidate}\n"
+            f"  Allowed roots: {[str(r) for r in roots]}\n"
+            f"  Hint: keep evidence files in the working directory or ./evidence/"
+        )
+
+    # 2. Must exist and be a regular file.
+    if not candidate.exists():
+        raise RuntimeError(f"{role} evidence file not found: {candidate}")
+    if not candidate.is_file():
+        raise RuntimeError(f"{role} evidence path is not a regular file: {candidate}")
+
+    # 3. Must look like JSON.
+    if candidate.suffix.lower() != ".json":
+        raise RuntimeError(
+            f"{role} evidence file must have .json extension (got {candidate.suffix!r})"
+        )
+
+    # 4. Reject suspiciously large files (JSON bomb mitigation).
+    size = candidate.stat().st_size
+    if size > EVIDENCE_FILE_MAX_BYTES:
+        raise RuntimeError(
+            f"{role} evidence file too large: {size:,} bytes "
+            f"(limit {EVIDENCE_FILE_MAX_BYTES:,}). "
+            f"Override via EVIDENCE_FILE_MAX_BYTES env var if intentional."
+        )
+    if size == 0:
+        raise RuntimeError(f"{role} evidence file is empty: {candidate}")
+
+    return candidate
+
+
+def _is_within(child: Path, parent: Path) -> bool:
+    """Return True if child is inside parent (after resolution)."""
+    try:
+        child.resolve().relative_to(parent.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def validate_rippling_base_url(url: str) -> str:
+    """Validate the Rippling base URL (SSRF mitigation).
+
+    Rejects non-HTTPS or non-allowlisted hosts. We do this because the bearer
+    token gets attached to every request; a misconfigured/malicious base URL
+    would leak the token to an attacker-controlled host.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        raise RuntimeError(
+            f"RIPPLING_BASE_URL must use HTTPS (got {parsed.scheme!r}). "
+            f"Refusing to send bearer token over insecure transport."
+        )
+    host = (parsed.hostname or "").lower()
+    if host not in RIPPLING_HOST_ALLOWLIST:
+        raise RuntimeError(
+            f"RIPPLING_BASE_URL host {host!r} is not in the allowlist "
+            f"{RIPPLING_HOST_ALLOWLIST}. Refusing to send bearer token "
+            f"to an unrecognized host."
+        )
+    return url.rstrip("/")
+
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
 
 def _parse_extra_args():
     result = {"kb4_evidence_file": None, "rippling_evidence_file": None}
@@ -66,57 +191,54 @@ def _strip_custom_args_from_argv():
     sys.argv = cleaned
 
 
-def load_rippling_from_paramify_file(path_str):
-    """Read a downloaded Paramify supergroups artifact and extract Everyone members."""
-    with open(path_str, encoding="utf-8") as f:
-        artifact = json.load(f)
-    results = artifact.get("results", [])
-    for g in results:
-        name = (g.get("display_name") or g.get("name") or "").strip()
-        if name.lower() == EVERYONE_GROUP_NAME.lower():
-            members = g.get("members", [])
-            print(f"Loaded Rippling from file: {path_str}")
-            print(f"  Found '{name}' group (id={g.get('id')}) with {len(members)} members")
-            return g, members
-    available = [g.get("display_name") or g.get("name") for g in results]
-    raise RuntimeError(
-        f"'{EVERYONE_GROUP_NAME}' group not found in {path_str}. "
-        f"Available groups (first 10): {available[:10]}"
-    )
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
 
-
-RIPPLING_BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://rest.ripplingapis.com").rstrip("/")
+# NOTE: we don't validate the base URL until we actually need to call Rippling
+# (so file-only runs don't require RIPPLING_BASE_URL to be set/valid).
+RIPPLING_BASE_URL_RAW = os.getenv("RIPPLING_BASE_URL", "https://rest.ripplingapis.com")
 RIPPLING_MEMBER_SLEEP = float(os.getenv("RIPPLING_MEMBER_SLEEP", "0.05"))
 EVERYONE_GROUP_NAME = os.getenv("RIPPLING_EVERYONE_GROUP", "Everyone")
 PASS_STATUSES = {s.strip().lower() for s in os.getenv("PASS_STATUSES", "Passed,Completed,Complete").split(",")}
 CRITICAL_STATUSES = {s.strip().lower() for s in os.getenv("CRITICAL_STATUSES", "Past Due").split(",")}
 
 
-def get_rippling_token():
+def get_rippling_token() -> str:
     token = os.getenv("RIPPLING_API_TOKEN", "").strip()
     if not token:
         raise RuntimeError("RIPPLING_API_TOKEN is not set.")
     return token
 
 
-def rippling_get(url, params=None):
+def rippling_get(url: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     headers = {"Accept": "application/json", "Authorization": f"Bearer {get_rippling_token()}"}
-    resp = requests.get(url, headers=headers, params=params, timeout=30)
+    # allow_redirects=False: a 30x response with a Location header could redirect
+    # the request (and its Authorization header) to an attacker-controlled host.
+    resp = requests.get(url, headers=headers, params=params, timeout=30, allow_redirects=False)
+    if resp.status_code in (301, 302, 303, 307, 308):
+        raise RuntimeError(
+            f"Rippling returned redirect {resp.status_code} to {resp.headers.get('Location')!r}; "
+            f"refusing to follow (token would leak)."
+        )
     if resp.status_code == 429:
         print("  Rate limited (429). Sleeping 15s then retrying...")
         time.sleep(15)
-        resp = requests.get(url, headers=headers, params=params, timeout=30)
+        resp = requests.get(url, headers=headers, params=params, timeout=30, allow_redirects=False)
     if resp.status_code >= 400:
         body = resp.text[:500] if resp.text else "(empty body)"
         raise RuntimeError(f"Rippling HTTP {resp.status_code} for {resp.url}\n  Body: {body}")
     return resp.json()
 
 
-def rippling_paginate(initial_url, initial_params=None):
-    results = []
-    next_url = initial_url
+def rippling_paginate(initial_url: str, initial_params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    results: List[Dict[str, Any]] = []
+    next_url: Optional[str] = initial_url
     next_params = initial_params
     while next_url:
+        # Defense in depth: every URL we follow (including next_link from the
+        # API response) must pass the host allowlist.
+        _enforce_rippling_host(next_url)
         payload = rippling_get(next_url, params=next_params)
         results.extend(payload.get("results", []))
         next_url = payload.get("next_link")
@@ -124,10 +246,20 @@ def rippling_paginate(initial_url, initial_params=None):
     return results
 
 
-def find_everyone_group():
+def _enforce_rippling_host(url: str) -> None:
+    """Re-check the host on every URL we hit (including next_link values)."""
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        raise RuntimeError(f"Refusing non-HTTPS Rippling URL: {url}")
+    host = (parsed.hostname or "").lower()
+    if host not in RIPPLING_HOST_ALLOWLIST:
+        raise RuntimeError(f"Refusing Rippling URL with disallowed host: {host}")
+
+
+def find_everyone_group(base_url: str) -> Optional[Dict[str, Any]]:
     print(f"Searching Rippling for '{EVERYONE_GROUP_NAME}' supergroup ...")
     groups = rippling_paginate(
-        f"{RIPPLING_BASE_URL}/supergroups/",
+        f"{base_url}/supergroups/",
         {"filter": "group_type eq 'Group'"},
     )
     for g in groups:
@@ -138,43 +270,82 @@ def find_everyone_group():
     return None
 
 
-def fetch_everyone_members(group_id):
+def fetch_everyone_members(base_url: str, group_id: str) -> List[Dict[str, Any]]:
     print(f"Fetching members of {group_id} ...")
-    members = rippling_paginate(f"{RIPPLING_BASE_URL}/supergroups/{group_id}/members/", None)
+    members = rippling_paginate(f"{base_url}/supergroups/{group_id}/members/", None)
     print(f"  Got {len(members)} members")
     if RIPPLING_MEMBER_SLEEP > 0:
         time.sleep(RIPPLING_MEMBER_SLEEP)
     return members
 
 
-def rippling_email(member):
+def rippling_email(member: Dict[str, Any]) -> Optional[str]:
     email = (member.get("work_email") or member.get("workEmail") or member.get("email") or "").strip().lower()
     return email or None
 
 
-def load_kb4_evidence(path):
-    with open(path, encoding="utf-8") as f:
+# ---------------------------------------------------------------------------
+# File-mode loaders (use safe_evidence_path)
+# ---------------------------------------------------------------------------
+
+def load_rippling_from_paramify_file(path_str: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """Read a downloaded Paramify supergroups artifact and extract Everyone members."""
+    safe_path = safe_evidence_path(path_str, role="Rippling")
+    with safe_path.open(encoding="utf-8") as f:
+        artifact = json.load(f)
+    if not isinstance(artifact, dict):
+        raise RuntimeError(f"Rippling evidence file is not a JSON object: {safe_path}")
+    results = artifact.get("results", [])
+    if not isinstance(results, list):
+        raise RuntimeError(f"Rippling evidence 'results' is not a list: {safe_path}")
+    for g in results:
+        name = (g.get("display_name") or g.get("name") or "").strip()
+        if name.lower() == EVERYONE_GROUP_NAME.lower():
+            members = g.get("members", [])
+            if not isinstance(members, list):
+                raise RuntimeError(f"'{name}' group's members is not a list")
+            print(f"Loaded Rippling from file: {safe_path}")
+            print(f"  Found '{name}' group (id={g.get('id')}) with {len(members)} members")
+            return g, members
+    available = [g.get("display_name") or g.get("name") for g in results]
+    raise RuntimeError(
+        f"'{EVERYONE_GROUP_NAME}' group not found in {safe_path}. "
+        f"Available groups (first 10): {available[:10]}"
+    )
+
+
+def load_kb4_evidence(path: str):
+    safe_path = safe_evidence_path(path, role="KnowBe4")
+    with safe_path.open(encoding="utf-8") as f:
         evidence = json.load(f)
+    if not isinstance(evidence, dict):
+        raise RuntimeError(f"KnowBe4 evidence file is not a JSON object: {safe_path}")
     results = evidence.get("results", {})
     enrollments = results.get("enrollments", []) if isinstance(results, dict) else []
     summary = results.get("summary", {}) if isinstance(results, dict) else {}
-    print(f"Loaded KnowBe4 evidence from {path}")
+    if not isinstance(enrollments, list):
+        raise RuntimeError(f"KnowBe4 evidence 'enrollments' is not a list: {safe_path}")
+    print(f"Loaded KnowBe4 evidence from {safe_path}")
     print(f"  {len(enrollments)} enrollment records")
     return enrollments, summary
 
 
-def kb4_user_email(enrollment):
+def kb4_user_email(enrollment: Dict[str, Any]) -> Optional[str]:
     user = enrollment.get("user") or {}
     email = (user.get("email") or "").strip().lower()
     return email or None
 
 
-def kb4_user_full_name(enrollment):
+def kb4_user_full_name(enrollment: Dict[str, Any]) -> str:
     user = enrollment.get("user") or {}
     first = (user.get("first_name") or "").strip()
     last = (user.get("last_name") or "").strip()
     return (first + " " + last).strip()
 
+
+# ---------------------------------------------------------------------------
+# Report builders (unchanged logic — these only operate on parsed data)
+# ---------------------------------------------------------------------------
 
 def build_per_person_report(rippling_by_email, enrollments_by_email):
     all_emails = set(rippling_by_email.keys()) | set(enrollments_by_email.keys())
@@ -185,7 +356,7 @@ def build_per_person_report(rippling_by_email, enrollments_by_email):
         rippling_name = rippling_member.get("full_name") if rippling_member else None
         kb4_name = kb4_user_full_name(kb4_enrollments[0]) if kb4_enrollments else None
         kb4_user_id = (kb4_enrollments[0].get("user") or {}).get("id") if kb4_enrollments else None
-        campaigns = {}
+        campaigns: Dict[str, Dict[str, Any]] = {}
         has_past_due = False
         for enr in kb4_enrollments:
             cname = enr.get("campaign_name") or "(no campaign)"
@@ -230,7 +401,7 @@ def build_per_person_report(rippling_by_email, enrollments_by_email):
         total_assigned = sum(c["assigned"] for c in campaigns.values())
         total_passed = sum(c["passed"] for c in campaigns.values())
         overall_pct = round(100 * total_passed / total_assigned) if total_assigned else None
-        flags = []
+        flags: List[str] = []
         if rippling_member and not kb4_enrollments:
             flags.append("not_in_knowbe4")
         if kb4_enrollments and not rippling_member:
@@ -293,6 +464,10 @@ def build_gap_summary(per_person):
     }
 
 
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 def main():
     extra = _parse_extra_args()
     _strip_custom_args_from_argv()
@@ -317,10 +492,12 @@ def main():
         print(f"  Saved {len(members)} members -> {rippling_path}")
     else:
         print("\nStep 1: Fetch Rippling Everyone group from live API ...")
-        everyone = find_everyone_group()
+        # Validate base URL only when actually calling Rippling.
+        base_url = validate_rippling_base_url(RIPPLING_BASE_URL_RAW)
+        everyone = find_everyone_group(base_url)
         if not everyone:
             raise RuntimeError(f"Could not find supergroup '{EVERYONE_GROUP_NAME}'.")
-        members = fetch_everyone_members(everyone["id"])
+        members = fetch_everyone_members(base_url, everyone["id"])
         rippling_path = evidence_dir / "rippling_everyone_members.json"
         with rippling_path.open("w", encoding="utf-8") as f:
             json.dump({
@@ -350,16 +527,16 @@ def main():
     print(f"  Saved {len(enrollments)} enrollments -> {kb4_out_path}")
 
     print("\nStep 3: Build per-person gap report (email primary, name fallback) ...")
-    rippling_by_email = {}
-    rippling_no_email = []
+    rippling_by_email: Dict[str, Dict] = {}
+    rippling_no_email: List[Dict] = []
     for m in members:
         email = rippling_email(m)
         if email:
             rippling_by_email[email] = m
         else:
             rippling_no_email.append(m)
-    enrollments_by_email = {}
-    enrollments_no_email = []
+    enrollments_by_email: Dict[str, List[Dict]] = {}
+    enrollments_no_email: List[Dict] = []
     for enr in enrollments:
         email = kb4_user_email(enr)
         if email:
@@ -367,18 +544,17 @@ def main():
         else:
             enrollments_no_email.append(enr)
 
-    # Name-fallback pass: any Rippling member without an email match, try matching
-    # an unmatched KB4 user by full_name (case-insensitive, whitespace-normalized).
-    def norm_name(s):
+    # Name-fallback: case-insensitive, whitespace-normalized.
+    def norm_name(s: Optional[str]) -> str:
         return " ".join((s or "").lower().split())
 
     matched_emails_in_kb4 = set(enrollments_by_email.keys()) & set(rippling_by_email.keys())
     unmatched_kb4_emails = set(enrollments_by_email.keys()) - matched_emails_in_kb4
     unmatched_rippling_emails = set(rippling_by_email.keys()) - matched_emails_in_kb4
 
-    name_fallback_matches = []
+    name_fallback_matches: List[Dict] = []
     if unmatched_rippling_emails and unmatched_kb4_emails:
-        kb4_by_name = {}
+        kb4_by_name: Dict[str, List[str]] = {}
         for kb4_email in unmatched_kb4_emails:
             kb4_name = norm_name(kb4_user_full_name(enrollments_by_email[kb4_email][0]))
             if kb4_name:
@@ -387,7 +563,6 @@ def main():
             r_name = norm_name(rippling_by_email[r_email].get("full_name"))
             candidates = kb4_by_name.get(r_name, []) if r_name else []
             if len(candidates) == 1:
-                # Merge KB4 enrollments under the Rippling email key.
                 kb4_email = candidates[0]
                 merged = list(enrollments_by_email.pop(kb4_email))
                 enrollments_by_email.setdefault(r_email, []).extend(merged)
