@@ -54,6 +54,7 @@ python main.py
 <a href="fetchers/checkov/"><img src="fetchers/logos/checkov.png" alt="Checkov" width="56" height="56" style="margin: 20px;"></a>
 <a href="fetchers/ssllabs/"><img src="fetchers/logos/qualys.svg" alt="Qualys SSL Labs" width="56" height="56" style="margin: 20px;"></a>
 <img src="fetchers/logos/paramify.svg" alt="Paramify" width="56" height="56" style="margin: 20px;">
+<a href="fetchers/wiz/"><img src="fetchers/logos/wiz.jpeg" alt="Wiz" width="56" height="56" style="margin: 20px;">
 
 </div>
 
@@ -63,8 +64,9 @@ More evidence fetchers and integrations are coming soon. To request a new fetche
 
 <div align="center">
 
-<img src="fetchers/logos/wiz.jpeg" alt="Wiz" width="56" height="56" style="margin: 20px;">
+
 <img src="fetchers/logos/crowdstrike.svg" alt="CrowdStrike" width="56" height="56" style="margin: 20px;">
+<img src="fetchers/logos/datadog.png" alt="Datadog" width="56" height="56" style="margin: 20px;">
 
 Planned Fetchers/Integrations
 
@@ -127,19 +129,3 @@ OKTA_ORG_URL=https://your-org.okta.com
 - **Component docs**: See `README.md` in each numbered directory
 - [DeepWiki docs](https://deepwiki.com/paramify/evidence-fetchers)
 - [`FedRAMP 20x KSIs <-> Fetchers Catalog`](fetchers/Paramify%20Fetchers%20Catalog.md)
-
-## API Setup Guides
-
-Each integration folder contains an `API_KEY_SETUP.md` with credential setup and rotation instructions. If you’re adding a new integration, start from the [template](docs/api-setup/_TEMPLATE.md).
-
-| Integration | Setup Guide | Env Vars (high level) |
-|---|---|---|
-| AWS | [fetchers/aws/API_KEY_SETUP.md](fetchers/aws/API_KEY_SETUP.md) | `AWS_PROFILE`, `AWS_DEFAULT_REGION` |
-| SentinelOne | [fetchers/sentinelone/API_KEY_SETUP.md](fetchers/sentinelone/API_KEY_SETUP.md) | `SENTINELONE_API_URL`, `SENTINELONE_API_TOKEN` |
-| Kubernetes | [fetchers/k8s/API_KEY_SETUP.md](fetchers/k8s/API_KEY_SETUP.md) | `AWS_PROFILE`, `AWS_DEFAULT_REGION`, local `kubectl` |
-| KnowBe4 | [fetchers/knowbe4/API_KEY_SETUP.md](fetchers/knowbe4/API_KEY_SETUP.md) | `KNOWBE4_API_KEY`, `KNOWBE4_REGION` |
-| Okta | [fetchers/okta/API_KEY_SETUP.md](fetchers/okta/API_KEY_SETUP.md) | `OKTA_ORG_URL`, `OKTA_API_TOKEN` |
-| GitLab | [fetchers/gitlab/API_KEY_SETUP.md](fetchers/gitlab/API_KEY_SETUP.md) | `GITLAB_URL`, `GITLAB_API_TOKEN` |
-| Rippling | [fetchers/rippling/API_KEY_SETUP.md](fetchers/rippling/API_KEY_SETUP.md) | `RIPPLING_API_TOKEN` |
-| Checkov | [fetchers/checkov/API_KEY_SETUP.md](fetchers/checkov/API_KEY_SETUP.md) | `GITLAB_URL`, `GITLAB_API_TOKEN` (+ `CHECKOV_*`) |
-| SSL Labs | [fetchers/ssllabs/API_KEY_SETUP.md](fetchers/ssllabs/API_KEY_SETUP.md) | `SSLLABS_EMAIL`, `SSLLABS_HOSTS` |
