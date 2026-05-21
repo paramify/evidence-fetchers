@@ -66,7 +66,7 @@ More evidence fetchers and integrations are coming soon. To request a new fetche
 
 
 <img src="fetchers/logos/crowdstrike.svg" alt="CrowdStrike" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/datadog.svg" alt="Datadog" width="56" height="56" style="margin: 20px;">
+<img src="fetchers/logos/datadog.png" alt="Datadog" width="56" height="56" style="margin: 20px;">
 
 Planned Fetchers/Integrations
 
