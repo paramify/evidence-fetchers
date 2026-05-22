@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Wiz Issues to Paramify Vulnerability Assessment Intake
 ======================================================
@@ -31,7 +32,7 @@ import json
 import os
 import hashlib
 from contextlib import closing
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Add fetchers/ to path so we can import common utilities
@@ -72,6 +73,7 @@ REPORT_CONFIG = {
     "name": "Paramify-Wiz-Fetcher",
     "type": "ISSUES",
     "projectId": "*",
+    "compressionMethod": "GZIP",
     "issueParams": {
         "type": "DETAILED",
         "issueFilters": {
@@ -177,7 +179,7 @@ def save_state(report_id: str, config_hash: str,
     state = {
         'report_id': report_id,
         'config_hash': config_hash,
-        'last_run': datetime.now().isoformat(),
+        'last_run': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'last_successful_run': (
             last_successful_run
             if last_successful_run is not None
@@ -204,7 +206,8 @@ def get_token():
             'audience': 'wiz-api',
             'client_id': WIZ_CLIENT_ID,
             'client_secret': WIZ_CLIENT_SECRET,
-        }
+        },
+        timeout=30,
     )
     if response.status_code != 200:
         raise Exception(
@@ -229,7 +232,8 @@ def query_wiz(graphql_query: str, variables: dict) -> dict:
                 'Authorization': f'Bearer {global_token}',
                 'User-Agent': 'Paramify-WizIntegration-0.1',
             },
-            json={'query': graphql_query, 'variables': variables}
+            json={'query': graphql_query, 'variables': variables},
+            timeout=30,
         )
         code = response.status_code
         if code in (401, 403):
@@ -291,18 +295,7 @@ def get_report_download_url(report_id: str) -> str:
         logging.info('Waiting %ds for report to complete', CHECK_INTERVAL_FOR_DOWNLOAD)
         time.sleep(CHECK_INTERVAL_FOR_DOWNLOAD)
         response = query_wiz(DOWNLOAD_REPORT_QUERY, {'reportId': report_id})
-
-        # Defensive: handle case where report or lastRun is None
-        if response.get('report') is None or response['report'].get('lastRun') is None:
-            logging.info('DEBUG raw response: %s', response)
-            logging.info('Report lastRun is None (attempt %d/%d) - waiting...',
-                         retries + 1, MAX_RETRIES_FOR_DOWNLOAD)
-            retries += 1
-            continue
-
         status = response['report']['lastRun']['status']
-        logging.info('Report status: %s (attempt %d/%d)',
-                     status, retries + 1, MAX_RETRIES_FOR_DOWNLOAD)
         if status == 'COMPLETED':
             url = response['report']['lastRun']['url']
             logging.info('Report ready: %s', url[:80] + '...')
@@ -311,14 +304,17 @@ def get_report_download_url(report_id: str) -> str:
             logging.warning('Report status %s - rerunning', status)
             rerun_report(report_id)
             time.sleep(RETRY_TIME_FOR_DOWNLOAD)
-        retries += 1
+            retries += 1
     raise Exception('Report download failed after max retries')
 
 def download_csv(download_url: str) -> Path:
     """Stream Wiz CSV to disk, dropping unwanted columns. Returns path."""
     logging.info('Downloading CSV from Wiz')
     logging.info('Dropping columns: %s', COLUMNS_TO_DROP)
-    with closing(requests.get(download_url, stream=True)) as r:
+    # timeout=(connect_timeout, read_timeout) for streaming downloads.
+    # Large CSVs can take many minutes to fully stream, but each chunk
+    # should arrive within 60s — keeps us from hanging on dead connections.
+    with closing(requests.get(download_url, stream=True, timeout=(10, 60))) as r:
         reader = csv.reader(codecs.iterdecode(r.iter_lines(), 'utf-8'))
         header = next(reader)
         drop_indices = {
@@ -380,7 +376,7 @@ def filter_csv_by_delta(csv_path: Path, last_successful_run: str) -> Path:
 # ============================================================
 def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
     """Upload CSV to Paramify Vulnerability Assessment Intake API."""
-    today = datetime.now()
+    today = datetime.now(timezone.utc)
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
     logging.info('  API:        %s', PARAMIFY_API_BASE_URL)
     logging.info('  Assessment: %s',WIZ_PARAMIFY_ASSESSMENT_ID)
@@ -400,7 +396,8 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
                     "note": f"Automated upload via wiz-fetcher (mode={mode_label})",
                     "effectiveDate": today.isoformat(),
                 }),
-            }
+            },
+            timeout=120,
         )
     response.raise_for_status()
     artifact = response.json()['artifacts'][0]
@@ -473,7 +470,9 @@ def main():
     upload_to_paramify(upload_path, mode_label)
 
     # Step 8: Update last_successful_run after successful upload
-    new_successful_run = datetime.now().isoformat()
+    # UTC ISO 8601 with 'Z' suffix matches Wiz's "Status Changed At" format,
+    # so string comparison in filter_csv_by_delta() works correctly.
+    new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     save_state(report_id, current_hash, last_successful_run=new_successful_run)
     logging.info('Updated last_successful_run: %s', new_successful_run)
 
