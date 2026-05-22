@@ -20,7 +20,7 @@ API references:
   https://developer.rippling.com/documentation/rest-api
   https://developer.okta.com/docs/reference/api/users/
 
-Environment variables required (live API mode):
+Environment variables required (live API mode):     
   RIPPLING_API_TOKEN   Bearer token for Rippling
   OKTA_API_TOKEN       Bearer token for Okta (SSWS token)
   OKTA_ORG_URL         Your Okta org URL, e.g. https://paramify.okta.com
