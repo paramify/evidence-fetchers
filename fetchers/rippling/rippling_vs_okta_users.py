@@ -5,39 +5,52 @@
 
 Compares active Rippling employees against Okta users to surface:
   1. Okta users NOT in Rippling HR  -> potential stale/orphaned accounts
-  2. Rippling employees NOT in Okta -> employees who may be missing SSO access
+                                       (or service accounts that should be
+                                        documented separately)
+  2. Rippling employees NOT in Okta -> employees who may be missing SSO
+                                       access (or are intentionally outside
+                                       the SSO scope, e.g. contractors)
 
-Outputs 3 files (as Isaac's 3-file pattern):
+Outputs 3 files (Isaac's 3-file pattern):
   - rippling_current_employees.json  (Rippling source of truth - reused if exists)
   - okta_all_users.json              (Okta source of truth)
   - rippling_vs_okta_gap.json        (the diff - what validators run on)
 
-Matching key: email address
-  Rippling -> workEmail field
-  Okta     -> profile.login (usually email) with profile.email as fallback
+Matching key: email address (lowercased)
+  Rippling -> work_email (from supergroups members API)
+  Okta     -> profile.login (usually email) with profile.email as fallback,
+              or top-level "email" when reading a Paramify evidence artifact.
+
+Rippling source endpoint:
+  GET /supergroups/?filter=group_type+eq+'Group'  (find "Everyone" group)
+  GET /supergroups/{everyone_id}/members/         (member roster)
+
+Note: This script reads from the supergroups endpoint rather than
+/platform/api/employees because the current Rippling API token has
+supergroups.read scope but not employees.read.
 
 API references:
   https://developer.rippling.com/documentation/rest-api
   https://developer.okta.com/docs/reference/api/users/
 
-Environment variables required (live API mode):     
+Environment variables required (live API mode):
   RIPPLING_API_TOKEN   Bearer token for Rippling
   OKTA_API_TOKEN       Bearer token for Okta (SSWS token)
   OKTA_ORG_URL         Your Okta org URL, e.g. https://paramify.okta.com
 
 Optional:
-  RIPPLING_BASE_URL    Defaults to https://api.rippling.com
-  RIPPLING_PAGE_SIZE   Defaults to 100
+  RIPPLING_BASE_URL          Defaults to https://rest.ripplingapis.com
+  RIPPLING_EVERYONE_GROUP    Defaults to "Everyone"
 
 Usage:
-    # Live API mode (requires tokens)
+    # Live API mode (requires both tokens)
     python rippling_vs_okta_users.py [--output-dir <path>]
 
-    # Evidence file mode (no tokens needed - use Paramify downloaded JSON)
-    python rippling_vs_okta_users.py --okta-evidence-file okta_least_privilege.json [--output-dir <path>]
+    # Evidence file mode for Okta (no Okta token needed)
+    python rippling_vs_okta_users.py --okta-evidence-file okta_least_privilege.json
 
 Output:
-    rippling_current_employees.json  Rippling active employees
+    rippling_current_employees.json  Rippling active employees (from Everyone group)
     okta_all_users.json              All active Okta users
     rippling_vs_okta_gap.json        Gap analysis between the two
 """
@@ -47,6 +60,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
+from urllib.parse import urlparse
 
 import requests
 
@@ -55,6 +69,7 @@ try:
     from common.env_loader import parse_fetcher_args
 except ModuleNotFoundError:
     from dotenv import load_dotenv
+
     def parse_fetcher_args():
         for p in [Path(__file__).parent] + list(Path(__file__).parents):
             if (p / ".env").exists():
@@ -84,12 +99,28 @@ def _parse_extra_args() -> Dict[str, Optional[str]]:
             i += 1
     return result
 
+
 # ---------------------------------------------------------------------------
-# Rippling helpers
+# Rippling helpers (supergroups-based)
 # ---------------------------------------------------------------------------
 
-RIPPLING_BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://api.rippling.com").rstrip("/")
-PAGE_SIZE = int(os.getenv("RIPPLING_PAGE_SIZE", "100"))
+RIPPLING_BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://rest.ripplingapis.com").rstrip("/")
+EVERYONE_GROUP_NAME = os.getenv("RIPPLING_EVERYONE_GROUP", "Everyone")
+
+# Allowlisted Rippling hosts (SSRF mitigation; same as KB4 script).
+RIPPLING_HOST_ALLOWLIST = (
+    "rest.ripplingapis.com",
+    "api.rippling.com",
+)
+
+
+def _enforce_rippling_host(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        raise RuntimeError(f"Refusing non-HTTPS Rippling URL: {url}")
+    host = (parsed.hostname or "").lower()
+    if host not in RIPPLING_HOST_ALLOWLIST:
+        raise RuntimeError(f"Refusing Rippling URL with disallowed host: {host}")
 
 
 def get_rippling_token() -> str:
@@ -99,47 +130,72 @@ def get_rippling_token() -> str:
     return token
 
 
-def rippling_get(path: str, params: Optional[Dict[str, Any]] = None) -> Any:
-    url = f"{RIPPLING_BASE_URL}{path}"
+def rippling_get(url: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    _enforce_rippling_host(url)
     resp = requests.get(
         url,
         headers={"Accept": "application/json", "Authorization": f"Bearer {get_rippling_token()}"},
         params=params,
         timeout=30,
+        allow_redirects=False,
     )
+    if resp.status_code in (301, 302, 303, 307, 308):
+        raise RuntimeError(
+            f"Rippling returned redirect {resp.status_code} to {resp.headers.get('Location')!r}; "
+            f"refusing to follow (token would leak)."
+        )
     resp.raise_for_status()
     return resp.json()
 
 
-def extract_records(payload: Any, extra_keys: tuple = ()) -> List[Dict]:
-    if isinstance(payload, list):
-        return [r for r in payload if isinstance(r, dict)]
-    if isinstance(payload, dict):
-        for key in ("results", "data", "employees", "items") + extra_keys:
-            value = payload.get(key)
-            if isinstance(value, list):
-                return [r for r in value if isinstance(r, dict)]
-    return []
-
-
-def fetch_rippling_employees() -> List[Dict]:
-    results: List[Dict] = []
-    offset = 0
-    print(f"Fetching active Rippling employees...")
-    while True:
-        payload = rippling_get("/platform/api/employees", params={"limit": PAGE_SIZE, "offset": offset})
-        page = extract_records(payload)
-        results.extend(page)
-        print(f"  offset={offset}: {len(page)} records (total: {len(results)})")
-        if len(page) < PAGE_SIZE:
-            break
-        offset += PAGE_SIZE
+def rippling_paginate(initial_url: str, initial_params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Cursor pagination via next_link, with host allowlist enforced on every URL."""
+    results: List[Dict[str, Any]] = []
+    next_url: Optional[str] = initial_url
+    next_params = initial_params
+    while next_url:
+        payload = rippling_get(next_url, params=next_params)
+        results.extend(payload.get("results", []))
+        next_url = payload.get("next_link")
+        next_params = None
     return results
 
 
+def find_everyone_group() -> Dict[str, Any]:
+    """Find the Everyone supergroup (server-side filter to real human-managed groups)."""
+    print(f"Searching Rippling for '{EVERYONE_GROUP_NAME}' supergroup ...")
+    groups = rippling_paginate(
+        f"{RIPPLING_BASE_URL}/supergroups/",
+        {"filter": "group_type eq 'Group'"},
+    )
+    for g in groups:
+        if (g.get("display_name") or g.get("name") or "") == EVERYONE_GROUP_NAME:
+            print(f"  Found '{EVERYONE_GROUP_NAME}' group id={g.get('id')}")
+            return g
+    raise RuntimeError(
+        f"Could not find supergroup '{EVERYONE_GROUP_NAME}'. "
+        f"Available (first 10): {[g.get('display_name') or g.get('name') for g in groups[:10]]}"
+    )
+
+
+def fetch_rippling_employees() -> List[Dict]:
+    """Fetch active employees by reading the Everyone supergroup's members."""
+    everyone = find_everyone_group()
+    everyone_id = everyone["id"]
+    print(f"Fetching members of {everyone_id} ...")
+    members = rippling_paginate(f"{RIPPLING_BASE_URL}/supergroups/{everyone_id}/members/", None)
+    print(f"  Got {len(members)} members")
+    return members
+
+
 def rippling_email(emp: Dict) -> Optional[str]:
-    """Extract the primary work email from a Rippling employee record."""
-    email = emp.get("workEmail") or emp.get("work_email") or emp.get("email") or ""
+    """Extract the primary work email from a Rippling member record."""
+    email = (
+        emp.get("work_email")
+        or emp.get("workEmail")
+        or emp.get("email")
+        or ""
+    )
     return email.strip().lower() or None
 
 
@@ -164,7 +220,6 @@ def fetch_okta_users() -> List[Dict]:
         "Authorization": f"SSWS {token}",
     }
     results: List[Dict] = []
-    # Only fetch ACTIVE users - deprovisioned/suspended are separate concern
     url = f"{org_url}/api/v1/users?filter=status+eq+%22ACTIVE%22&limit=200"
     print(f"Fetching active Okta users from {org_url}...")
     while url:
@@ -173,7 +228,6 @@ def fetch_okta_users() -> List[Dict]:
         page = resp.json()
         results.extend([u for u in page if isinstance(u, dict)])
         print(f"  fetched {len(page)} users (total: {len(results)})")
-        # Okta uses Link header for pagination
         url = None
         link_header = resp.headers.get("Link", "")
         for part in link_header.split(","):
@@ -185,39 +239,22 @@ def fetch_okta_users() -> List[Dict]:
 
 
 def okta_email(user: Dict) -> Optional[str]:
-    """Extract email from an Okta user record.
-
-    Handles two formats:
-      - Live Okta API: email is nested under profile.login / profile.email
-      - Paramify evidence JSON: email is a top-level field
-    """
-    # Top-level email (Paramify evidence format: admin_users / regular_users)
+    """Email lookup. Handles live API (profile.*) and Paramify evidence (top-level)."""
     if user.get("email"):
         return user["email"].strip().lower() or None
-    # Nested profile (live Okta API format)
     profile = user.get("profile", {})
     email = profile.get("login") or profile.get("email") or ""
     return email.strip().lower() or None
 
 
 def load_okta_from_evidence_file(path: str) -> List[Dict]:
-    """
-    Load Okta users from a Paramify evidence JSON file (e.g. okta_least_privilege.json).
-
-    Expected format:
-      data.admin_users[].email  (+ login, name, admin_type, ...)
-      data.regular_users[].email  (+ name, status, ...)
-
-    Returns a flat list of user dicts, each with at least an 'email' field.
-    """
+    """Read Okta users from a Paramify evidence artifact (no API token needed)."""
     with open(path, encoding="utf-8") as f:
         evidence = json.load(f)
-
     data = evidence.get("data", {})
     admin_users = data.get("admin_users", [])
     regular_users = data.get("regular_users", [])
     all_users = admin_users + regular_users
-
     print(f"Loaded Okta evidence from {path}")
     print(f"  {len(admin_users)} admin users, {len(regular_users)} regular users = {len(all_users)} total")
     return all_users
@@ -228,10 +265,6 @@ def load_okta_from_evidence_file(path: str) -> List[Dict]:
 # ---------------------------------------------------------------------------
 
 def build_gap(rippling_employees: List[Dict], okta_users: List[Dict]) -> Dict:
-    """
-    Compare the two lists by email and return a structured gap report.
-    """
-    # Build lookup sets (lowercased email as key)
     rippling_by_email: Dict[str, Dict] = {}
     for emp in rippling_employees:
         email = rippling_email(emp)
@@ -247,18 +280,13 @@ def build_gap(rippling_employees: List[Dict], okta_users: List[Dict]) -> Dict:
     rippling_emails: Set[str] = set(rippling_by_email.keys())
     okta_emails: Set[str] = set(okta_by_email.keys())
 
-    # Gap 1: Okta users NOT in Rippling (potential stale/orphaned accounts)
     in_okta_not_rippling = sorted(okta_emails - rippling_emails)
-    # Gap 2: Rippling employees NOT in Okta (missing SSO access)
     in_rippling_not_okta = sorted(rippling_emails - okta_emails)
-    # Matched: in both systems
     matched = sorted(rippling_emails & okta_emails)
 
     def okta_summary(email: str) -> Dict:
         u = okta_by_email[email]
         p = u.get("profile", {})
-        # Live API format: profile.firstName / profile.lastName
-        # Evidence file format: top-level "name" field (e.g. "Isaac Teuscher")
         first_name = p.get("firstName")
         last_name = p.get("lastName")
         if not first_name and not last_name:
@@ -274,15 +302,26 @@ def build_gap(rippling_employees: List[Dict], okta_users: List[Dict]) -> Dict:
             "status": u.get("status"),
             "created": u.get("created"),
             "last_login": u.get("lastLogin"),
+            "admin_type": u.get("admin_type"),
+            "is_super_admin": bool(u.get("is_super_admin")),
+            "api_token_name": u.get("api_token_name"),
         }
 
     def rippling_summary(email: str) -> Dict:
         e = rippling_by_email[email]
+        full_name = e.get("full_name") or ""
+        first_name = e.get("firstName") or e.get("first_name")
+        last_name = e.get("lastName") or e.get("last_name")
+        if not (first_name or last_name) and full_name:
+            parts = full_name.split(" ", 1)
+            first_name = parts[0] if parts else None
+            last_name = parts[1] if len(parts) > 1 else None
         return {
             "email": email,
-            "rippling_id": e.get("id"),
-            "first_name": e.get("firstName") or e.get("first_name"),
-            "last_name": e.get("lastName") or e.get("last_name"),
+            "rippling_id": e.get("id") or e.get("worker_id"),
+            "first_name": first_name,
+            "last_name": last_name,
+            "full_name": full_name or None,
             "role": e.get("roleState") or e.get("title") or e.get("jobTitle"),
             "department": e.get("department"),
             "start_date": e.get("startDate") or e.get("start_date"),
@@ -297,12 +336,8 @@ def build_gap(rippling_employees: List[Dict], okta_users: List[Dict]) -> Dict:
             "in_okta_not_in_rippling": len(in_okta_not_rippling),
             "in_rippling_not_in_okta": len(in_rippling_not_okta),
         },
-        # High-priority: these are active Okta accounts with no Rippling HR record
-        # Could be ex-employees, service accounts, or contractor accounts
         "in_okta_not_in_rippling": [okta_summary(e) for e in in_okta_not_rippling],
-        # Lower-priority: Rippling employees without Okta (may intentionally not need SSO)
         "in_rippling_not_in_okta": [rippling_summary(e) for e in in_rippling_not_okta],
-        # For reference: employees confirmed in both systems
         "matched_count": len(matched),
         "matched_emails": matched,
     }
@@ -318,7 +353,7 @@ def main() -> None:
     evidence_dir = Path(output_dir)
     evidence_dir.mkdir(parents=True, exist_ok=True)
 
-    # --- File 1: Rippling source of truth ---
+    # --- File 1: Rippling source of truth (from Everyone supergroup) ---
     rippling_path = evidence_dir / "rippling_current_employees.json"
     if rippling_path.exists():
         print(f"Reusing existing {rippling_path}")
@@ -330,8 +365,8 @@ def main() -> None:
         with rippling_path.open("w", encoding="utf-8") as f:
             json.dump({
                 "source": "rippling",
-                "endpoint": "/platform/api/employees",
-                "mode": "current_active",
+                "endpoint": f"/supergroups/<everyone-id>/members/",
+                "mode": "current_active_via_everyone_group",
                 "count": len(rippling_employees),
                 "results": rippling_employees,
             }, f, indent=2)
@@ -340,11 +375,9 @@ def main() -> None:
     # --- File 2: Okta source of truth ---
     okta_evidence_file = extra["okta_evidence_file"] or os.getenv("OKTA_EVIDENCE_FILE", "").strip() or None
     if okta_evidence_file:
-        # Evidence file mode: load from downloaded Paramify JSON (no API token needed)
         okta_users = load_okta_from_evidence_file(okta_evidence_file)
         mode_label = f"evidence_file:{Path(okta_evidence_file).name}"
     else:
-        # Live API mode: fetch directly from Okta
         okta_users = fetch_okta_users()
         mode_label = "live_api"
 
@@ -364,8 +397,10 @@ def main() -> None:
     with gap_path.open("w", encoding="utf-8") as f:
         json.dump(gap, f, indent=2)
 
-    # Avoid logging potentially sensitive summary statistics directly; refer to file instead.
     print(f"\n\u2713 Gap analysis completed. See {gap_path}")
+    print("\nSummary:")
+    for k, v in gap["summary"].items():
+        print(f"  {k}: {v}")
 
 
 if __name__ == "__main__":
