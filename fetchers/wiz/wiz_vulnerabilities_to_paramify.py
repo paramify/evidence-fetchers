@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Wiz Vulnerability Findings to Paramify Evidence Sets
 =====================================================
@@ -35,7 +36,7 @@ import json
 import os
 import hashlib
 from contextlib import closing
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -211,7 +212,7 @@ def save_state(config_hash: str, last_successful_run: str = None) -> None:
     existing = load_state() or {}
     state = {
         'config_hash': config_hash,
-        'last_run': datetime.now().isoformat(),
+        'last_run': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'last_successful_run': (
             last_successful_run
             if last_successful_run is not None
@@ -238,7 +239,8 @@ def get_token():
             'audience': 'wiz-api',
             'client_id': WIZ_CLIENT_ID,
             'client_secret': WIZ_CLIENT_SECRET,
-        }
+        },
+        timeout=30,
     )
     if response.status_code != 200:
         raise Exception(
@@ -263,7 +265,8 @@ def query_wiz(graphql_query: str, variables: dict) -> dict:
                 'Authorization': f'Bearer {global_token}',
                 'User-Agent': 'Paramify-WizIntegration-0.1',
             },
-            json={'query': graphql_query, 'variables': variables}
+            json={'query': graphql_query, 'variables': variables},
+            timeout=30,
         )
         code = response.status_code
         if code in (401, 403):
@@ -421,7 +424,7 @@ def flatten_vulnerability(node: dict) -> dict:
 # ============================================================
 def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
     """Upload CSV as a new artifact to a Paramify Evidence record."""
-    today = datetime.now()
+    today = datetime.now(timezone.utc)
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
     logging.info('  API:      %s', PARAMIFY_API_BASE_URL)
     logging.info('  Evidence: %s', WIZ_VULN_PARAMIFY_EVIDENCE_ID)
@@ -441,7 +444,8 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
                     "note": f"Automated upload via wiz-vulnerabilities-fetcher (mode={mode_label})",
                     "effectiveDate": today.isoformat(),
                 }),
-            }
+            },
+            timeout=120,
         )
     response.raise_for_status()
     # Evidence/Artifacts endpoint returns a single artifact object,
@@ -495,7 +499,7 @@ def main():
     if row_count == 0:
         logging.info('No vulnerabilities to upload (0 rows)')
         # Still update last_successful_run so next run picks up new changes
-        new_successful_run = datetime.now().isoformat()
+        new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         save_state(current_hash, last_successful_run=new_successful_run)
         logging.info('Updated last_successful_run: %s', new_successful_run)
         logging.info('=' * 60)
@@ -506,8 +510,10 @@ def main():
     # Step 5: Upload to Paramify
     upload_to_paramify(OUTPUT_CSV, mode_label)
 
-    # Step 6: Update last_successful_run after successful upload
-    new_successful_run = datetime.now().isoformat()
+    # Step 6: Update last_successful_run after successful upload.
+    # UTC ISO 8601 with 'Z' suffix matches Wiz's updatedAt format,
+    # so the delta filter in the next run compares correctly.
+    new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     save_state(current_hash, last_successful_run=new_successful_run)
     logging.info('Updated last_successful_run: %s', new_successful_run)
 
