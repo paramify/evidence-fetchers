@@ -16,18 +16,18 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## CED Family (Cybersecurity Education)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`KSI-CED-RAT`** | **`CED-01, CED-02, CED-03, CED-04`** | Security Awareness Training | [security_awareness_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/security_awareness_training.sh) | KnowBe4 | Automated |
-|  |  | Role Specific Training (High Risk) | [high_risk_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/high_risk_training.sh) | KnowBe4 | Automated |
-|  |  | Development and Engineering Training | [developer_specific_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/developer_specific_training.sh) | KnowBe4 | Automated |
-|  |  | Response and Recovery Training | [module_based_summary.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/module_based_summary.sh) | KnowBe4 | Automated |
+| **`KSI-CED-RAT`** | **`CED-01, CED-02, CED-03, CED-04`** | KnowBe4 Security Awareness Training | [security_awareness_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/security_awareness_training.sh) | KnowBe4 | Automated |
+|  |  | KnowBe4 Role Specific Training (High Risk) | [high_risk_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/high_risk_training.sh) | KnowBe4 | Automated |
+|  |  | KnowBe4 Development and Engineering Training | [developer_specific_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/developer_specific_training.sh) | KnowBe4 | Automated |
+|  |  | KnowBe4 Response and Recovery Training | [module_based_summary.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/module_based_summary.sh) | KnowBe4 | Automated |
 
 ---
 
 ## CMT Family (Change Management)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-CMT-LMC`** | **`CMT-01`** | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_merge_request_summary.py) | GitLab | Automated |
 |  |  | GitLab CI/CD Pipeline Configuration | [gitlab_ci_cd_pipeline_config.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_ci_cd_pipeline_config.py) | GitLab | Automated |
@@ -42,7 +42,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## CNA Family (Cloud-Native Architecture)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-CNA-RNT`** | **`CNA-01`** | Security Groups | [security_groups.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/security_groups.sh) | AWS | Automated |
 |  |  | WAF All Rules | [waf_all_rules.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/waf_all_rules.sh) | AWS WAF | Automated |
@@ -71,7 +71,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## IAM Family (Identity and Access Management)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-IAM-APM`** | **`IAM-01, IAM-02`** | Adopting Passwordless Methods | [okta_passwordless_authentication.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_passwordless_authentication.py) | Okta | Automated |
 |  |  | Okta Phishing Resistant MFA | [okta_phishing_resistant_mfa.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_phishing_resistant_mfa.py) | Okta | Automated |
@@ -97,7 +97,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## INR Family (Incident Response)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-INR-RIR`** | **`INR-01`** | Reviewing Incident Response Procedures | - | - | Manual |
 | **`KSI-INR-RPI`** | **`INR-02`** | Reviewing Past Incidents | [sentinelone_activities.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_activities.py) | SentinelOne | Automated |
@@ -107,7 +107,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## MLA Family (Monitoring, Logging and Auditing)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-MLA-OSM`** | **`MLA-01`** | Operating SIEM Capability | [sentinelone_cloud_detection_rules.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/sentinelone/sentinelone_cloud_detection_rules.py) | SentinelOne | Automated |
 |  |  | CloudTrail Configuration | [cloudtrail_configuration.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/cloudtrail_configuration.sh) | AWS CloudTrail | Automated |
@@ -125,7 +125,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## PIY Family (Policy and inventory)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-PIY-GIV`** | **`PIY-01`** | Generating Inventories | [detect_new_aws_resource.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/detect_new_aws_resource.sh) | AWS | Automated |
 |  |  | EKS Pod Inventory | [eks_pod_inventory.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/k8s/eks_pod_inventory.sh) | Kubernetes (EKS) | Automated |
@@ -141,7 +141,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## RPL Family (Recovery Planning)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-RPL-RRO`** | **`RPL-01`** | Reviewing Recovery Objectives | [backup_validation.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/backup_validation.sh) | AWS Backup | Automated |
 | **`KSI-RPL-ARP`** | **`RPL-02`** | Aligning Recovery Plan | [backup_recovery_high_availability.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/backup_recovery_high_availability.sh) | AWS Backup | Automated |
@@ -159,7 +159,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## SCR Family (Supply Chain Risk)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-SCR-MIT`** |  | Mitigating Supply Chain Risk | [checkov_terraform.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/checkov/checkov_terraform.sh) | Checkov (IaC Scanner) | Automated |
 | **`KSI-SCR-MON`** |  | Monitoring Supply Chain Risk | [guard_duty.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/guard_duty.sh) | AWS GuardDuty | Automated |
@@ -168,7 +168,7 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 ## SVC Family (Service Configuration)
 
-| KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
+| KSI ID (CR 2026) | Former KSI ID | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`KSI-SVC-EIS`** | **`SVC-01`** | GitLab Merge Request Summary | [gitlab_merge_request_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_merge_request_summary.py) | GitLab | Automated |
 |  |  | GitLab Project Summary | [gitlab_project_summary.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/gitlab/gitlab_project_summary.py) | GitLab | Automated |
