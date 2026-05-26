@@ -1,5 +1,5 @@
 # Paramify Fetchers Catalog
-[![Fetcher Count](https://img.shields.io/badge/Active_Fetchers-42_Scripts-blue)]() [![Compliance Status](https://img.shields.io/badge/Coverage-84%25_Automated-green)]()
+[![Fetcher Count](https://img.shields.io/badge/Active_Fetchers-42_Scripts-blue)]() [![Compliance Status](https://img.shields.io/badge/Coverage-85%25_Automated-green)]()
 
 Welcome to the **Paramify Fetchers Catalog**.
 
@@ -9,8 +9,8 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 | Status | Count | Percentage | Definition |
 | :--- | :--- | :--- | :--- |
-|  **Automated** | **42** | **84%** | Validated by a script in this repo. |
-|  **Manual** | **8** | **16%** | Validated by a pass or fail questionnaire.|
+|  **Automated** | **39** | **85%** | Validated by a script in this repo. |
+|  **Manual** | **7** | **15%** | Validated by a pass or fail questionnaire.|
 
 ---
 
@@ -18,10 +18,10 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`KSI-CED-RGT`** | **`CED-01`** | Security Awareness Training | [security_awareness_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/security_awareness_training.sh) | KnowBe4 | Automated |
-| **`KSI-CED-RST`** | **`CED-02`** | Role Specific Training (High Risk) | [high_risk_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/high_risk_training.sh) | KnowBe4 | Automated |
-| **`KSI-CED-DET`** | **`CED-03`** | Development and Engineering Training | [developer_specific_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/developer_specific_training.sh) | KnowBe4 | Automated |
-| **`KSI-CED-RRT`** | **`CED-04`** | Response and Recovery Training | - | - | Manual |
+| **`KSI-CED-RAT`** | **`CED-01, CED-02, CED-03, CED-04`** | Security Awareness Training | [security_awareness_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/security_awareness_training.sh) | KnowBe4 | Automated |
+|  |  | Role Specific Training (High Risk) | [high_risk_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/high_risk_training.sh) | KnowBe4 | Automated |
+|  |  | Development and Engineering Training | [developer_specific_training.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/developer_specific_training.sh) | KnowBe4 | Automated |
+|  |  | Response and Recovery Training | [module_based_summary.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/knowbe4/module_based_summary.sh) | KnowBe4 | Automated |
 
 ---
 
@@ -73,11 +73,11 @@ This repository contains the automated scripts ("fetchers") used to validate you
 
 | KSI ID (20x) | Former KSI ID name | Evidence Title | Fetcher Script | Source System | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`KSI-IAM-MFA`** | **`IAM-01`** | Okta Phishing Resistant MFA | [okta_phishing_resistant_mfa.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_phishing_resistant_mfa.py) | Okta | Automated |
+| **`KSI-IAM-APM`** | **`IAM-01, IAM-02`** | Adopting Passwordless Methods | [okta_passwordless_authentication.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_passwordless_authentication.py) | Okta | Automated |
+|  |  | Okta Phishing Resistant MFA | [okta_phishing_resistant_mfa.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_phishing_resistant_mfa.py) | Okta | Automated |
 |  |  | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_identity_center.sh) | AWS IAM Identity Center | Automated |
 |  |  | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_roles.sh) | AWS IAM | Automated |
 |  |  | IAM Users and Groups | [iam_users_groups.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_users_groups.sh) | AWS IAM | Automated |
-| **`KSI-IAM-APM`** | **`IAM-02`** | Adopting Passwordless Methods | [okta_passwordless_authentication.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_passwordless_authentication.py) | Okta | Automated |
 | **`KSI-IAM-SNU`** | **`IAM-03`** | Okta Non-User Accounts | [okta_non_user_accounts_authentication.py](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/okta/okta_non_user_accounts_authentication.py) | Okta | Automated |
 |  |  | IAM Identity Center | [iam_identity_center.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_identity_center.sh) | AWS IAM Identity Center | Automated |
 |  |  | IAM Roles | [iam_roles.sh](https://github.com/paramify/evidence-fetchers/blob/main/fetchers/aws/iam_roles.sh) | AWS IAM | Automated |
