@@ -587,15 +587,40 @@ def main() -> None:
 
     print(f"\n\u2713 Gap analysis completed. See {gap_path}")
     print("\nSummary:")
+
+    def _redact_for_logging(value: Any) -> Any:
+        sensitive_keys = {
+            "password",
+            "passphrase",
+            "token",
+            "api_token",
+            "api_token_name",
+            "secret",
+            "access_token",
+            "refresh_token",
+            "client_secret",
+        }
+        if isinstance(value, dict):
+            redacted: Dict[str, Any] = {}
+            for k, v in value.items():
+                if str(k).lower() in sensitive_keys:
+                    redacted[k] = "[REDACTED]"
+                else:
+                    redacted[k] = _redact_for_logging(v)
+            return redacted
+        if isinstance(value, list):
+            return [_redact_for_logging(v) for v in value]
+        return value
+
     for k, v in gap["summary"].items():
         if k == "okta_group_breakdown":
             continue  # Printed separately below
-        print(f"  {k}: {v}")
+        print(f"  {k}: {_redact_for_logging(v)}")
     breakdown = gap["summary"].get("okta_group_breakdown") or []
     if breakdown:
         print("\nOkta group breakdown:")
         for s in breakdown:
-            print(f"  {s}")
+            print(f"  {_redact_for_logging(s)}")
     print(f"\n{gap['least_privilege_narrative']}")
 
 
