@@ -454,7 +454,7 @@ def build_gap(rippling_employees: List[Dict], okta_users: List[Dict],
             "last_login": u.get("lastLogin"),
             "admin_type": u.get("admin_type"),
             "is_super_admin": bool(u.get("is_super_admin")),
-            "api_token_name": u.get("api_token_name"),
+            "api_token_name": "[REDACTED]" if u.get("api_token_name") else None,
             "is_service_account": email in service_account_emails,
         }
 
