@@ -177,14 +177,14 @@ while read -r cluster_name; do
           |
           if ($item.context.capabilities?.add // []) | length > 0 then .excessiveCapsContainers += [($item.container)] end
         )
-      )' > tmp_summary.json; then
+      )' > "$OUTPUT_DIR/tmp_summary.json"; then
         echo -e "${RED}Error: Failed to process security contexts for cluster $cluster_name${NC}"
         error_occurred=true
         continue
     fi
     
     # Update the main JSON file with the summary
-    if ! jq --slurpfile summary tmp_summary.json '.summary.least_privilege_summary = {
+    if ! jq --slurpfile summary "$OUTPUT_DIR/tmp_summary.json" '.summary.least_privilege_summary = {
         "total_containers": $summary[0].total,
         "run_as_non_root": $summary[0].runAsNonRoot,
         "allow_privilege_escalation_false": $summary[0].allowPrivilegeEscalationFalse,
@@ -193,12 +193,12 @@ while read -r cluster_name; do
         "privileged_containers": $summary[0].privilegedContainers,
         "missing_context_containers": $summary[0].missingContextContainers,
         "excessive_capabilities_containers": $summary[0].excessiveCapsContainers
-    }' "$OUTPUT_JSON" > tmp.json; then
+    }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON"; then
         echo -e "${RED}Error: Failed to update JSON summary for cluster $cluster_name${NC}"
         error_occurred=true
         continue
     fi
-    mv tmp.json "$OUTPUT_JSON"
+    mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
     # Add cluster data to results
     cluster_data=$(jq -n \
@@ -213,12 +213,12 @@ while read -r cluster_name; do
             "networkPolicies": $network
         }')
     
-    if ! jq --argjson cluster "$cluster_data" '.results += [$cluster]' "$OUTPUT_JSON" > tmp.json; then
+    if ! jq --argjson cluster "$cluster_data" '.results += [$cluster]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON"; then
         echo -e "${RED}Error: Failed to add cluster data to JSON for cluster $cluster_name${NC}"
         error_occurred=true
         continue
     fi
-    mv tmp.json "$OUTPUT_JSON"
+    mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
     # Generate formatted summary for this cluster
     formatted_summary=$(jq -r '
@@ -235,15 +235,15 @@ while read -r cluster_name; do
     ' "$OUTPUT_JSON")
     
     # Update JSON with formatted summary
-    if ! jq --arg summary "$formatted_summary" '.summary.formatted_summary = $summary' "$OUTPUT_JSON" > tmp.json; then
+    if ! jq --arg summary "$formatted_summary" '.summary.formatted_summary = $summary' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON"; then
         echo -e "${RED}Error: Failed to update formatted summary for cluster $cluster_name${NC}"
         error_occurred=true
         continue
     fi
-    mv tmp.json "$OUTPUT_JSON"
+    mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
     # Clean up temporary files
-    rm -f tmp_summary.json
+    rm -f "$OUTPUT_DIR/tmp_summary.json"
 done < <(echo "$clusters" | jq -r '.[]')
 
 # Check if any cluster was successfully processed

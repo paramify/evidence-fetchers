@@ -71,7 +71,7 @@ if [ "$(echo "$detectors" | jq 'length')" -gt 0 ]; then
         # Add detector details to unique JSON
         jq --arg id "$detector_id" \
            --argjson details "$detector_details" \
-           '.results.detector_details[$id] = $details' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+           '.results.detector_details[$id] = $details' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
         
         # Add to CSV
         status=$(echo "$detector_details" | jq -r '.Status // "DISABLED"')
@@ -81,7 +81,7 @@ else
 fi
 
 # Update detectors list in unique JSON
-jq --argjson detectors "$detectors" '.results.detectors = ($detectors // [])' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+jq --argjson detectors "$detectors" '.results.detectors = ($detectors // [])' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 
 
@@ -169,17 +169,17 @@ summary_detector_count=$(echo "$summary_json" | jq '.detectors | length')
 
 # Create overall summary JSON and combine with detector summaries
 if [ -n "$overall_data_sources" ]; then
-    echo "$overall_data_sources" > overall_data_sources.json
+    echo "$overall_data_sources" > "$OUTPUT_DIR/overall_data_sources.json"
     summary_json=$(echo "$summary_json" | jq --arg count "$summary_detector_count" \
         --arg health "$(if [ "$all_enabled" = true ]; then echo "HEALTHY"; else echo "REQUIRES_ATTENTION"; fi)" \
-        --slurpfile sources overall_data_sources.json \
+        --slurpfile sources "$OUTPUT_DIR/overall_data_sources.json" \
         '{
             detector_count: $count,
             health_status: $health,
             issues: (if $health == "REQUIRES_ATTENTION" then ["detectors_disabled"] else [] end),
             data_sources: $sources[0]
         } + .')
-    rm -f overall_data_sources.json
+    rm -f "$OUTPUT_DIR/overall_data_sources.json"
 else
     summary_json=$(echo "$summary_json" | jq --arg count "$summary_detector_count" \
         --arg health "$(if [ "$all_enabled" = true ]; then echo "HEALTHY"; else echo "REQUIRES_ATTENTION"; fi)" \
@@ -191,7 +191,7 @@ else
 fi
 
 # Update unique JSON with combined summary
-jq --argjson summary "$summary_json" '.results.summary = $summary' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+jq --argjson summary "$summary_json" '.results.summary = $summary' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 
 

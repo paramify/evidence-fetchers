@@ -103,7 +103,7 @@ echo "$fido2_config" | jq -c '.[]' | while read -r authenticator; do
         }')
         
         # Add analysis to results
-        jq --argjson auth "$auth_details" --argjson analysis "$analysis" '.results.fido2_config += [$auth + {"Analysis": $analysis}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        jq --argjson auth "$auth_details" --argjson analysis "$analysis" '.results.fido2_config += [$auth + {"Analysis": $analysis}]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
         
         # Print analysis results
@@ -133,7 +133,7 @@ echo "$applications" | jq -c '.[]' | while read -r app; do
         "$OKTA_ORG_URL/api/v1/apps/$app_id/policies" | jq '.')
     
     # Add application to results
-    jq --argjson app "$app" --argjson policies "$app_policies" '.results.applications += [$app + {"Policies": $policies}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson app "$app" --argjson policies "$app_policies" '.results.applications += [$app + {"Policies": $policies}]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 
@@ -162,7 +162,7 @@ echo "$enrollment_policies" | jq -c '.[]' | while read -r policy; do
     
     # Add policy to results
     jq --argjson policy "$policy" --argjson rules "$policy_rules" --arg has_pr "$has_phishing_resistant" \
-        '.results.enrollment_policies += [$policy + {"Rules": $rules, "HasPhishingResistantMFA": ($has_pr | test("true"))}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        '.results.enrollment_policies += [$policy + {"Rules": $rules, "HasPhishingResistantMFA": ($has_pr | test("true"))}]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 
@@ -185,7 +185,7 @@ for test_case in "${test_cases[@]}"; do
         "$OKTA_ORG_URL/api/v1/policies/simulate" | jq '.')
     
     # Add simulation result
-    jq --argjson result "$simulation_result" '.results.simulation_results += [$result]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson result "$simulation_result" '.results.simulation_results += [$result]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 

@@ -98,7 +98,7 @@ echo "$policies" | jq -c '.[]' | while read -r policy; do
         }')
     
     # Add to JSON
-    jq --argjson policy "$policy_info" '.results += [$policy]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson policy "$policy_info" '.results += [$policy]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 

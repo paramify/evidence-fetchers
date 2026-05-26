@@ -206,7 +206,7 @@ for campaign_name in "${DEVELOPER_CAMPAIGNS[@]}"; do
       '.[] | select(.name == $name)' | while read -r campaign; do
         jq --argjson campaign "$campaign" \
           '.results.developer_campaigns += [$campaign]' \
-          "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+          "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
     done
 done
 
@@ -222,13 +222,13 @@ while read -r group_json; do
         if [[ "$group_name" == *"$group"* ]]; then
             group_members=$(make_paginated_api_call "groups/$group_id/members")
             jq --arg name "$group_name" --arg id "$group_id" \
-               '.results.developer_groups += [{"name": $name, "id": $id}]' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+               '.results.developer_groups += [{"name": $name, "id": $id}]' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
             while read -r user_json; do
                 user_email=$(echo "$user_json" | jq -r '.email')
                 if [[ ! " ${developer_users[@]} " =~ " ${user_email} " ]]; then
                     developer_users+=("$user_email")
                     minimal_user=$(echo "$user_json" | jq '{id: .id, email: .email, status: .status}')
-                    jq --argjson user "$minimal_user" '.results.developer_users += [$user]' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+                    jq --argjson user "$minimal_user" '.results.developer_users += [$user]' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
                 fi
             done < <(echo "$group_members" | jq -c '.[] | select(.status == "active")')
             break
@@ -259,7 +259,7 @@ for email in "${developer_users[@]}"; do
         echo "$user_enrollments" | jq -c '.[] | del(.policy_acknowledged)' | while read -r e; do
             jq --argjson enrollment "$e" \
               '.results.enrollments += [$enrollment]' \
-              "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+              "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
         done
 
         if echo "$user_enrollments" | jq -e 'all(.status == "Passed")' >/dev/null; then
@@ -273,7 +273,7 @@ for email in "${developer_users[@]}"; do
 
     jq --arg email "$email" --arg status "$user_status" \
       '.results.user_training_status[$email] = $status' \
-      "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+      "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 done
 
 # Summary
@@ -307,7 +307,7 @@ jq --arg total "$total_developer_users" \
      "completion_rate": ($rate|tonumber),
      "total_campaigns": ($campaigns|tonumber),
      "total_groups": ($groups|tonumber)
-   }' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+   }' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 # Generate summary
 echo -e "\n${GREEN}Validation Summary:${NC}"

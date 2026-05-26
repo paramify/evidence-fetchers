@@ -67,7 +67,7 @@ if [ $? -ne 0 ] || [ -z "$trails" ] || [ "$trails" = "null" ] || [ "$trails" = "
 fi
 
 # Update trails list in unique JSON
-jq --argjson trails "$trails" '.results.trails = ($trails // [])' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+jq --argjson trails "$trails" '.results.trails = ($trails // [])' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 
 
@@ -112,12 +112,12 @@ if [ "$(echo "$trails" | jq 'length')" -gt 0 ]; then
         # Add trail details to unique JSON
         jq --arg name "$trail_name" \
            --argjson details "$trail_info" \
-           '.results.trail_details[$name] = $details' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+           '.results.trail_details[$name] = $details' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
         
         # Add trail status to unique JSON
         jq --arg name "$trail_name" \
            --argjson status "$trail_status" \
-           '.results.trail_status[$name] = $status' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+           '.results.trail_status[$name] = $status' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
         
         # Create trail summary JSON
         trail_summary=$(jq -n \
@@ -219,7 +219,7 @@ else
 fi
 
 # Update unique JSON with combined summary
-jq --argjson summary "$summary_json" '.results.summary = $summary' "$UNIQUE_JSON" > tmp.json && mv tmp.json "$UNIQUE_JSON"
+jq --argjson summary "$summary_json" '.results.summary = $summary' "$UNIQUE_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$UNIQUE_JSON"
 
 exit 0
 

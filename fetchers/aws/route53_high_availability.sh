@@ -68,7 +68,7 @@ if [ $? -eq 0 ]; then
         jq --argjson hc "$hc" \
            --argjson status "$hc_status" \
            '.results += [{"Type": "Route53_HealthCheck", "HealthCheckInfo": $hc, "Status": $status}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi

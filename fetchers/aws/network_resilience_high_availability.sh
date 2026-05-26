@@ -66,7 +66,7 @@ if [ $? -eq 0 ]; then
         # Add to JSON
         jq --argjson subnet "$subnet" \
            '.results += [{"Type": "VPC_Subnet", "SubnetInfo": $subnet}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi
@@ -85,7 +85,7 @@ if [ $? -eq 0 ]; then
         # Add to JSON
         jq --argjson nat "$nat" \
            '.results += [{"Type": "NAT_Gateway", "NATInfo": $nat}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi

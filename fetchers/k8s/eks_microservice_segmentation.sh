@@ -152,30 +152,30 @@ while read -r cluster_name; do
         }')
     
     # Add cluster data to results
-    if ! jq --argjson cluster "$cluster_data" '.results += [$cluster]' "$OUTPUT_JSON" > tmp.json; then
+    if ! jq --argjson cluster "$cluster_data" '.results += [$cluster]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON"; then
         echo -e "${RED}Error: Failed to add cluster data to JSON for cluster $cluster_name${NC}"
         error_occurred=true
         continue
     fi
-    mv tmp.json "$OUTPUT_JSON"
+    mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
     # Update summary counters
     if [ -n "$default_deny_policies" ]; then
-        jq '.summary.clusters.with_default_deny += 1' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        jq '.summary.clusters.with_default_deny += 1' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     fi
     
     if echo "$pod_resources" | grep -q "limits\|requests"; then
-        jq '.summary.clusters.with_resource_limits += 1' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        jq '.summary.clusters.with_resource_limits += 1' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     fi
     
     if [ -n "$security_group_policies" ]; then
-        jq '.summary.clusters.with_security_groups += 1' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        jq '.summary.clusters.with_security_groups += 1' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     fi
     
 done < <(echo "$clusters" | jq -r '.[]')
 
 # Update total clusters count
-jq --arg total "$(echo "$clusters" | jq -r '. | length')" '.summary.clusters.total = ($total | tonumber)' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+jq --arg total "$(echo "$clusters" | jq -r '. | length')" '.summary.clusters.total = ($total | tonumber)' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 # Check if any cluster was successfully processed
 if [ "$any_cluster_successful" = false ]; then

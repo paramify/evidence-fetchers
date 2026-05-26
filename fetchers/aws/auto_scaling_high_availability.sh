@@ -75,7 +75,7 @@ if [ $? -eq 0 ]; then
         jq --argjson asg "$asg" \
            --argjson instances "$asg_instances" \
            '.results += [{"Type": "AutoScalingGroup", "ASGInfo": $asg, "Instances": $instances}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi

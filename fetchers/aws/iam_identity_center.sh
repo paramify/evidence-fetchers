@@ -78,7 +78,7 @@ echo "$saml_providers" | jq -c '.[]' | while read -r provider; do
     provider_details=$(aws iam get-saml-provider --profile "$PROFILE" --saml-provider-arn "$provider_arn" --query 'SAMLProviderDocument' --output json)
     
     # Add provider to results
-    jq --arg arn "$provider_arn" --argjson details "$provider_details" '.results.iam_providers.saml += [{"Arn": $arn, "Details": $details}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --arg arn "$provider_arn" --argjson details "$provider_details" '.results.iam_providers.saml += [{"Arn": $arn, "Details": $details}]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 
@@ -95,7 +95,7 @@ echo "$oidc_providers" | jq -c '.[]' | while read -r provider; do
     provider_details=$(aws iam get-open-id-connect-provider --profile "$PROFILE" --open-id-connect-provider-arn "$provider_arn" --query 'OpenIDConnectProviderDocument' --output json)
     
     # Add provider to results
-    jq --arg arn "$provider_arn" --argjson details "$provider_details" '.results.iam_providers.oidc += [{"Arn": $arn, "Details": $details}]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --arg arn "$provider_arn" --argjson details "$provider_details" '.results.iam_providers.oidc += [{"Arn": $arn, "Details": $details}]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
 done
 
@@ -120,7 +120,7 @@ else
         echo -e "${BLUE}Processing Identity Center instance: $instance_id${NC}"
         
         # Add instance to results
-        jq --argjson instance "$instance" '.results.identity_center.instances += [$instance]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+        jq --argjson instance "$instance" '.results.identity_center.instances += [$instance]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
         # Add to CSV
 
@@ -140,7 +140,7 @@ else
             echo -e "${BLUE}Processing Identity Provider: $provider_id${NC}"
             
             # Add provider to results
-            jq --argjson provider "$provider" '.results.identity_center.identity_providers += [$provider]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+            jq --argjson provider "$provider" '.results.identity_center.identity_providers += [$provider]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
             
             # Add to CSV
         done
@@ -163,7 +163,7 @@ else
             
             if [ $? -eq 0 ] && [ ! -z "$permission_set_details" ]; then
                 # Add permission set to results
-                jq --argjson ps "$permission_set_details" '.results.identity_center.permission_sets += [$ps]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+                jq --argjson ps "$permission_set_details" '.results.identity_center.permission_sets += [$ps]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
                 
                 # Add to CSV
             else

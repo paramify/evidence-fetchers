@@ -97,7 +97,7 @@ for sg_id in $sg_ids; do
     done
     
     # Add group data to results
-    jq --argjson data "$group_data" '.results += [$data]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+    jq --argjson data "$group_data" '.results += [$data]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
     
     echo ""
 done

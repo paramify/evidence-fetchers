@@ -69,3 +69,7 @@ done
 
 # Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
+
+# Per-script temp file for safe atomic jq updates (same filesystem as OUTPUT_DIR,
+# unique per process to avoid collisions when scripts run in parallel).
+_FETCHER_TMP_JSON="$OUTPUT_DIR/.tmp.$$.json"

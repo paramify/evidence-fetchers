@@ -92,7 +92,7 @@ if [ $? -eq 0 ] && [ "$(echo "$clusters" | jq -r 'length')" -gt 0 ]; then
                                --argjson nodegroup "$nodegroup_info" \
                                --arg name "$nodegroup" \
                                '.results += [{"Type": "EKS_Cluster", "ClusterName": $name, "ClusterInfo": $cluster, "SubnetDetails": $subnets, "NodeGroupInfo": $nodegroup}]' \
-                               "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+                               "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
                             
                         fi
                     done
@@ -101,7 +101,7 @@ if [ $? -eq 0 ] && [ "$(echo "$clusters" | jq -r 'length')" -gt 0 ]; then
                     jq --argjson cluster "$cluster_info" \
                        --arg name "$cluster_name" \
                        '.results += [{"Type": "EKS_Cluster", "ClusterName": $name, "ClusterInfo": $cluster}]' \
-                       "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+                       "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
                     
                 fi
             else

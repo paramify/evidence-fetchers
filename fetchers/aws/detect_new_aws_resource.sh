@@ -93,7 +93,7 @@ jq --argjson recorders "$config_recorders" \
        "recorders": ($recorders // []),
        "status": ($status // []),
        "delivery_channels": ($channels // [])
-   }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+   }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 # 2. Check EventBridge rules
 echo -e "${BLUE}Checking EventBridge rules...${NC}"
@@ -123,7 +123,7 @@ if [ "$(echo "$rules" | jq 'length')" -gt 0 ]; then
                "rule": $rule,
                "targets": ($targets // []),
                "schedule": $schedule
-           }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
         # Add to CSV with actual schedule
     done
@@ -157,7 +157,7 @@ if [ "$(echo "$topics" | jq 'length')" -gt 0 ]; then
                '.results.sns.topics[$name] = {
                    "topic": $topic,
                    "subscriptions": ($subs // [])
-               }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+               }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
             
             # Add to CSV
         fi
@@ -188,7 +188,7 @@ if [ "$(jq -r '.results.eventbridge.rules | length' "$OUTPUT_JSON")" -gt 0 ]; th
            '.results.validation_results.interval_checks[$name] = {
                "status": $check,
                "schedule": $schedule
-           }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
         # Add to CSV
     done

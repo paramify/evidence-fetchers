@@ -82,7 +82,7 @@ if [ $? -eq 0 ]; then
            --argjson targets "$target_groups" \
            --argjson attrs "$lb_attributes" \
            '.results += [{"Type": "LoadBalancer", "LoadBalancerInfo": $lb, "AvailabilityZones": $azs, "TargetGroups": $targets, "Attributes": $attrs}]' \
-           "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+           "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
         
     done
 fi

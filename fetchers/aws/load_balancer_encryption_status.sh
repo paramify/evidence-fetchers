@@ -149,7 +149,7 @@ jq --arg alb_count "$alb_count" --arg alb_encrypted "$alb_encrypted" \
     .results.load_balancers.nlb.total = ($nlb_count | tonumber) |
     .results.load_balancers.nlb.encrypted = ($nlb_encrypted | tonumber) |
     .results.load_balancers.nlb.details = $nlb_details' \
-   "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+   "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 # Update summary in JSON
 jq --arg alb_count "$alb_count" --arg alb_encrypted "$alb_encrypted" \
@@ -160,7 +160,7 @@ jq --arg alb_count "$alb_count" --arg alb_encrypted "$alb_encrypted" \
       nlb_total: ($nlb_count | tonumber),
       nlb_encrypted: ($nlb_encrypted | tonumber),
       formatted_summary: ("ALB: " + $alb_encrypted + "/" + $alb_count + ", NLB: " + $nlb_encrypted + "/" + $nlb_count)
-   }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+   }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 # Calculate execution time
 end_time=$(date +%s.%N)

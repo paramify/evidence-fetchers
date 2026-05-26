@@ -54,7 +54,7 @@ s3_total=0
 s3_ssl_enforced=0
 
 # Create temporary file for S3 details
-echo "[]" > s3_details.json
+echo "[]" > "$OUTPUT_DIR/s3_details.json"
 
 for bucket in $s3_buckets; do
     s3_total=$((s3_total+1))
@@ -73,11 +73,11 @@ for bucket in $s3_buckets; do
     # Add to JSON array using jq
     jq --arg bucket "$bucket" --arg enforced "$enforced" --arg snippet "$snippet" \
        '. += [{"bucket": $bucket, "ssl_enforced": ($enforced == "true"), "policy_snippet": ($snippet | fromjson? // null)}]' \
-       s3_details.json > tmp.json && mv tmp.json s3_details.json
+       "$OUTPUT_DIR/s3_details.json" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_DIR/s3_details.json"
 done
 
 # Update main JSON with S3 details
-jq --slurpfile s3 s3_details.json '.results.s3 = $s3[0]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+jq --slurpfile s3 "$OUTPUT_DIR/s3_details.json" '.results.s3 = $s3[0]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 # 2. RDS SSL Enforcement
 rds_instances=$(aws rds describe-db-instances --profile "$PROFILE" --region "$REGION" | jq -r '.DBInstances[].DBInstanceIdentifier')
@@ -85,7 +85,7 @@ rds_total=0
 rds_ssl_enforced=0
 
 # Create temporary file for RDS details
-echo "[]" > rds_details.json
+echo "[]" > "$OUTPUT_DIR/rds_details.json"
 
 for db in $rds_instances; do
     rds_total=$((rds_total+1))
@@ -104,14 +104,14 @@ for db in $rds_instances; do
     # Add to JSON array using jq
     jq --arg db "$db" --arg enforced "$enforced" --argjson pgroups "$pg_json" \
        '. += [{"db_instance": $db, "ssl_enforced": ($enforced == "true"), "parameter_groups": $pgroups}]' \
-       rds_details.json > tmp.json && mv tmp.json rds_details.json
+       "$OUTPUT_DIR/rds_details.json" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_DIR/rds_details.json"
 done
 
 # Update main JSON with RDS details
-jq --slurpfile rds rds_details.json '.results.rds = $rds[0]' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+jq --slurpfile rds "$OUTPUT_DIR/rds_details.json" '.results.rds = $rds[0]' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 # Clean up temporary files
-rm -f s3_details.json rds_details.json
+rm -f "$OUTPUT_DIR/s3_details.json" "$OUTPUT_DIR/rds_details.json"
 
 # Summary
 jq --arg s3_total "$s3_total" --arg s3_ssl_enforced "$s3_ssl_enforced" \
@@ -123,7 +123,7 @@ jq --arg s3_total "$s3_total" --arg s3_ssl_enforced "$s3_ssl_enforced" \
       rds_ssl_enforced: ($rds_ssl_enforced|tonumber),
       formatted_summary: ("S3 Buckets: " + $s3_total + ", SSL Enforced: " + $s3_ssl_enforced + "\n" +
                          "RDS Instances: " + $rds_total + ", SSL Enforced: " + $rds_ssl_enforced + "\n")
-   }' "$OUTPUT_JSON" > tmp.json && mv tmp.json "$OUTPUT_JSON"
+   }' "$OUTPUT_JSON" > "$_FETCHER_TMP_JSON" && mv "$_FETCHER_TMP_JSON" "$OUTPUT_JSON"
 
 # Add to CSV with formatted summary
 
