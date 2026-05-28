@@ -99,7 +99,7 @@ Wiz tenants are deployed across multiple regions and the auth + API endpoints di
 
 1. Sign in to Paramify.
 2. Navigate to the program where Wiz Issues should be tracked.
-3. Open or create a **Vulnerability Assessment**.
+3. Open or create a **Configuration**.
 4. Copy the Assessment UUID from the URL or settings.
 5. Set `WIZ_PARAMIFY_ASSESSMENT_ID` to that UUID.
 
