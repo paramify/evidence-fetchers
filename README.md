@@ -143,7 +143,7 @@ Each integration folder contains an `API_KEY_SETUP.md` with credential setup and
 | KnowBe4 | [fetchers/knowbe4/API_KEY_SETUP.md](fetchers/knowbe4/API_KEY_SETUP.md) | `KNOWBE4_API_KEY`, `KNOWBE4_REGION` |
 | Okta | [fetchers/okta/API_KEY_SETUP.md](fetchers/okta/API_KEY_SETUP.md) | `OKTA_ORG_URL`, `OKTA_API_TOKEN` |
 | GitLab | [fetchers/gitlab/API_KEY_SETUP.md](fetchers/gitlab/API_KEY_SETUP.md) | `GITLAB_URL`, `GITLAB_API_TOKEN` |
-| Rippling | [fetchers/rippling/API_KEY_SETUP.md](fetchers/rippling/API_KEY_SETUP.md) | `RIPPLING_API_TOKEN` |
+| Rippling | [fetchers/rippling/API_KEY_SETUP.md](fetchers/rippling/API_KEY_SETUP.md) | `RIPPLING_API_TOKEN`, `RIPPLING_BASE_URL`, `RIPPLING_PARAMIFY_EVIDENCE_ID` |
 | Checkov | [fetchers/checkov/API_KEY_SETUP.md](fetchers/checkov/API_KEY_SETUP.md) | `GITLAB_URL`, `GITLAB_API_TOKEN` (+ `CHECKOV_*`) |
 | SSL Labs | [fetchers/ssllabs/API_KEY_SETUP.md](fetchers/ssllabs/API_KEY_SETUP.md) | `SSLLABS_EMAIL`, `SSLLABS_HOSTS` |
-| Wiz | [fetchers/wiz/API_KEY_SETUP.md](fetchers/wiz/API_KEY_SETUP.md) | `SSLLABS_EMAIL`, `SSLLABS_HOSTS` |
+| Wiz | [fetchers/wiz/API_KEY_SETUP.md](fetchers/wiz/API_KEY_SETUP.md) | `WIZ_CLIENT_ID`, `WIZ_CLIENT_SECRET`, `WIZ_AUTH_URL`, `WIZ_API_ENDPOINT` |
