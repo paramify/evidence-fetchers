@@ -21,8 +21,8 @@ All Wiz fetchers in this folder require Wiz Service Account credentials plus a P
 
 ## Fetchers Covered
 
-- `wiz_to_paramify.py` — Wiz Issues → Paramify Vulnerability Assessment Intake
-- `wiz_vulnerabilities_to_paramify.py` — Wiz Vulnerability Findings → Paramify Evidence Sets
+- `wiz_to_paramify.py`
+- `wiz_vulnerabilities_to_paramify.py`
 
 ## API Endpoints Used
 
