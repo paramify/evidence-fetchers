@@ -93,8 +93,6 @@ curl -s -H "Accept: application/json" \
 
 ## Notes
 
-- Rippling tokens are sent with `Authorization: Bearer <token>` (not `SSWS` like Okta).
-- Cursor-based pagination via `next_link` is followed automatically.
 - Cross-reference scripts (`rippling_vs_knowbe4_training.py`, `rippling_vs_okta_users.py`) call the Rippling live API by default. They also support an offline file mode: set `RIPPLING_EVIDENCE_FILE` to read a previously downloaded Paramify Rippling artifact instead of calling the live API. Same pattern applies to the Okta and KnowBe4 sides via `OKTA_EVIDENCE_FILE` and `KB4_EVIDENCE_FILE`. File mode is useful for replaying against a fixed snapshot, avoiding rate limits, or running without the token loaded.
 - `RIPPLING_BASE_URL` is HTTPS-only and host-allowlisted (`rest.ripplingapis.com`, `api.rippling.com`) to prevent the bearer token from being sent to an attacker-controlled host. Redirects on API calls are refused for the same reason.
 - Per Paramify orchestrator convention, fetcher scripts do not upload to Paramify themselves. Run `python 4-upload-to-paramify/upload_to_paramify.py` (or the orchestrator at `3-run-fetchers/run_fetchers.py`) to push artifacts to the evidence record identified by `RIPPLING_PARAMIFY_EVIDENCE_ID`.
