@@ -56,7 +56,7 @@ WIZ_AUTH_URL = os.environ['WIZ_AUTH_URL']
 WIZ_API_ENDPOINT = os.environ['WIZ_API_ENDPOINT']
 
 PARAMIFY_API_BASE_URL = os.environ['PARAMIFY_API_BASE_URL']
-PARAMIFY_API_TOKEN = os.environ['PARAMIFY_API_TOKEN']
+PARAMIFY_API_ISSUES_TOKEN = os.environ['PARAMIFY_API_ISSUES_TOKEN']
 WIZ_VULN_PARAMIFY_EVIDENCE_ID = os.environ['WIZ_VULN_PARAMIFY_EVIDENCE_ID']
 
 # ============================================================
