@@ -8,7 +8,7 @@ All Rippling fetchers in this folder use the Rippling REST API with Bearer authe
 |---|---:|---|---|
 | `RIPPLING_API_TOKEN` | Yes | Rippling REST API token (used with `Authorization: Bearer ...`) | `rpl_pat_...` |
 | `RIPPLING_BASE_URL` | yes | Rippling REST API base URL (default `https://rest.ripplingapis.com`) | `https://rest.ripplingapis.com` |
-| `RIPPLING_API_VERSION` | yes | Rippling API version date (default `2024-01-31`) | `2024-01-31` |
+| `RIPPLING_API_VERSION` | no | Rippling API version date (default `2024-01-31`) | `2024-01-31` |
 | `RIPPLING_PAGE_SIZE` | No | Results per page for paginated endpoints (default `100`) | `100` |
 | `RIPPLING_PARAMIFY_EVIDENCE_ID` | Yes  | Paramify evidence record UUID where Rippling artifacts are uploaded by the orchestrator | `04726592-06f5-4ec5-a837-5d91116c14e6` |
 
