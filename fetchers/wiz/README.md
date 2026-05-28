@@ -45,7 +45,7 @@ In your Wiz console:
    - `read:threat_issues` — Required by Wiz Reports API
 4. Save the **Client ID** and **Client Secret**
 
-> **Note: Your Wiz Issues are not modified**Collapse commentComment on line L48iteuscher commented on May 27, 2026 iteuscheron May 27, 2026CollaboratorMore actionsI think these kind of comments would be nice. At least some of them to illustrate that it is only read on issues and the update and create is just issue reports not issues themselvesReactWrite a replyResolve comment
+> **Note: Your Wiz Issues are not modified**
 
 > This fetcher only **reads** Issues and manages **Report configurations**.
 
