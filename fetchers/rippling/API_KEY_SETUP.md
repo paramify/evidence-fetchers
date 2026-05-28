@@ -11,9 +11,6 @@ All Rippling fetchers in this folder use the Rippling REST API with Bearer authe
 | `RIPPLING_API_VERSION` | yes | Rippling API version date (default `2024-01-31`) | `2024-01-31` |
 | `RIPPLING_PAGE_SIZE` | No | Results per page for paginated endpoints (default `100`) | `100` |
 | `RIPPLING_PARAMIFY_EVIDENCE_ID` | Yes  | Paramify evidence record UUID where Rippling artifacts are uploaded by the orchestrator | `04726592-06f5-4ec5-a837-5d91116c14e6` |
-| `RIPPLING_MEMBER_SLEEP` | No | Seconds between supergroup-member calls to stay under rate limits (default `0.05`) | `0.05` |
-| `RIPPLING_EVERYONE_GROUP` | No | Name of the "all employees" supergroup (default `Everyone`) | `Everyone` |
-| `RIPPLING_EVIDENCE_FILE` | No | Path to a downloaded Paramify Rippling artifact; when set, cross-reference scripts skip the live API and read this file instead | `evidence/rippling_from_paramify.json` |
 
 ## Fetchers Covered
 
