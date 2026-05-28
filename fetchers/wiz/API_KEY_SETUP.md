@@ -142,7 +142,6 @@ Wiz tenants are deployed across multiple regions and the auth + API endpoints di
 
 ## Notes
 
-- Wiz Gov tenants do **not** accept `compressionMethod: GZIP` in the `CreateReport` mutation, even though Wiz docs list it as a field. The `wiz_to_paramify.py` fetcher omits this field for cross-tenant compatibility.
 - The Vulnerabilities fetcher uses cursor-based GraphQL pagination (`first` + `after` + `pageInfo.endCursor`) at `PAGE_SIZE=100`. Large tenants may produce many pages and take several minutes.
 - Both fetchers persist state to disk next to the script (`state.json` for Issues, `vuln_state.json` for Vulnerabilities). State files contain a Wiz report ID / config hash / `last_successful_run` timestamp; treat them like operational data and do not commit them to source control.
 - The Vulnerabilities fetcher uses the Wiz `VulnerabilityFindings` GraphQL endpoint, which Wiz documents as intended for **incremental** delta updates. For large initial imports, expect the first full run to be the slowest.
