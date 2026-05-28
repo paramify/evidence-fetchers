@@ -146,3 +146,4 @@ Each integration folder contains an `API_KEY_SETUP.md` with credential setup and
 | Rippling | [fetchers/rippling/API_KEY_SETUP.md](fetchers/rippling/API_KEY_SETUP.md) | `RIPPLING_API_TOKEN` |
 | Checkov | [fetchers/checkov/API_KEY_SETUP.md](fetchers/checkov/API_KEY_SETUP.md) | `GITLAB_URL`, `GITLAB_API_TOKEN` (+ `CHECKOV_*`) |
 | SSL Labs | [fetchers/ssllabs/API_KEY_SETUP.md](fetchers/ssllabs/API_KEY_SETUP.md) | `SSLLABS_EMAIL`, `SSLLABS_HOSTS` |
+| Wiz | [fetchers/wiz/API_KEY_SETUP.md](fetchers/wiz/API_KEY_SETUP.md) | `SSLLABS_EMAIL`, `SSLLABS_HOSTS` |
