@@ -131,7 +131,7 @@ OKTA_ORG_URL=https://your-org.okta.com
 - [`FedRAMP 20x KSIs <-> Fetchers Catalog`](fetchers/Paramify%20Fetchers%20Catalog.md)
 
   
-## API Setup GuidesCollapse commentComment on line L131iteuscher commented on May 27, 2026 iteuscheron May 27, 2026CollaboratorMore actionsLets keep this in the readme. And add the instructions for Wiz and Rippling API token creation to the list.ReactWrite a replyResolve comment
+## API Setup Guides
 
 Each integration folder contains an `API_KEY_SETUP.md` with credential setup and rotation instructions. If you’re adding a new integration, start from the [template](docs/api-setup/_TEMPLATE.md).
 
