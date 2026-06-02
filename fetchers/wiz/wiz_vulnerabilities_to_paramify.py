@@ -11,6 +11,7 @@ Behavior:
   - Subsequent runs (if state.json has last_successful_run):
     - Uses updatedAt.after filter to only fetch changed vulnerabilities
     - "Delta updates" pattern recommended by Wiz docs
+  - If DELTA_MODE=false: always fetches ALL vulnerabilities (ignores saved state)
   - Streams paginated results, writes to a single CSV locally
   - Uploads CSV as an Artifact under a Paramify Evidence record
     via POST /evidence/{evidenceId}/artifacts/upload
@@ -55,9 +56,13 @@ WIZ_CLIENT_SECRET = os.environ['WIZ_CLIENT_SECRET']
 WIZ_AUTH_URL = os.environ['WIZ_AUTH_URL']
 WIZ_API_ENDPOINT = os.environ['WIZ_API_ENDPOINT']
 
-PARAMIFY_API_BASE_URL = os.environ['PARAMIFY_API_BASE_URL']
+PARAMIFY_API_ISSUES_BASE_URL = os.environ['PARAMIFY_API_ISSUES_BASE_URL']
 PARAMIFY_API_ISSUES_TOKEN = os.environ['PARAMIFY_API_ISSUES_TOKEN']
 WIZ_VULN_PARAMIFY_EVIDENCE_ID = os.environ['WIZ_VULN_PARAMIFY_EVIDENCE_ID']
+
+# Delta mode: when False, always fetch ALL vulnerabilities (ignores saved state).
+# When True (default), use last_successful_run from state for incremental fetches.
+DELTA_MODE = os.environ.get('DELTA_MODE', 'true').lower() == 'true'
 
 # ============================================================
 # File paths
@@ -426,13 +431,13 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
     """Upload CSV as a new artifact to a Paramify Evidence record."""
     today = datetime.now(timezone.utc)
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
-    logging.info('  API:      %s', PARAMIFY_API_BASE_URL)
+    logging.info('  API:      %s', PARAMIFY_API_ISSUES_BASE_URL)
     logging.info('  Evidence: %s', WIZ_VULN_PARAMIFY_EVIDENCE_ID)
     with open(csv_path, 'rb') as f:
         response = requests.post(
-            f"{PARAMIFY_API_BASE_URL}/evidence/{WIZ_VULN_PARAMIFY_EVIDENCE_ID}/artifacts/upload",
+            f"{PARAMIFY_API_ISSUES_BASE_URL}/evidence/{WIZ_VULN_PARAMIFY_EVIDENCE_ID}/artifacts/upload",
             headers={
-                "Authorization": f"Bearer {PARAMIFY_API_TOKEN}",
+                "Authorization": f"Bearer {PARAMIFY_API_ISSUES_TOKEN}",
                 "Accept": "application/json",
             },
             files={
@@ -468,6 +473,7 @@ def main():
     )
     logging.info('=' * 60)
     logging.info('Wiz Vulnerabilities to Paramify Fetcher')
+    logging.info('  DELTA_MODE: %s', DELTA_MODE)
     logging.info('=' * 60)
 
     # Step 1: Authenticate to Wiz
@@ -483,13 +489,15 @@ def main():
     # Step 3: Load state to decide full vs delta
     state = load_state()
     last_successful_run = None
-    if state:
+    if DELTA_MODE and state:
         saved_hash = state.get('config_hash')
         if saved_hash != current_hash:
             logging.info('Config changed (was %s, now %s) - falling back to full fetch',
                          saved_hash, current_hash)
         else:
             last_successful_run = state.get('last_successful_run')
+    elif not DELTA_MODE:
+        logging.info('DELTA_MODE=false - forcing full fetch (ignoring saved state)')
 
     mode_label = 'delta' if last_successful_run else 'full'
 
