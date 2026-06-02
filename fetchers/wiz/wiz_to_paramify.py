@@ -56,7 +56,7 @@ WIZ_API_ENDPOINT = os.environ['WIZ_API_ENDPOINT']
 
 PARAMIFY_API_ISSUES_BASE_URL = os.environ['PARAMIFY_API_ISSUES_BASE_URL']
 PARAMIFY_API_ISSUES_TOKEN = os.environ['PARAMIFY_API_ISSUES_TOKEN']
-WIZ_PARAMIFY_ASSESSMENT_ID = os.environ['WIZ_PARAMIFY_ASSESSMENT_ID']
+WIZ_ISSUES_PARAMIFY_EVIDENCE_ID = os.environ['WIZ_ISSUES_PARAMIFY_EVIDENCE_ID']
 
 # Delta mode: when True, filter CSV to only changed issues
 DELTA_MODE = os.environ.get('DELTA_MODE', 'false').lower() == 'true'
@@ -74,7 +74,6 @@ REPORT_CONFIG = {
     "name": "Paramify-Wiz-Fetcher",
     "type": "ISSUES",
     "projectId": "*",
-    "compressionMethod": "GZIP",
     "issueParams": {
         "type": "DETAILED",
         "issueFilters": {
@@ -379,13 +378,13 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
     """Upload CSV to Paramify Vulnerability Assessment Intake API."""
     today = datetime.now(timezone.utc)
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
-    logging.info('  API:        %s', PARAMIFY_API_BASE_URL)
-    logging.info('  Assessment: %s',WIZ_PARAMIFY_ASSESSMENT_ID)
+    logging.info('  API:        %s', PARAMIFY_API_ISSUES_BASE_URL)
+    logging.info('  Assessment: %s', WIZ_ISSUES_PARAMIFY_EVIDENCE_ID)
     with open(csv_path, 'rb') as f:
         response = requests.post(
-            f"{PARAMIFY_API_BASE_URL}/assessment/{WIZ_PARAMIFY_ASSESSMENT_ID}/intake",
+            f"{PARAMIFY_API_ISSUES_BASE_URL}/assessment/{WIZ_ISSUES_PARAMIFY_EVIDENCE_ID}/intake",
             headers={
-                "Authorization": f"Bearer {PARAMIFY_API_TOKEN}",
+                "Authorization": f"Bearer {PARAMIFY_API_ISSUES_TOKEN}",
                 "Accept": "application/json",
             },
             files={
