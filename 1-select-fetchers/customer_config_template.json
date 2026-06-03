@@ -82,6 +82,24 @@
           "checkov_terraform",
           "checkov_kubernetes"
         ]
+      },
+      "datadog": {
+        "enabled": false,
+        "selected_scripts": [
+          "datadog_siem_detection_rules",
+          "datadog_siem_signals",
+          "datadog_siem_configuration",
+          "datadog_log_pipelines",
+          "datadog_log_indexes",
+          "datadog_log_archives",
+          "datadog_monitors_list",
+          "datadog_agent_hosts",
+          "datadog_apm_services",
+          "datadog_incidents_list",
+          "datadog_incident_timelines",
+          "datadog_infra_agent_checks",
+          "datadog_containers"
+        ]
       }
     },
     "customization_notes": {
