@@ -84,7 +84,8 @@ evidence-fetchers/
 │   ├── gitlab/               # GitLab scripts (3 available)
 │   ├── rippling/             # Rippling scripts (2 available)
 │   ├── checkov/              # Checkov scripts (2 available)
-│   └── ssllabs/              # Qualys SSL Labs API scripts (1 available)
+│   ├── ssllabs/              # Qualys SSL Labs API scripts (1 available)
+│   └── wiz/                  # Wiz scripts (2 available)
 ├── 0-prerequisites/          # Setup and dependencies
 ├── 1-select-fetchers/        # Fetcher selection
 ├── 2-create-evidence-sets/   # Create evidence sets in Paramify
