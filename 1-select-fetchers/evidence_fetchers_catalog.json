@@ -1995,6 +1995,59 @@
             ]
           }
         }
+      },
+      "wiz": {
+        "name": "Wiz",
+        "description": "Wiz cloud security platform evidence collection — security issues and CVE vulnerability findings for compliance automation",
+        "access_method": "Wiz API via Service Account credentials",
+        "access_method_description": "The Wiz fetcher scripts authenticate via OAuth client credentials flow using WIZ_CLIENT_ID and WIZ_CLIENT_SECRET. Set WIZ_AUTH_URL to your tenant auth endpoint and WIZ_API_ENDPOINT to your GraphQL endpoint. Each fetcher uploads directly to a Paramify Vulnerability Assessment using PARAMIFY_API_ISSUES_TOKEN.",
+        "logo": "",
+        "scripts": {
+          "wiz_issues_report": {
+            "script_file": "fetchers/wiz/wiz_issues_report.py",
+            "name": "Wiz Security Issues",
+            "description": "Fetches Wiz security issues report via GraphQL and uploads it to a Paramify Vulnerability Assessment",
+            "id": "EVD-WIZ-ISSUES",
+            "instructions": "Script: wiz_issues_report.py. Authenticates to Wiz via OAuth client credentials, creates or reruns a security issues report, polls until complete, downloads the CSV, and uploads it to the configured Paramify Vulnerability Assessment (WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID). Supports DELTA_MODE=true for incremental uploads based on Status Changed At timestamp.",
+            "dependencies": [
+              "python3",
+              "requests",
+              "python-dotenv"
+            ],
+            "tags": [
+              "wiz",
+              "security",
+              "issues",
+              "cspm",
+              "vulnerability-management"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
+          },
+          "wiz_vulnerabilities_findings": {
+            "script_file": "fetchers/wiz/wiz_vulnerabilities_findings.py",
+            "name": "Wiz Vulnerability Findings",
+            "description": "Fetches Wiz CVE vulnerability findings via paginated GraphQL and uploads them to a Paramify Vulnerability Assessment",
+            "id": "EVD-WIZ-VULN",
+            "instructions": "Script: wiz_vulnerabilities_findings.py. Authenticates to Wiz via OAuth client credentials, queries VulnerabilityFindings with cursor-based pagination (100 per page), writes a CSV, and uploads it to the configured Paramify Vulnerability Assessment (WIZ_VULN_PARAMIFY_ASSESSMENT_ID). Supports DELTA_MODE=true for incremental updates using the updatedAt filter.",
+            "dependencies": [
+              "python3",
+              "requests",
+              "python-dotenv"
+            ],
+            "tags": [
+              "wiz",
+              "cve",
+              "vulnerabilities",
+              "cspm",
+              "vulnerability-management"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
+          }
+        }
       }
     }
   }
