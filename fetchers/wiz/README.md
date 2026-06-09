@@ -133,7 +133,6 @@ The Wiz CSV columns are mapped to Paramify fields automatically by the mechanism
 | Created At | → | Effective Date |
 | Resolved Time | → | Date Closed |
 | Remediation Recommendation | → | Recommendation |
-| Resource external ID | → | Asset Identifier |
 | Severity | → | Original Risk Level |
 
 ### Severity Mapping
