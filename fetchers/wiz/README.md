@@ -26,7 +26,7 @@ cp .env.example .env
 chmod 600 .env
 
 # 4. Run
-python3 wiz_to_paramify.py
+python3 wiz_issues_report.py
 ```
 
 ## Setup
@@ -94,7 +94,7 @@ Edit `.env` with your actual values (see [Configuration](#configuration) below).
 ### Step 5: First Run
 
 ```bash
-python3 wiz_to_paramify.py
+python3 wiz_issues_report.py
 ```
 
 The first run will:
@@ -152,7 +152,7 @@ Wiz uses 5 severity levels; Paramify uses 5:
 
 ### Each Fetcher Run
 
-After `python3 wiz_to_paramify.py` completes successfully:
+After `python3 wiz_issues_report.py` completes successfully:
 
 1. Open your Vulnerability Assessment cycle in Paramify
 2. Click **Run Intake Workflow**
