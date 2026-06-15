@@ -1514,48 +1514,101 @@
       },
       "rippling": {
         "name": "Rippling",
-        "description": "Rippling HR evidence collection scripts",
+        "description": "Rippling HR cross-reference evidence fetchers (supergroups API)",
         "access_method": "Rippling API via Bearer Token",
-        "access_method_description": "The evidence fetcher scripts use the Rippling REST API which requires the RIPPLING_API_TOKEN environment variable. Authentication uses Bearer token authorization (same pattern as OKTA_API_TOKEN).",
+        "access_method_description": "On wiz-rippling, Rippling fetchers use the supergroups REST API (GET /supergroups/.../members/) with RIPPLING_API_TOKEN (supergroups.read). KnowBe4 cross-reference uses a downloaded Paramify artifact via KB4_EVIDENCE_FILE rather than live KnowBe4 API calls.",
         "logo": "fetchers/logos/rippling.svg",
         "scripts": {
-          "rippling_current_employees": {
-            "script_file": "fetchers/rippling/rippling_current_employees.py",
-            "name": "Rippling Current Employees",
-            "description": "Evidence for list of current active employees from Rippling",
-            "id": "EVD-RIPPLING-CURRENT-EMPLOYEES",
-            "instructions": "Script: rippling_current_employees.py. Commands executed: curl GET /platform/api/employees with limit/offset pagination",
+          "rippling_vs_okta_users": {
+            "script_file": "fetchers/rippling/rippling_vs_okta_users.py",
+            "name": "Rippling vs Okta Users",
+            "description": "Cross-reference Rippling Everyone supergroup members against Okta users for access review evidence",
+            "id": "EVD-RIPPLING-VS-OKTA-USERS",
+            "instructions": "Script: rippling_vs_okta_users.py. Rippling: GET /supergroups/ (Everyone group) and GET /supergroups/{id}/members/. Okta: live API or OKTA_EVIDENCE_FILE. Outputs rippling_current_employees.json, okta_all_users.json, rippling_vs_okta_gap.json.",
             "dependencies": [
               "python3",
-              "curl"
+              "requests"
             ],
             "tags": [
               "hr",
               "rippling",
-              "employees",
-              "current",
-              "completeness"
+              "okta",
+              "access-review",
+              "cross-reference",
+              "supergroups"
             ],
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": []
           },
-          "rippling_all_employees": {
-            "script_file": "fetchers/rippling/rippling_all_employees.py",
-            "name": "Rippling All Employees",
-            "description": "Evidence for list of all employees from Rippling including terminated",
-            "id": "EVD-RIPPLING-ALL-EMPLOYEES",
-            "instructions": "Script: rippling_all_employees.py. Commands executed: curl GET /platform/api/employees/include_terminated with limit/offset pagination",
+          "rippling_vs_knowbe4_training": {
+            "script_file": "fetchers/rippling/rippling_org_structure.py",
+            "name": "Rippling vs KnowBe4 Training",
+            "description": "Cross-reference Rippling Everyone supergroup members against KnowBe4 training enrollments",
+            "id": "EVD-RIPPLING-VS-KNOWBE4-TRAINING",
+            "instructions": "Script: rippling_org_structure.py (catalog id rippling_vs_knowbe4_training). Rippling: RIPPLING_EVIDENCE_FILE and/or live supergroups API. KnowBe4: KB4_EVIDENCE_FILE (required) path to downloaded module_based_summary JSON. Output: rippling_vs_knowbe4_training.json.",
             "dependencies": [
               "python3",
-              "curl"
+              "requests"
             ],
             "tags": [
               "hr",
               "rippling",
-              "employees",
-              "terminated",
-              "completeness"
+              "knowbe4",
+              "training",
+              "cross-reference",
+              "supergroups"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
+          }
+        }
+      },
+      "wiz": {
+        "name": "Wiz",
+        "description": "Wiz security findings and vulnerability assessment evidence fetchers",
+        "access_method": "Wiz API (OAuth client credentials) + Paramify API",
+        "access_method_description": "The Wiz fetchers authenticate to Wiz using OAuth client credentials (WIZ_CLIENT_ID/WIZ_CLIENT_SECRET) and pull data from the Wiz GraphQL API (WIZ_API_ENDPOINT). They also upload evidence to Paramify using Paramify API credentials.",
+        "logo": "fetchers/logos/wiz.svg",
+        "scripts": {
+          "wiz_to_paramify": {
+            "script_file": "fetchers/wiz/wiz_to_paramify.py",
+            "name": "Wiz Issues to Paramify",
+            "description": "Pulls Issues from Wiz and uploads them to a Paramify Vulnerability Assessment cycle",
+            "id": "EVD-WIZ-ISSUES-TO-PARAMIFY",
+            "instructions": "Script: wiz_to_paramify.py. Authenticates with Wiz OAuth, generates/refreshes a Wiz Issues report, downloads the CSV, and uploads it to Paramify Vulnerability Assessment Intake API.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "wiz",
+              "issues",
+              "vulnerabilities",
+              "paramify",
+              "assessment"
+            ],
+            "validation_rules": [],
+            "solution_capabilities": [],
+            "controls": []
+          },
+          "wiz_vulnerabilities_to_paramify": {
+            "script_file": "fetchers/wiz/wiz_vulnerabilities_to_paramify.py",
+            "name": "Wiz Vulnerabilities to Paramify",
+            "description": "Pulls vulnerabilities from Wiz and uploads them to Paramify",
+            "id": "EVD-WIZ-VULNERABILITIES-TO-PARAMIFY",
+            "instructions": "Script: wiz_vulnerabilities_to_paramify.py. Authenticates with Wiz OAuth, pulls vulnerability/export data from Wiz APIs, and uploads evidence to Paramify.",
+            "dependencies": [
+              "python3",
+              "requests"
+            ],
+            "tags": [
+              "wiz",
+              "vulnerabilities",
+              "findings",
+              "paramify",
+              "assessment"
             ],
             "validation_rules": [],
             "solution_capabilities": [],
