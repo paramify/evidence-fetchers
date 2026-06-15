@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Wiz Vulnerability Findings to Paramify Evidence Sets
-=====================================================
+Wiz Vulnerability Findings to Paramify Vulnerability Assessment Intake
+=====================================================================
 
 Fetches Wiz Vulnerability Findings via GraphQL pagination and uploads
-them as a new Artifact to a pre-existing Paramify Evidence record.
+them as an artifact to a Paramify vulnerability ASSESSMENT via the
+assessment intake endpoint (POST /assessment/{assessmentId}/intake).
 
 Behavior:
   - First run: fetches ALL vulnerabilities (no updatedAt filter)
@@ -13,14 +14,14 @@ Behavior:
     - "Delta updates" pattern recommended by Wiz docs
   - If DELTA_MODE=false: always fetches ALL vulnerabilities (ignores saved state)
   - Streams paginated results, writes to a single CSV locally
-  - Uploads CSV as an Artifact under a Paramify Evidence record
-    via POST /evidence/{evidenceId}/artifacts/upload
+  - Uploads CSV as an artifact to a Paramify assessment intake
+    via POST /assessment/{assessmentId}/intake
   - Updates last_successful_run after successful upload
 
 Prerequisites:
-  - Paramify Evidence record must already exist
-    (created manually in Paramify UI, or via POST /evidence)
-  - Evidence ID set in WIZ_VULN_PARAMIFY_EVIDENCE_ID env var
+  - Paramify vulnerability assessment must already exist
+    (created in the Paramify UI)
+  - Assessment UUID set in WIZ_VULN_PARAMIFY_ASSESSMENT_ID env var
   - Wiz Service Account must have read:vulnerabilities scope
 
 Configuration:
@@ -49,7 +50,7 @@ csv.field_size_limit(sys.maxsize)
 # ============================================================
 # Load configuration from .env
 # ============================================================
-init_fetcher_env()
+output_dir, _, _ = init_fetcher_env()
 
 WIZ_CLIENT_ID = os.environ['WIZ_CLIENT_ID']
 WIZ_CLIENT_SECRET = os.environ['WIZ_CLIENT_SECRET']
@@ -58,7 +59,8 @@ WIZ_API_ENDPOINT = os.environ['WIZ_API_ENDPOINT']
 
 PARAMIFY_API_ISSUES_BASE_URL = os.environ['PARAMIFY_API_ISSUES_BASE_URL']
 PARAMIFY_API_ISSUES_TOKEN = os.environ['PARAMIFY_API_ISSUES_TOKEN']
-WIZ_VULN_PARAMIFY_EVIDENCE_ID = os.environ['WIZ_VULN_PARAMIFY_EVIDENCE_ID']
+# Paramify vulnerability ASSESSMENT UUID (the assessment intake destination).
+WIZ_VULN_PARAMIFY_ASSESSMENT_ID = os.environ['WIZ_VULN_PARAMIFY_ASSESSMENT_ID']
 
 # Delta mode: when False, always fetch ALL vulnerabilities (ignores saved state).
 # When True (default), use last_successful_run from state for incremental fetches.
@@ -428,14 +430,14 @@ def flatten_vulnerability(node: dict) -> dict:
 # Paramify upload
 # ============================================================
 def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
-    """Upload CSV as a new artifact to a Paramify Evidence record."""
+    """Upload CSV as an artifact to a Paramify vulnerability assessment intake."""
     today = datetime.now(timezone.utc)
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
-    logging.info('  API:      %s', PARAMIFY_API_ISSUES_BASE_URL)
-    logging.info('  Evidence: %s', WIZ_VULN_PARAMIFY_EVIDENCE_ID)
+    logging.info('  API:        %s', PARAMIFY_API_ISSUES_BASE_URL)
+    logging.info('  Assessment: %s', WIZ_VULN_PARAMIFY_ASSESSMENT_ID)
     with open(csv_path, 'rb') as f:
         response = requests.post(
-            f"{PARAMIFY_API_ISSUES_BASE_URL}/evidence/{WIZ_VULN_PARAMIFY_EVIDENCE_ID}/artifacts/upload",
+            f"{PARAMIFY_API_ISSUES_BASE_URL}/assessment/{WIZ_VULN_PARAMIFY_ASSESSMENT_ID}/intake",
             headers={
                 "Authorization": f"Bearer {PARAMIFY_API_ISSUES_TOKEN}",
                 "Accept": "application/json",
@@ -453,14 +455,12 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
             timeout=120,
         )
     response.raise_for_status()
-    # Evidence/Artifacts endpoint returns a single artifact object,
-    # not an array (different from Phase 1's /assessment/{id}/intake).
-    artifact = response.json()
+    # Assessment intake endpoint returns an array of artifacts.
+    artifact = response.json()['artifacts'][0]
     logging.info('Uploaded artifact:')
-    logging.info('  ID:        %s', artifact.get('id'))
-    logging.info('  Title:     %s', artifact.get('title'))
-    logging.info('  File:      %s', artifact.get('originalFileName'))
-    logging.info('  File type: %s', artifact.get('fileType'))
+    logging.info('  ID:    %s', artifact['id'])
+    logging.info('  Title: %s', artifact['title'])
+    logging.info('  File:  %s', artifact['originalFileName'])
     return artifact
 
 # ============================================================
@@ -516,7 +516,7 @@ def main():
         return
 
     # Step 5: Upload to Paramify
-    upload_to_paramify(OUTPUT_CSV, mode_label)
+    artifact = upload_to_paramify(OUTPUT_CSV, mode_label)
 
     # Step 6: Update last_successful_run after successful upload.
     # UTC ISO 8601 with 'Z' suffix matches Wiz's updatedAt format,
@@ -524,6 +524,20 @@ def main():
     new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     save_state(current_hash, last_successful_run=new_successful_run)
     logging.info('Updated last_successful_run: %s', new_successful_run)
+
+    # Step 7: Write summary JSON for TUI review screen
+    summary_path = Path(output_dir) / 'wiz_vulnerabilities.json'
+    summary = {
+        'fetcher': 'wiz_vulnerabilities_findings',
+        'mode': mode_label,
+        'artifact_id': artifact.get('id'),
+        'artifact_title': artifact.get('title'),
+        'row_count': row_count,
+        'timestamp': new_successful_run,
+    }
+    with open(summary_path, 'w') as f:
+        json.dump(summary, f, indent=2)
+    logging.info('Wrote summary to %s', summary_path)
 
     logging.info('=' * 60)
     logging.info('All done!')

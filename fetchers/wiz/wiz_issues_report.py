@@ -46,7 +46,7 @@ csv.field_size_limit(sys.maxsize)
 # ============================================================
 # Load configuration from .env
 # ============================================================
-init_fetcher_env()
+output_dir, _, _ = init_fetcher_env()
 
 WIZ_CLIENT_ID = os.environ['WIZ_CLIENT_ID']
 WIZ_CLIENT_SECRET = os.environ['WIZ_CLIENT_SECRET']
@@ -56,7 +56,7 @@ WIZ_API_ENDPOINT = os.environ['WIZ_API_ENDPOINT']
 
 PARAMIFY_API_ISSUES_BASE_URL = os.environ['PARAMIFY_API_ISSUES_BASE_URL']
 PARAMIFY_API_ISSUES_TOKEN = os.environ['PARAMIFY_API_ISSUES_TOKEN']
-WIZ_ISSUES_PARAMIFY_EVIDENCE_ID = os.environ['WIZ_ISSUES_PARAMIFY_EVIDENCE_ID']
+WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID = os.environ['WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID']
 
 # Delta mode: when True, filter CSV to only changed issues
 DELTA_MODE = os.environ.get('DELTA_MODE', 'false').lower() == 'true'
@@ -379,10 +379,10 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
     today = datetime.now(timezone.utc)
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
     logging.info('  API:        %s', PARAMIFY_API_ISSUES_BASE_URL)
-    logging.info('  Assessment: %s', WIZ_ISSUES_PARAMIFY_EVIDENCE_ID)
+    logging.info('  Assessment: %s', WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID)
     with open(csv_path, 'rb') as f:
         response = requests.post(
-            f"{PARAMIFY_API_ISSUES_BASE_URL}/assessment/{WIZ_ISSUES_PARAMIFY_EVIDENCE_ID}/intake",
+            f"{PARAMIFY_API_ISSUES_BASE_URL}/assessment/{WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID}/intake",
             headers={
                 "Authorization": f"Bearer {PARAMIFY_API_ISSUES_TOKEN}",
                 "Accept": "application/json",
@@ -467,7 +467,7 @@ def main():
         mode_label = 'full'
 
     # Step 7: Upload to Paramify
-    upload_to_paramify(upload_path, mode_label)
+    artifact = upload_to_paramify(upload_path, mode_label)
 
     # Step 8: Update last_successful_run after successful upload
     # UTC ISO 8601 with 'Z' suffix matches Wiz's "Status Changed At" format,
@@ -475,6 +475,19 @@ def main():
     new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     save_state(report_id, current_hash, last_successful_run=new_successful_run)
     logging.info('Updated last_successful_run: %s', new_successful_run)
+
+    # Step 9: Write summary JSON for TUI review screen
+    summary_path = Path(output_dir) / 'wiz_issues.json'
+    summary = {
+        'fetcher': 'wiz_issues_report',
+        'mode': mode_label,
+        'artifact_id': artifact.get('id'),
+        'artifact_title': artifact.get('title'),
+        'timestamp': new_successful_run,
+    }
+    with open(summary_path, 'w') as f:
+        json.dump(summary, f, indent=2)
+    logging.info('Wrote summary to %s', summary_path)
 
     logging.info('=' * 60)
     logging.info('All done!')
