@@ -2001,7 +2001,7 @@
         "description": "Wiz cloud security platform evidence collection — security issues and CVE vulnerability findings for compliance automation",
         "access_method": "Wiz API via Service Account credentials",
         "access_method_description": "The Wiz fetcher scripts authenticate via OAuth client credentials flow using WIZ_CLIENT_ID and WIZ_CLIENT_SECRET. Set WIZ_AUTH_URL to your tenant auth endpoint and WIZ_API_ENDPOINT to your GraphQL endpoint. Each fetcher uploads directly to a Paramify Vulnerability Assessment using PARAMIFY_API_ISSUES_TOKEN.",
-        "logo": "",
+        "logo": "fetchers/logos/wiz.jpeg",
         "scripts": {
           "wiz_issues_report": {
             "script_file": "fetchers/wiz/wiz_issues_report.py",

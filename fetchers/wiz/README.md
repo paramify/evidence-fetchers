@@ -114,9 +114,9 @@ All configuration is done via the `.env` file:
 | `WIZ_CLIENT_SECRET` | Yes | Wiz service account secret |
 | `WIZ_AUTH_URL` | Yes | Wiz OAuth URL (default: `https://auth.app.wiz.io/oauth/token`) |
 | `WIZ_API_ENDPOINT` | Yes | Your tenant's GraphQL endpoint |
-| `PARAMIFY_API_BASE_URL` | Yes | Paramify API base URL |
-| `PARAMIFY_API_TOKEN` | Yes | Paramify API token |
-| `PARAMIFY_ASSESSMENT_ID` | Yes | Target Vulnerability Assessment UUID |
+| `PARAMIFY_API_ISSUES_BASE_URL` | Yes | Paramify API base URL |
+| `PARAMIFY_API_ISSUES_TOKEN` | Yes | Paramify API token (view/write issues permissions) |
+| `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID` | Yes | Target Vulnerability Assessment UUID |
 | `DELTA_MODE` | No | `true` for Delta filtering, `false` for full upload (default: `false`) |
 
 ## Field Mapping
@@ -179,7 +179,7 @@ crontab -e
 
 ```
 # Run on the 1st of each month at 6 AM
-0 6 1 * * cd /path/to/evidence-fetchers/fetchers/wiz && /usr/bin/python3 wiz_to_paramify.py >> wiz_fetcher.log 2>&1
+0 6 1 * * cd /path/to/evidence-fetchers/fetchers/wiz && /usr/bin/python3 wiz_issues_report.py >> wiz_fetcher.log 2>&1
 ```
 
 ## Delta Mode
@@ -233,8 +233,8 @@ Typical reduction: **99%+** payload size after first run.
 
 ### `Paramify upload failed [403]`
 
-- Verify `PARAMIFY_API_TOKEN` has `Write Evidences` permission
-- Confirm `PARAMIFY_ASSESSMENT_ID` is correct
+- Verify `PARAMIFY_API_ISSUES_TOKEN` has `Write Issues` permission
+- Confirm `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID` is correct
 
 ### Report stays in `RUNNING` forever
 
