@@ -3,6 +3,7 @@
 
 # State file (per-customer report ID)
 state.json
+vuln_state.json
 
 # Output files (contains vulnerability data)
 wiz_issues.csv
