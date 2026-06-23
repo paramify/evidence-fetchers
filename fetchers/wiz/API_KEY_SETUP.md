@@ -13,16 +13,16 @@ All Wiz fetchers in this folder require Wiz Service Account credentials plus a P
 | `PARAMIFY_API_ISSUES_TOKEN` | Yes* | Paramify API token with view/write issues permissions (preferred for Wiz) | `eyJhbGciOi...` |
 | `PARAMIFY_UPLOAD_API_TOKEN` | Yes* | Paramify API token (fallback if `PARAMIFY_API_ISSUES_TOKEN` not set) | `eyJhbGciOi...` |
 | `PARAMIFY_API_ISSUES_BASE_URL` | No | Paramify API base URL (default `https://app.paramify.com/api/v0`) | `https://app.paramify.com/api/v0` |
-| `WIZ_PARAMIFY_ASSESSMENT_ID` | For Issues fetcher | Paramify Vulnerability Assessment UUID where Wiz Issues are uploaded | `d0318023-55c2-41ea-...` |
-| `WIZ_VULN_PARAMIFY_EVIDENCE_ID` | For Vulnerabilities fetcher | Paramify Evidence record UUID where Wiz Vulnerability Findings are uploaded as artifacts | `f85e252b-2a7f-4012-...` |
+| `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID` | For Issues fetcher | Paramify Vulnerability Assessment UUID where Wiz Issues are uploaded | `d0318023-55c2-41ea-...` |
+| `WIZ_VULN_PARAMIFY_ASSESSMENT_ID` | For Vulnerabilities fetcher | Paramify Vulnerability Assessment UUID where Wiz Vulnerability Findings are uploaded | `f85e252b-2a7f-4012-...` |
 | `DELTA_MODE` | No | When `true`, Issues fetcher uploads only changed rows since last successful run (default `false`) | `true` |
 
 \* At least one of `PARAMIFY_API_ISSUES_TOKEN` or `PARAMIFY_UPLOAD_API_TOKEN` must be set. The Wiz fetchers prefer `PARAMIFY_API_ISSUES_TOKEN` because it carries the view/write issues permissions; if it isn't set, they fall back to `PARAMIFY_UPLOAD_API_TOKEN`.
 
 ## Fetchers Covered
 
-- `wiz_to_paramify.py`
-- `wiz_vulnerabilities_to_paramify.py`
+- `wiz_issues_report.py`
+- `wiz_vulnerabilities_findings.py`
 
 ## API Endpoints Used
 
@@ -32,16 +32,15 @@ All Wiz fetchers in this folder require Wiz Service Account credentials plus a P
 |---|---|---|
 | Both | `${WIZ_AUTH_URL}` (OAuth token request) | POST |
 | Both | `${WIZ_API_ENDPOINT}` (GraphQL queries/mutations) | POST |
-| `wiz_to_paramify.py` | GraphQL: `CreateReport`, `UpdateReport`, `RerunReport`, `ReportDownloadUrl` | POST |
-| `wiz_to_paramify.py` | Wiz-issued presigned S3 URL for report CSV download | GET (stream) |
-| `wiz_vulnerabilities_to_paramify.py` | GraphQL: `VulnerabilityFindingsPage` (cursor-paginated) | POST |
+| `wiz_issues_report.py` | GraphQL: `CreateReport`, `UpdateReport`, `RerunReport`, `ReportDownloadUrl` | POST |
+| `wiz_issues_report.py` | Wiz-issued presigned S3 URL for report CSV download | GET (stream) |
+| `wiz_vulnerabilities_findings.py` | GraphQL: `VulnerabilityFindingsPage` (cursor-paginated) | POST |
 
 ### Paramify endpoints
 
 | Fetcher | Endpoint(s) | Method(s) |
 |---|---|---|
-| `wiz_to_paramify.py` | `${PARAMIFY_API_ISSUES_BASE_URL}/assessment/{assessmentId}/intake` | POST (multipart) |
-| `wiz_vulnerabilities_to_paramify.py` | `${PARAMIFY_API_ISSUES_BASE_URL}/evidence/{evidenceId}/artifacts/upload` | POST (multipart) |
+| Both | `${PARAMIFY_API_ISSUES_BASE_URL}/assessment/{assessmentId}/intake` | POST (multipart) |
 
 ## Required Permissions (Least Privilege)
 
@@ -51,18 +50,18 @@ The Service Account must have the union of scopes needed by both fetchers (or sc
 
 | Scope | Fetcher | Purpose |
 |---|---|---|
-| `read:issues` | `wiz_to_paramify.py` | Read Wiz Issues data |
-| `create:reports` | `wiz_to_paramify.py` | Create Wiz Issues reports |
-| `read:reports` | `wiz_to_paramify.py` | Poll report status, get presigned download URL |
-| `update:reports` | `wiz_to_paramify.py` | Update report config when changed between runs |
-| `read:vulnerabilities` | `wiz_vulnerabilities_to_paramify.py` | Read Wiz Vulnerability Findings |
+| `read:issues` | `wiz_issues_report.py` | Read Wiz Issues data |
+| `create:reports` | `wiz_issues_report.py` | Create Wiz Issues reports |
+| `read:reports` | `wiz_issues_report.py` | Poll report status, get presigned download URL |
+| `update:reports` | `wiz_issues_report.py` | Update report config when changed between runs |
+| `read:vulnerabilities` | `wiz_vulnerabilities_findings.py` | Read Wiz Vulnerability Findings |
 
 Project scope: `*` (all projects) or specific project IDs.
 
 ### Paramify token
 
-- **Access level**: API token with permission to upload artifacts to Vulnerability Assessments and create artifacts under Evidence records.
-- **Scope**: Write access to the specific Assessment / Evidence UUIDs configured for Wiz.
+- **Access level**: API token with permission to upload artifacts to Vulnerability Assessments.
+- **Scope**: Write access to the specific Assessment UUIDs configured for Wiz.
 
 ## Wiz Tenant Region
 
@@ -95,21 +94,21 @@ Wiz tenants are deployed across multiple regions and the auth + API endpoints di
 
 ## Creating Paramify Destinations
 
-### For `wiz_to_paramify.py` (Issues)
+### For `wiz_issues_report.py` (Issues)
 
 1. Sign in to Paramify.
 2. Navigate to the program where Wiz Issues should be tracked.
-3. Open or create a **Configuration**.
+3. Open or create a **Vulnerability Assessment** configured for Wiz.
 4. Copy the Assessment UUID from the URL or settings.
-5. Set `WIZ_PARAMIFY_ASSESSMENT_ID` to that UUID.
+5. Set `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID` to that UUID.
 
-### For `wiz_vulnerabilities_to_paramify.py` (Vulnerability Findings)
+### For `wiz_vulnerabilities_findings.py` (Vulnerability Findings)
 
 1. Sign in to Paramify.
-2. Navigate to **Resources → Evidence**.
-3. Click **Create Evidence** (or equivalent) and name it (e.g., `Wiz Vulnerability Findings`).
-4. Copy the Evidence UUID from the URL.
-5. Set `WIZ_VULN_PARAMIFY_EVIDENCE_ID` to that UUID.
+2. Navigate to the program where Wiz Vulnerability Findings should be tracked.
+3. Open or create a **Vulnerability Assessment** configured for Wiz.
+4. Copy the Assessment UUID from the URL or settings.
+5. Set `WIZ_VULN_PARAMIFY_ASSESSMENT_ID` to that UUID.
 
 ## Rotating the Wiz Client Secret
 
@@ -132,7 +131,7 @@ Wiz tenants are deployed across multiple regions and the auth + API endpoints di
 
 1. Generate a new Paramify API token with view/write issues permissions.
 2. Update `PARAMIFY_API_ISSUES_TOKEN` in your secrets store.
-3. Smoke test (replace `<assessment-id>` with `$WIZ_PARAMIFY_ASSESSMENT_ID`):
+3. Smoke test (replace `<assessment-id>` with `$WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID`):
    ```bash
    curl -s -H "Authorization: Bearer $PARAMIFY_API_ISSUES_TOKEN" \
      "${PARAMIFY_API_ISSUES_BASE_URL:-https://app.paramify.com/api/v0}/evidence" \

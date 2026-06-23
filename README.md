@@ -66,7 +66,7 @@ More evidence fetchers and integrations are coming soon. To request a new fetche
 
 
 <img src="fetchers/logos/crowdstrike.svg" alt="CrowdStrike" width="56" height="56" style="margin: 20px;">
-<img src="fetchers/logos/servicenow.png" alt="servicenow" width="56" height="56" style="margin: 20px;">
+<img src="fetchers/logos/servicenow.svg" alt="ServiceNow" width="56" height="56" style="margin: 20px;">
 
 Planned Fetchers/Integrations
 
@@ -146,4 +146,4 @@ Each integration folder contains an `API_KEY_SETUP.md` with credential setup and
 | Rippling | [fetchers/rippling/API_KEY_SETUP.md](fetchers/rippling/API_KEY_SETUP.md) | `RIPPLING_API_TOKEN`, `RIPPLING_BASE_URL`, `RIPPLING_PARAMIFY_EVIDENCE_ID` |
 | Checkov | [fetchers/checkov/API_KEY_SETUP.md](fetchers/checkov/API_KEY_SETUP.md) | `GITLAB_URL`, `GITLAB_API_TOKEN` (+ `CHECKOV_*`) |
 | SSL Labs | [fetchers/ssllabs/API_KEY_SETUP.md](fetchers/ssllabs/API_KEY_SETUP.md) | `SSLLABS_EMAIL`, `SSLLABS_HOSTS` |
-| Wiz | [fetchers/wiz/API_KEY_SETUP.md](fetchers/wiz/API_KEY_SETUP.md) | `WIZ_CLIENT_ID`, `WIZ_CLIENT_SECRET`, `WIZ_AUTH_URL`, `WIZ_API_ENDPOINT`, `WIZ_PARAMIFY_ASSESSMENT_ID`, `WIZ_VULN_PARAMIFY_EVIDENCE_ID`|
+| Wiz | [fetchers/wiz/API_KEY_SETUP.md](fetchers/wiz/API_KEY_SETUP.md) | `WIZ_CLIENT_ID`, `WIZ_CLIENT_SECRET`, `WIZ_AUTH_URL`, `WIZ_API_ENDPOINT`, `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID`, `WIZ_VULN_PARAMIFY_ASSESSMENT_ID` |
