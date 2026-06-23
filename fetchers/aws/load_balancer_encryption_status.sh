@@ -122,7 +122,7 @@ while IFS=$'\t' read -r arn type; do
         # Get SSL policy details for the output
         ssl_policy=$(aws elbv2 describe-listeners --load-balancer-arn "$arn" \
             --query "Listeners[*].{Port:Port,Protocol:Protocol,SslPolicy:SslPolicy}" \
-            --profile "$PROFILE" --region "$REGION" 2>/dev/null | jq -r '.[0].SslPolicy // "none"')
+            --profile "$PROFILE" --region "$REGION" 2>/dev/null | jq -r 'first(.[] | select(.Protocol == "HTTPS" or .Protocol == "TLS") | .SslPolicy) // "none"')
         alb_details+=("{\"arn\":\"$arn\",\"encrypted\":$is_encrypted,\"ssl_policy\":\"$ssl_policy\"}")
     elif [[ "$type" == "network" ]]; then
         nlb_count=$((nlb_count + 1))
@@ -133,7 +133,7 @@ while IFS=$'\t' read -r arn type; do
         # Get SSL policy details for the output
         ssl_policy=$(aws elbv2 describe-listeners --load-balancer-arn "$arn" \
             --query "Listeners[*].{Port:Port,Protocol:Protocol,SslPolicy:SslPolicy}" \
-            --profile "$PROFILE" --region "$REGION" 2>/dev/null | jq -r '.[0].SslPolicy // "none"')
+            --profile "$PROFILE" --region "$REGION" 2>/dev/null | jq -r 'first(.[] | select(.Protocol == "HTTPS" or .Protocol == "TLS") | .SslPolicy) // "none"')
         nlb_details+=("{\"arn\":\"$arn\",\"encrypted\":$is_encrypted,\"ssl_policy\":\"$ssl_policy\"}")
     fi
 done < <(echo "$load_balancers" | jq -r '.LoadBalancers[] | [.LoadBalancerArn, .Type] | @tsv')
