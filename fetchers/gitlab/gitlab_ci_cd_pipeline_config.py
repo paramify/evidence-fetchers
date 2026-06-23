@@ -164,7 +164,6 @@ def get_gitlab_ci_config(project_id: str, branch: str = "main") -> Dict[str, Any
             "file_name": file_data.get("file_name"),
             "file_path": file_data.get("file_path"),
             "last_commit_id": file_data.get("last_commit_id"),
-            "content_raw": content,
             "content_parsed": ci_config,
             "analysis": {
                 "stages": extract_stages(ci_config),
