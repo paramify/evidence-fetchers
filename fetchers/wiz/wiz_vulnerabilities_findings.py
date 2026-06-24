@@ -452,7 +452,7 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
                     "effectiveDate": today.isoformat(),
                 }),
             },
-            timeout=120,
+            timeout=600,
         )
     response.raise_for_status()
     # Assessment intake endpoint returns an array of artifacts.

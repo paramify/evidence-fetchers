@@ -78,7 +78,14 @@ _DEPENDENCY_BINARY_MAP = {
 # Python package dependencies that need import-based checking
 _PYTHON_PACKAGE_DEPS = {
     "requests": "pip install requests",
+    "python-dotenv": "pip install python-dotenv",
     "python3": None,  # Skip — we're already running Python
+}
+
+# Maps a catalog dependency name to its importable module name when they differ
+# (e.g. the "python-dotenv" package is imported as "dotenv").
+_PYTHON_IMPORT_NAME = {
+    "python-dotenv": "dotenv",
 }
 
 
@@ -137,7 +144,7 @@ def check_tool_dependencies(evidence_sets: dict) -> None:
             if install_hint is None:
                 continue
             try:
-                importlib.import_module(dep_name)
+                importlib.import_module(_PYTHON_IMPORT_NAME.get(dep_name, dep_name))
                 print(f"  ✓ {dep_name}")
             except ImportError:
                 missing_count += 1
