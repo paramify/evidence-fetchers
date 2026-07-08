@@ -1998,7 +1998,7 @@
       },
       "wiz": {
         "name": "Wiz",
-        "description": "Wiz cloud security platform evidence collection — security issues and CVE vulnerability findings for compliance automation",
+        "description": "Wiz cloud security platform evidence collection \u2014 security issues and CVE vulnerability findings for compliance automation",
         "access_method": "Wiz API via Service Account credentials",
         "access_method_description": "The Wiz fetcher scripts authenticate via OAuth client credentials flow using WIZ_CLIENT_ID and WIZ_CLIENT_SECRET. Set WIZ_AUTH_URL to your tenant auth endpoint and WIZ_API_ENDPOINT to your GraphQL endpoint. Each fetcher uploads directly to a Paramify Vulnerability Assessment using PARAMIFY_API_ISSUES_TOKEN.",
         "logo": "fetchers/logos/wiz.jpeg",
@@ -2046,6 +2046,37 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": []
+          }
+        }
+      },
+      "paramify": {
+        "name": "Paramify",
+        "description": "FedRAMP 20x machine-readable evidence generated from Paramify data",
+        "access_method": "Paramify API via Bearer Token",
+        "access_method_description": "Scripts call the Paramify REST API (Authorization: Bearer <PARAMIFY_API_TOKEN>) with read scope. Base URL defaults to https://app.paramify.com/api/v0 and can be overridden with PARAMIFY_API_BASE_URL. Reports are scoped per project via PARAMIFY_PROJECT_ID.",
+        "logo": "fetchers/logos/paramify.svg",
+        "scripts": {
+          "paramify_accepted_vulnerabilities": {
+            "script_file": "fetchers/paramify/paramify_accepted_vulnerabilities.py",
+            "name": "Paramify Accepted Vulnerability Info (VER-RPT-AVI)",
+            "description": "Generates the FedRAMP 20x Accepted Vulnerability Info JSON from Paramify issues with an accepted deviation (OPERATIONAL_REQUIREMENT, VENDOR_DEPENDENCY, RISK_ADJUSTMENT). Validates output against the published FedRAMP schema.",
+            "id": "EVD-PARAMIFY-VER-RPT-AVI",
+            "instructions": "Script: paramify_accepted_vulnerabilities.py. Commands executed: python Paramify API GET /issues per accepted deviation type; output validated against fedramp-accepted-vulnerability-info-schema-2026-06-24.json; writes paramify_accepted_vulnerabilities.json",
+            "validationRules": [],
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "paramify",
+              "fedramp-20x",
+              "vulnerability",
+              "ver-rpt-avi"
+            ],
+            "solution_capabilities": [],
+            "controls": [
+              "KSI-MLA-06",
+              "KSI-MLA-03"
+            ]
           }
         }
       }
