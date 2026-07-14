@@ -1,4 +1,4 @@
-# Wiz Issues Fetcher
+# Wiz Configuration Findings Fetcher
 
 Pulls security Issues from Wiz and uploads them to a Paramify Vulnerability Assessment cycle as CSV.
 
