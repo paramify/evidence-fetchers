@@ -33,7 +33,7 @@ Configuration (from .env / environment; see .env.example):
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -56,6 +56,16 @@ ACCEPTED_DEVIATION_TYPES = (
     "RISK_ADJUSTMENT",
 )
 ACCEPTED_STATUS = "ACCEPTED"
+
+# VER-TFR-MAV: providers MUST categorize any vulnerability not (or not going to be)
+# fully mitigated or remediated within 192 days of evaluation as an accepted
+# vulnerability. So an issue that is still open 192+ days after its evaluationDate
+# is an accepted vulnerability even without an explicit accepted deviation.
+ACCEPTANCE_DAYS = 192
+# Issue status that indicates the vulnerability is still open (not resolved).
+# Confirmed value from the Paramify issues API: "OPEN". If other open-like
+# statuses exist in the enum, add them here.
+OPEN_ISSUE_STATUSES = ("OPEN",)
 
 # Potential Agency Impact N-rating (VER-EVA-EPA / item 6 of VER-RPT-AVI).
 # INTERIM provider-assigned mapping (confirmed by the FedRAMP package owner):
@@ -119,6 +129,24 @@ def fetch_candidate_issues(
             continue
         for issue in payload.get("issues", []) if isinstance(payload, dict) else []:
             by_id[issue["id"]] = issue
+
+    # VER-TFR-MAV: also fetch issues evaluated 192+ days ago, regardless of
+    # deviation, since a long-open issue is an accepted vulnerability on its own.
+    # The API filters by evaluation date (evaluationDateEnd = now - 192 days);
+    # the open-status check is applied later in _is_192_day_accepted.
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=ACCEPTANCE_DAYS)).date().isoformat()
+    aged_params = {
+        "projectId": project_id,
+        "evaluationDateEnd": cutoff,
+    }
+    try:
+        payload = paramify_get(base_url, token, "/issues", aged_params)
+        for issue in payload.get("issues", []) if isinstance(payload, dict) else []:
+            by_id[issue["id"]] = issue
+    except requests.exceptions.RequestException as e:
+        api_failures.append({"query": "aged_192day", "type": type(e).__name__, "message": str(e)})
+        print(f"WARNING: fetch failed for 192-day aged query: {e}", file=sys.stderr)
+
     return list(by_id.values())
 
 
@@ -136,6 +164,41 @@ def _accepted_deviation(issue: Dict) -> Optional[Dict]:
         reverse=True,
     )
     return qualifying[0]
+
+
+def _parse_iso(value: str) -> Optional[datetime]:
+    """Parse an ISO-8601 timestamp (handling a trailing Z) to an aware datetime.
+    Naive values (no timezone) are assumed UTC so comparisons never crash."""
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _is_192_day_accepted(issue: Dict, now: Optional[datetime] = None) -> bool:
+    """
+    VER-TFR-MAV time-based acceptance: True when the issue is still open AND its
+    evaluation completed 192 or more days ago. This catches vulnerabilities that
+    must be treated as accepted purely due to elapsed time, even with no deviation.
+    """
+    if issue.get("status") not in OPEN_ISSUE_STATUSES:
+        return False
+    evaluated = _parse_iso(issue.get("evaluationDate"))
+    if evaluated is None:
+        return False
+    now = now or datetime.now(timezone.utc)
+    return (now - evaluated).days >= ACCEPTANCE_DAYS
+
+
+def is_accepted(issue: Dict) -> bool:
+    """A vulnerability is accepted if it has an accepted deviation (Excuse) OR it
+    meets the VER-TFR-MAV 192-day-open threshold."""
+    return _accepted_deviation(issue) is not None or _is_192_day_accepted(issue)
 
 
 def map_issue(issue: Dict) -> Dict:
@@ -161,9 +224,18 @@ def map_issue(issue: Dict) -> Dict:
     if rating is not None:
         detail["currentRating"] = rating
 
+    rationale = (deviation or {}).get("description") or ""
+    if not rationale and deviation is None and _is_192_day_accepted(issue):
+        # Time-based acceptance with no explicit Excuse: record why it qualifies,
+        # rather than emitting an empty rationale.
+        rationale = (
+            "Categorized as an accepted vulnerability under VER-TFR-MAV: open and "
+            "not fully mitigated or remediated within 192 days of evaluation."
+        )
+
     return {
         "vulnerabilityDetail": detail,
-        "acceptanceRationale": (deviation or {}).get("description") or "",
+        "acceptanceRationale": rationale,
     }
 
 
@@ -173,7 +245,7 @@ def build_report(
     report_from: str,
     report_to: str,
 ) -> Dict:
-    accepted = [map_issue(i) for i in issues if _accepted_deviation(i) is not None]
+    accepted = [map_issue(i) for i in issues if is_accepted(i)]
     return {
         "certificationPackageOverviewUri": cert_package_uri,
         "reportPeriod": {"from": report_from, "to": report_to},
@@ -194,7 +266,11 @@ def run(evidence_dir: str) -> Tuple[str, str]:
     output_path = Path(evidence_dir) / OUTPUT_FILENAME
 
     try:
-        token = get_env("PARAMIFY_API_TOKEN")
+        # Prefer the read-scoped token (repo convention); fall back to the
+        # upload token so the fetcher runs when only that is configured.
+        token = os.environ.get("PARAMIFY_API_TOKEN") or os.environ.get("PARAMIFY_UPLOAD_API_TOKEN")
+        if not token:
+            raise RuntimeError("Missing required env var: PARAMIFY_API_TOKEN (or PARAMIFY_UPLOAD_API_TOKEN)")
         cert_package_uri = get_env("PARAMIFY_CERT_PACKAGE_URI")
         report_from = get_env("PARAMIFY_REPORT_FROM")
         project_id = get_env("PARAMIFY_PROJECT_ID")
