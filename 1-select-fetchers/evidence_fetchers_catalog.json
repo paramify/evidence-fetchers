@@ -2077,6 +2077,28 @@
               "KSI-MLA-06",
               "KSI-MLA-03"
             ]
+          },
+          "paramify_vulnerability_detail_report": {
+            "script_file": "fetchers/paramify/paramify_vulnerability_detail_report.py",
+            "name": "Paramify Vulnerability Detail Report (VER-RPT-VDT)",
+            "description": "Generates the FedRAMP 20x Vulnerability Detail Report JSON covering all non-accepted vulnerabilities (exact partition with VER-RPT-AVI via a shared accepted definition). Derives overdue status and final disposition, and validates output against the published FedRAMP schema.",
+            "id": "EVD-PARAMIFY-VER-RPT-VDT",
+            "instructions": "Script: paramify_vulnerability_detail_report.py. Commands executed: python Paramify API GET /issues for the project plus GET /issues/{id}/milestones per open non-accepted issue; output validated against fedramp-vulnerability-detail-report-schema-2026-06-24.json; writes paramify_vulnerability_detail_report.json",
+            "validationRules": [],
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "paramify",
+              "fedramp-20x",
+              "vulnerability",
+              "ver-rpt-vdt"
+            ],
+            "solution_capabilities": [],
+            "controls": [
+              "KSI-MLA-06",
+              "KSI-MLA-03"
+            ]
           }
         }
       }
