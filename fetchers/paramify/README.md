@@ -15,6 +15,7 @@ output to the Evidence records identified by `EVD-PARAMIFY-VER-RPT-AVI` / `EVD-P
 |---|---|---|---|---|
 | Accepted Vulnerability Info | VER-RPT-AVI | `paramify_accepted_vulnerabilities.py` | `EVD-PARAMIFY-VER-RPT-AVI` | Accepted vulnerabilities only |
 | Vulnerability Detail Report | VER-RPT-VDT | `paramify_vulnerability_detail_report.py` | `EVD-PARAMIFY-VER-RPT-VDT` | Non-accepted vulnerabilities only |
+| Historical VER Activity | VER-TFR-MRH | `paramify_historical_ver_activity.py` | `EVD-PARAMIFY-VER-TFR-MRH` | Point-in-time snapshot: both arrays in one document |
 
 The two reports partition the project's vulnerabilities: every issue is reported by
 exactly one of them, using a shared definition of "accepted." No evidence UUIDs are
@@ -86,6 +87,18 @@ reporting:
   false-positive deviation; omitted while the issue is still active with no progress.
 - **`overdueStatus`** — `isOverdue: true` (with a required explanation) when the issue
   is open and past its due date; `isOverdue: false` otherwise.
+
+## Historical VER Activity Snapshot
+
+`paramify_historical_ver_activity.py` produces the VER-TFR-MRH snapshot: one
+document with `activeVulnerabilities` (VDT fields) and `acceptedVulnerabilities`
+(AVI fields), plus a `generatedAt` timestamp. It contains no acceptance logic of
+its own -- it imports the AVI and VDT fetchers and partitions a single issue
+fetch with their shared accepted definition, so the snapshot can never disagree
+with the individual reports. Data is always fetched fresh from the Paramify API,
+never reassembled from previously generated evidence. Per VER-TFR-MRH, Class C
+providers should refresh this at least every 14 days (scheduling is operational,
+outside the fetcher).
 
 ## Schema Validation
 

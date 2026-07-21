@@ -2099,6 +2099,28 @@
               "KSI-MLA-06",
               "KSI-MLA-03"
             ]
+          },
+          "paramify_historical_ver_activity": {
+            "script_file": "fetchers/paramify/paramify_historical_ver_activity.py",
+            "name": "Paramify Historical VER Activity (VER-TFR-MRH)",
+            "description": "Generates the FedRAMP 20x Historical Vulnerability Evaluation and Reporting Activity JSON: a point-in-time snapshot containing all active (non-accepted) and all accepted vulnerabilities in one document. Reuses the AVI/VDT shared accepted definition from a single issue fetch so the two arrays are consistent by construction. Per VER-TFR-MRH, Class C should refresh this at least every 14 days.",
+            "id": "EVD-PARAMIFY-VER-TFR-MRH",
+            "instructions": "Script: paramify_historical_ver_activity.py. Commands executed: python Paramify API GET /issues for the project plus GET /issues/{id}/milestones per open non-accepted issue; output validated against fedramp-historical-ver-activity-schema-2026-06-24.json; writes paramify_historical_ver_activity.json",
+            "validationRules": [],
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "paramify",
+              "fedramp-20x",
+              "vulnerability",
+              "ver-tfr-mrh"
+            ],
+            "solution_capabilities": [],
+            "controls": [
+              "KSI-MLA-06",
+              "KSI-MLA-03"
+            ]
           }
         }
       }
