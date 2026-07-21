@@ -127,7 +127,7 @@ The Wiz CSV columns are mapped to Paramify fields automatically by the mechanism
 
 | Wiz CSV Column | → | Paramify Field |
 |---|---|---|
-| Issue ID | → | Unique Record ID |
+| Control ID | → | Unique Record ID |
 | Title | → | Weakness Name |
 | Description | → | Weakness Description |
 | Created At | → | Effective Date |
