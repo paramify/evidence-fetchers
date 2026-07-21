@@ -23,6 +23,7 @@ The API token is read from `PARAMIFY_API_TOKEN`, falling back to
 
 - `paramify_accepted_vulnerabilities.py` — FedRAMP Accepted Vulnerability Info (VER-RPT-AVI)
 - `paramify_vulnerability_detail_report.py` — FedRAMP Vulnerability Detail Report (VER-RPT-VDT)
+- `paramify_historical_ver_activity.py` — FedRAMP Historical VER Activity (VER-TFR-MRH)
 
 ## API Endpoints Used
 
@@ -31,6 +32,7 @@ The API token is read from `PARAMIFY_API_TOKEN`, falling back to
 | Both | `${PARAMIFY_API_BASE_URL}/issues?projectId=...` (issues in the project, filtered by date) | GET |
 | `paramify_accepted_vulnerabilities.py` | `${PARAMIFY_API_BASE_URL}/issues?deviationType=...` (per accepted deviation type) | GET |
 | `paramify_vulnerability_detail_report.py` | `${PARAMIFY_API_BASE_URL}/issues/{issueId}/milestones` (per open non-accepted issue, to detect partial mitigation) | GET |
+| `paramify_historical_ver_activity.py` | same endpoints as the VDT fetcher (single issues fetch + per-issue milestones) | GET |
 
 The fetchers themselves make read-only GET calls and write their reports locally.
 Upload happens in pipeline stage 4, which resolves each report's Evidence record by
@@ -56,6 +58,7 @@ reporting success:
 |---|---|---|
 | `paramify_accepted_vulnerabilities.py` | `paramify_accepted_vulnerabilities.json` | `fedramp-accepted-vulnerability-info-schema-2026-06-24.json` |
 | `paramify_vulnerability_detail_report.py` | `paramify_vulnerability_detail_report.json` | `fedramp-vulnerability-detail-report-schema-2026-06-24.json` |
+| `paramify_historical_ver_activity.py` | `paramify_historical_ver_activity.json` | `fedramp-historical-ver-activity-schema-2026-06-24.json` |
 
 If validation fails, or if any API call fails, the fetcher reports an error and does
 not present the output as valid evidence. Open issues with a missing or epoch-sentinel
