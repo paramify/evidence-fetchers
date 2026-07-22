@@ -14,7 +14,7 @@ variables below are loaded from `.env`.
 | `PARAMIFY_CERT_PACKAGE_URI` | Yes | Certification Package Overview URI recorded in each report | `https://example.com/certification-package-overview` |
 | `PARAMIFY_REPORT_FROM` | Yes | ISO-8601 start of the report period (covers all activity since the previous report per VER-RPT-PER) | `2026-01-01T00:00:00Z` |
 | `PARAMIFY_REPORT_TO` | No | ISO-8601 end of the report period (defaults to the run time) | `2026-07-01T00:00:00Z` |
-| `PARAMIFY_HTTP_TIMEOUT` | No | Per-request HTTP timeout in seconds (default 90) | `90` |
+| `PARAMIFY_HTTP_TIMEOUT` | No | Per-request HTTP timeout in seconds (default 300; the bulk `/issues` call is large) | `300` |
 
 The API token is read from `PARAMIFY_API_TOKEN`, falling back to
 `PARAMIFY_UPLOAD_API_TOKEN` (the name used at the top of `.env.example`). Either works.
@@ -29,10 +29,10 @@ The API token is read from `PARAMIFY_API_TOKEN`, falling back to
 
 | Fetcher | Endpoint(s) | Method(s) |
 |---|---|---|
-| Both | `${PARAMIFY_API_BASE_URL}/issues?projectId=...` (issues in the project, filtered by date) | GET |
+| Both | `${PARAMIFY_API_BASE_URL}/issues?projectId=...` (all project issues; open issues kept regardless of status date, closures filtered to the report window) | GET |
 | `paramify_accepted_vulnerabilities.py` | `${PARAMIFY_API_BASE_URL}/issues?deviationType=...` (per accepted deviation type) | GET |
-| `paramify_vulnerability_detail_report.py` | `${PARAMIFY_API_BASE_URL}/issues/{issueId}/milestones` (per open non-accepted issue, to detect partial mitigation) | GET |
-| `paramify_historical_ver_activity.py` | same endpoints as the VDT fetcher (single issues fetch + per-issue milestones) | GET |
+| `paramify_vulnerability_detail_report.py` | `${PARAMIFY_API_BASE_URL}/issues?projectId=...` only (milestones are read from the `milestones` array embedded in the response; no per-issue calls) | GET |
+| `paramify_historical_ver_activity.py` | same single `GET /issues` fetch as the VDT fetcher (embedded milestones; no per-issue calls) | GET |
 
 The fetchers themselves make read-only GET calls and write their reports locally.
 Upload happens in pipeline stage 4, which resolves each report's Evidence record by
@@ -64,6 +64,14 @@ If validation fails, or if any API call fails, the fetcher reports an error and 
 not present the output as valid evidence. Open issues with a missing or epoch-sentinel
 evaluation date are reported in the VDT output without `evaluationCompletedAt` and
 counted in a run warning (see README, "How Accepted Is Determined").
+
+## Summary Field
+
+Every report includes a top-level `_summary` object with count breakdowns (e.g.
+dispositions, overdue counts). It is a vendor extension computed from the report's
+own required arrays -- FedRAMP schemas permit unrecognized extra fields (surfaced by
+validators as informational notes), so this does not affect schema validation. See
+the README for details.
 
 ## Finding the Project UUID
 

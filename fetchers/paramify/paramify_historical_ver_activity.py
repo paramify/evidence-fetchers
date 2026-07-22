@@ -89,6 +89,55 @@ def build_report(
     }
 
 
+def _build_summary(report: Dict, generated_at: str) -> Dict:
+    """Derived at-a-glance summary (vendor extension under "_summary").
+    FedRAMP schemas are minimal and permit extra fields; arrays stay the truth."""
+    from collections import Counter
+    act = report["activeVulnerabilities"]; acc = report["acceptedVulnerabilities"]
+    disp = Counter(v.get("finalDisposition", "In Progress") for v in act)
+    overdue = sum(1 for v in act if (v.get("overdueStatus") or {}).get("isOverdue") is True)
+    no_eval = sum(1 for v in act if "evaluationCompletedAt" not in v)
+    return {
+        "report": "VER-TFR-MRH",
+        "generatedAt": generated_at,
+        "totalVulnerabilities": len(act) + len(acc),
+        "active": len(act),
+        "accepted": len(acc),
+        "activeDispositions": {
+            "fullyMitigated": disp.get("Fully Mitigated", 0),
+            "partiallyMitigated": disp.get("Partially Mitigated", 0),
+            "falsePositive": disp.get("False Positive", 0),
+            "inProgress": disp.get("In Progress", 0),
+        },
+        "activeOverdue": overdue,
+        "activeWithoutCompletedEvaluation": no_eval,
+    }
+
+
+def _print_summary(report: Dict, generated_at: str) -> None:
+    """Human-readable console summary (stderr). Computed from the finished
+    report only; does NOT modify the evidence JSON."""
+    from collections import Counter
+    act = report["activeVulnerabilities"]
+    acc = report["acceptedVulnerabilities"]
+    disp = Counter(v.get("finalDisposition", "(in progress)") for v in act)
+    overdue = sum(1 for v in act if (v.get("overdueStatus") or {}).get("isOverdue") is True)
+    no_eval = sum(1 for v in act if "evaluationCompletedAt" not in v)
+    lines = [
+        "=== MRH Summary (VER-TFR-MRH snapshot) ===",
+        f"Generated at: {generated_at}",
+        f"Total vulnerabilities: {len(act) + len(acc)}  "
+        f"(active: {len(act)} | accepted: {len(acc)})",
+        f"  Active dispositions -- Fully Mitigated: {disp.get('Fully Mitigated', 0)} | "
+        f"Partially Mitigated: {disp.get('Partially Mitigated', 0)} | "
+        f"False Positive: {disp.get('False Positive', 0)} | "
+        f"In progress: {disp.get('(in progress)', 0)}",
+        f"  Active overdue: {overdue} | No completed-evaluation date: {no_eval}"
+        + ("  [VER-TFR-EVU backlog]" if no_eval else ""),
+    ]
+    print("\n".join(lines), file=sys.stderr)
+
+
 def run(output_dir: Optional[str] = None) -> "tuple[str, str]":
     base_url = os.environ.get("PARAMIFY_API_BASE_URL", "https://app.paramify.com/api/v0").rstrip("/")
     token = os.environ.get("PARAMIFY_API_TOKEN") or os.environ.get("PARAMIFY_UPLOAD_API_TOKEN")
@@ -137,6 +186,7 @@ def run(output_dir: Optional[str] = None) -> "tuple[str, str]":
         )
 
     report = build_report(issues, cert_package_uri, generated_at, base_url, token)
+    report["_summary"] = _build_summary(report, generated_at)
 
     out_dir = Path(output_dir or os.environ.get("EVIDENCE_DIR", "./evidence"))
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -160,6 +210,7 @@ def run(output_dir: Optional[str] = None) -> "tuple[str, str]":
         print("Final result: ERROR")
         return "ERROR", str(out_path)
 
+    _print_summary(report, generated_at)
     print(f"Evidence saved to {out_path} ({n_active} active, {n_accepted} accepted)")
     print("Final result: PASS")
     print(f"Evidence file: {out_path}")

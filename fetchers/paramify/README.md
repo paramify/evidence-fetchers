@@ -83,10 +83,20 @@ reporting:
 
 - **`finalDisposition`** — `"Fully Mitigated"` when the issue is closed;
   `"Partially Mitigated"` when the issue is open and has either a risk-adjustment
-  deviation or a remediation-activity milestone; `"False Positive"` for an accepted
+  deviation (including a pending one) or a remediation-activity milestone;
+  `"False Positive"` (which takes precedence) for an accepted
   false-positive deviation; omitted while the issue is still active with no progress.
 - **`overdueStatus`** — `isOverdue: true` (with a required explanation) when the issue
   is open and past its due date; `isOverdue: false` otherwise.
+
+## Coverage
+
+The VDT and MRH fetchers fetch every issue in the project and keep those that are
+**open** (an open, unresolved vulnerability is ongoing activity regardless of when its
+status last changed) **or** whose status changed within the report window. This ensures
+open vulnerabilities are never dropped from reporting -- including issues whose
+`statusDate` is missing or an epoch sentinel, which an earlier date-windowed query
+silently excluded.
 
 ## Historical VER Activity Snapshot
 
@@ -107,8 +117,3 @@ before it is written and reported as valid evidence. The schemas are the officia
 `2026-06-24` releases; `_fedramp/schema_validator.py` handles FedRAMP's cross-file
 `$ref` format without modifying the vendored files.
 
-## Performance
-
-The VDT fetcher makes one milestones call per open, non-partially-mitigated issue, so
-large projects take several minutes. The per-request HTTP timeout defaults to 90
-seconds and can be tuned with `PARAMIFY_HTTP_TIMEOUT`.

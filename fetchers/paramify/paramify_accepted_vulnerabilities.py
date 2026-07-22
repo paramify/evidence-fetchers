@@ -282,6 +282,29 @@ def build_report(
     }
 
 
+def _build_summary(report):
+    acc = report["acceptedVulnerabilities"]
+    with_eval = sum(1 for a in acc if a["vulnerabilityDetail"].get("evaluationCompletedAt"))
+    rp = report.get("reportPeriod", {})
+    return {
+        "report": "VER-RPT-AVI",
+        "reportPeriod": {"from": rp.get("from"), "to": rp.get("to")},
+        "acceptedVulnerabilities": len(acc),
+        "withCompletedEvaluation": with_eval,
+        "withoutCompletedEvaluation": len(acc) - with_eval,
+    }
+
+
+def _print_summary(report):
+    s = report["_summary"]
+    lines = [
+        "=== AVI Summary (VER-RPT-AVI) ===",
+        f"Accepted vulnerabilities: {s['acceptedVulnerabilities']}",
+        f"  With completed-evaluation date: {s['withCompletedEvaluation']} | without: {s['withoutCompletedEvaluation']}",
+    ]
+    print("\n".join(lines), file=sys.stderr)
+
+
 def run(evidence_dir: str) -> Tuple[str, str]:
     """
     Collect accepted vulnerabilities and write the FedRAMP AVI JSON.
@@ -336,6 +359,7 @@ def run(evidence_dir: str) -> Tuple[str, str]:
         )
 
     report = build_report(issues, cert_package_uri, report_from, report_to)
+    report["_summary"] = _build_summary(report)
 
     missing_rationale = [
         v["vulnerabilityDetail"]["providerTrackingId"]
@@ -355,6 +379,8 @@ def run(evidence_dir: str) -> Tuple[str, str]:
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, default=str)
+    if not schema_errors:
+        _print_summary(report)
     print(f"Evidence saved to {output_path} ({len(report['acceptedVulnerabilities'])} accepted vulnerabilities)")
 
     if api_failures:
