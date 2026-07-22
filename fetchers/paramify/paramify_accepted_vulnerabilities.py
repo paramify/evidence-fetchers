@@ -95,7 +95,7 @@ def get_env(name: str) -> str:
 # HTTP timeout (seconds) for Paramify API calls; override with PARAMIFY_HTTP_TIMEOUT.
 # Large projects make the /issues and per-issue milestone calls slow; 30s caused
 # read timeouts on stage, so the default is 90.
-HTTP_TIMEOUT = int(os.environ.get("PARAMIFY_HTTP_TIMEOUT", "90"))
+HTTP_TIMEOUT = int(os.environ.get("PARAMIFY_HTTP_TIMEOUT", "300"))
 
 
 def paramify_get(base_url: str, token: str, path: str, params: Dict[str, Any]) -> Any:
