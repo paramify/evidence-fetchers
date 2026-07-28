@@ -1,5 +1,6 @@
 .env
 .DS_Store
+.claude/
 *.pyc
 */old_example_process/*
 evidence/*
