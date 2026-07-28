@@ -14,11 +14,14 @@ AWS_PROFILE="$PROFILE"
 JSON_OUTPUT="$OUTPUT_DIR/eks_all_clusters_pod_inventory.json"
 echo "Using AWS profile: $AWS_PROFILE"
 
-# Trigger AWS SSO login
-echo "Logging in with AWS SSO..."
-aws sso login --profile "$AWS_PROFILE"
-if [ $? -ne 0 ]; then
-  echo "SSO login failed. Exiting."
+# Verify AWS credentials are available WITHOUT triggering an interactive login.
+# `aws sso login` opens a browser and blocks for input; when this fetcher is run
+# non-interactively by run_fetchers.py that hangs until the subprocess times out.
+# Authenticate beforehand if needed:  aws sso login --profile "$AWS_PROFILE"
+echo "Verifying AWS credentials for profile: $AWS_PROFILE"
+if ! aws sts get-caller-identity --profile "$AWS_PROFILE" >/dev/null 2>&1; then
+  echo "Error: AWS credentials for profile '$AWS_PROFILE' are missing or expired."
+  echo "Run 'aws sso login --profile $AWS_PROFILE' and then re-run this fetcher."
   exit 1
 fi
 

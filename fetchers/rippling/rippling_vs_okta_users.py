@@ -81,6 +81,12 @@ from typing import Any, Dict, List, Optional, Set
 from urllib.parse import urlparse
 
 import requests
+from requests.adapters import HTTPAdapter
+
+try:
+    from urllib3.util.retry import Retry
+except ImportError:  # pragma: no cover - very old urllib3 fallback
+    from requests.packages.urllib3.util.retry import Retry
 
 try:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -129,6 +135,36 @@ RIPPLING_HOST_ALLOWLIST = (
     "api.rippling.com",
 )
 
+# Network resilience: configurable read timeout plus automatic retry/backoff so a
+# single slow or transient Rippling response no longer fails the whole fetcher run.
+RIPPLING_TIMEOUT = float(os.getenv("RIPPLING_TIMEOUT", "60"))
+RIPPLING_MAX_RETRIES = int(os.getenv("RIPPLING_MAX_RETRIES", "4"))
+RIPPLING_BACKOFF = float(os.getenv("RIPPLING_BACKOFF", "1.5"))
+
+
+def _build_rippling_session() -> requests.Session:
+    """Session with retry/backoff for connect, read, and 429/5xx responses."""
+    retry = Retry(
+        total=RIPPLING_MAX_RETRIES,
+        connect=RIPPLING_MAX_RETRIES,
+        read=RIPPLING_MAX_RETRIES,
+        status=RIPPLING_MAX_RETRIES,
+        backoff_factor=RIPPLING_BACKOFF,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+        respect_retry_after_header=True,
+        # Never auto-follow redirects: a leaked bearer token must not be re-sent.
+        redirect=False,
+        raise_on_redirect=False,
+        raise_on_status=False,
+    )
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    return session
+
+
+_RIPPLING_SESSION = _build_rippling_session()
+
 
 def _enforce_rippling_host(url: str) -> None:
     parsed = urlparse(url)
@@ -148,11 +184,11 @@ def get_rippling_token() -> str:
 
 def rippling_get(url: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     _enforce_rippling_host(url)
-    resp = requests.get(
+    resp = _RIPPLING_SESSION.get(
         url,
         headers={"Accept": "application/json", "Authorization": f"Bearer {get_rippling_token()}"},
         params=params,
-        timeout=30,
+        timeout=RIPPLING_TIMEOUT,
         allow_redirects=False,
     )
     if resp.status_code in (301, 302, 303, 307, 308):
