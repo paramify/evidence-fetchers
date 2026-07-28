@@ -87,8 +87,20 @@ FILTER_CONFIG = {}
 # ============================================================
 # Internal Configuration
 # ============================================================
-MAX_RETRIES_FOR_QUERY = 5
-RETRY_TIME_FOR_QUERY = 2
+MAX_RETRIES_FOR_QUERY = int(os.environ.get('WIZ_MAX_RETRIES', '5'))
+RETRY_TIME_FOR_QUERY = float(os.environ.get('WIZ_RETRY_SECONDS', '2'))
+MAX_RETRY_BACKOFF = 60.0
+
+# (connect, read) timeouts. A single vulnerabilities page carries PAGE_SIZE
+# findings with dozens of fields each, which the Wiz API can legitimately take
+# well over 30s to assemble, so the read budget is generous by default.
+WIZ_CONNECT_TIMEOUT = float(os.environ.get('WIZ_CONNECT_TIMEOUT', '10'))
+WIZ_READ_TIMEOUT = float(os.environ.get('WIZ_READ_TIMEOUT', '120'))
+WIZ_TIMEOUT = (WIZ_CONNECT_TIMEOUT, WIZ_READ_TIMEOUT)
+
+# Status codes worth another attempt; anything else is a caller error that
+# would fail identically on every retry.
+RETRYABLE_STATUS = (429, 500, 502, 503, 504)
 
 COGNITO_URLS = [
     'https://auth.app.wiz.io/oauth/token',
@@ -233,13 +245,49 @@ def save_state(config_hash: str, last_successful_run: str = None) -> None:
 # ============================================================
 # Wiz authentication and queries
 # ============================================================
+_SESSION = requests.Session()
+
+
+def _post_with_retries(url: str, description: str, **kwargs) -> requests.Response:
+    """POST to Wiz, retrying transient failures with exponential backoff.
+
+    Retries cover network-level failures (read timeouts, connection resets) as
+    well as transient HTTP statuses. The network case matters because requests
+    raises those as exceptions instead of returning a response, so a status-only
+    retry loop never sees them and the whole fetcher run dies on one slow page.
+    """
+    attempt = 0
+    while True:
+        try:
+            response = _SESSION.post(url, timeout=WIZ_TIMEOUT, **kwargs)
+        except requests.exceptions.RequestException as exc:
+            problem = f'network error ({exc.__class__.__name__}: {exc})'
+        else:
+            if response.status_code not in RETRYABLE_STATUS:
+                return response
+            problem = f'HTTP {response.status_code}'
+
+        if attempt >= MAX_RETRIES_FOR_QUERY:
+            raise Exception(
+                f'{description}: giving up after {attempt + 1} attempts - {problem}'
+            )
+        delay = min(RETRY_TIME_FOR_QUERY * (2 ** attempt), MAX_RETRY_BACKOFF)
+        logging.warning(
+            '%s failed (%s) - retrying in %.1fs [attempt %d/%d]',
+            description, problem, delay, attempt + 1, MAX_RETRIES_FOR_QUERY,
+        )
+        time.sleep(delay)
+        attempt += 1
+
+
 def get_token():
     global global_token
     logging.info('Getting Wiz token')
     if WIZ_AUTH_URL not in COGNITO_URLS:
         raise Exception('Invalid Wiz auth URL')
-    response = requests.post(
+    response = _post_with_retries(
         WIZ_AUTH_URL,
+        'Wiz authentication',
         headers={'Content-Type': 'application/x-www-form-urlencoded'},
         data={
             'grant_type': 'client_credentials',
@@ -247,7 +295,6 @@ def get_token():
             'client_id': WIZ_CLIENT_ID,
             'client_secret': WIZ_CLIENT_SECRET,
         },
-        timeout=30,
     )
     if response.status_code != 200:
         raise Exception(
@@ -263,39 +310,30 @@ def query_wiz(graphql_query: str, variables: dict) -> dict:
     """Send GraphQL query to Wiz with retries."""
     if not global_token:
         raise Exception('Wiz token not initialized')
-    retries = 0
-    while True:
-        response = requests.post(
-            WIZ_API_ENDPOINT,
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {global_token}',
-                'User-Agent': 'Paramify-WizIntegration-0.1',
-            },
-            json={'query': graphql_query, 'variables': variables},
-            timeout=30,
+    response = _post_with_retries(
+        WIZ_API_ENDPOINT,
+        'Wiz GraphQL query',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {global_token}',
+            'User-Agent': 'Paramify-WizIntegration-0.1',
+        },
+        json={'query': graphql_query, 'variables': variables},
+    )
+    code = response.status_code
+    if code in (401, 403):
+        raise Exception(f'Wiz auth error [{code}] - {response.text}')
+    if code == 404:
+        raise Exception(
+            f'Wiz endpoint not found [{code}] - check WIZ_API_ENDPOINT'
         )
-        code = response.status_code
-        if code in (401, 403):
-            raise Exception(f'Wiz auth error [{code}] - {response.text}')
-        if code == 404:
-            raise Exception(
-                f'Wiz endpoint not found [{code}] - check WIZ_API_ENDPOINT'
-            )
-        if code == 200:
-            data = response.json().get('data')
-            if not data:
-                errors = response.json().get('errors')
-                raise Exception(f'Wiz returned no data: {errors}')
-            return data
-        if retries >= MAX_RETRIES_FOR_QUERY:
-            raise Exception(
-                f'Max retries exceeded. Last error [{code}] - {response.text}'
-            )
-        logging.info('Wiz query failed [%d], retrying in %ds',
-                     code, RETRY_TIME_FOR_QUERY)
-        time.sleep(RETRY_TIME_FOR_QUERY)
-        retries += 1
+    if code != 200:
+        raise Exception(f'Wiz query failed [{code}] - {response.text}')
+    data = response.json().get('data')
+    if not data:
+        errors = response.json().get('errors')
+        raise Exception(f'Wiz returned no data: {errors}')
+    return data
 
 # ============================================================
 # Vulnerability fetching with pagination
