@@ -1,3 +1,21 @@
+> [!IMPORTANT]
+> ### This repo has moved and is now legacy
+>
+> `evidence-fetchers` has been renamed to **[paramify/legacy-evidence-fetchers](https://github.com/paramify/legacy-evidence-fetchers)** and is no longer actively developed. It remains available for reference, but new fetchers, fixes, and features will be in the new supported project:
+>
+> ### 👉 **[paramify/paramify-fetchers](https://github.com/paramify/paramify-fetchers)**
+>
+> **What you get by switching:**
+>
+> - **A real terminal UI** — `paramify tui` lets you browse fetchers, build a manifest, and run everything from one interactive app. No hand-editing YAML, no memorizing flags. A live console streams each fetcher's output with per-target pass/fail, so you can see exactly what worked.
+> - **Secrets done right** — manifests reference secrets by env-var name (`${env:VAR}`), never by value, so they're safe to commit. The same manifest works with `.env`, a secret manager, IRSA, or CI. The runner injects only declared secrets, strips everything else, and redacts secret values from captured output so they never leak into evidence. Wire one up with `set-secret` instead of maintaining a sprawling `.env`.
+> - **Writing a new fetcher is guided** — `create-fetcher` runs a short interview, scaffolds a contract-conformant fetcher, and verifies the wiring. A self-describing `fetcher.yaml` means you declare a fetcher's needs once and the framework handles discovery, config, and secrets. `describe` shows what a fetcher requires at a glance, and `wire-manifest` diagnoses "why won't this run?" and emits the exact commands to fix it.
+> - **AI-native by design** — every command takes `--json`, and a single facade powers the human CLI, the AI CLI, and the TUI, so an agent and a person get identical behavior. Ships task-shaped skills (scaffold a fetcher, wire a manifest, suggest a validator from real output) plus a `CLAUDE.md` so Claude Code can work in the repo without re-explaining the design each session.
+>
+> **Migrating?** Start with the [paramify-fetchers README](https://github.com/paramify/paramify-fetchers#readme).
+
+--- 
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/paramify/evidence-fetchers)
 [![FedRAMP 20x KSIs](https://img.shields.io/badge/FedRAMP%2020x-KSIs-blue)](fetchers/Paramify%20Fetchers%20Catalog.md)
 [![CodeQL](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/paramify/evidence-fetchers/actions/workflows/github-code-scanning/codeql)
