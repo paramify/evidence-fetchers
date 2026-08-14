@@ -80,9 +80,9 @@ OUTPUT_CSV = SCRIPT_DIR / 'wiz_vulnerabilities.csv'
 # 100 chosen as a balance between throughput and response size.
 PAGE_SIZE = 1000
 
-# Filter configuration: empty filter = fetch ALL vulnerabilities.
+
 # Add filters here if needed (e.g., severity, status).
-FILTER_CONFIG = {}
+FILTER_CONFIG = {'status': ['OPEN', 'RESOLVED']}
 
 # ============================================================
 # Internal Configuration
