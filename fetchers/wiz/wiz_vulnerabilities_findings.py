@@ -4,40 +4,50 @@ Wiz Vulnerability Findings to Paramify Vulnerability Assessment Intake
 =====================================================================
 
 Fetches Wiz Vulnerability Findings via GraphQL pagination and uploads
-them as an artifact to a Paramify vulnerability ASSESSMENT via the
+them as a CSV artifact to a Paramify vulnerability ASSESSMENT via the
 assessment intake endpoint (POST /assessment/{assessmentId}/intake).
 
 Behavior:
-  - First run: fetches ALL vulnerabilities (no updatedAt filter)
-  - Subsequent runs (if state.json has last_successful_run):
-    - Uses updatedAt.after filter to only fetch changed vulnerabilities
-    - "Delta updates" pattern recommended by Wiz docs
-  - If DELTA_MODE=false: always fetches ALL vulnerabilities (ignores saved state)
-  - Streams paginated results, writes to a single CSV locally
-  - Uploads CSV as an artifact to a Paramify assessment intake
-    via POST /assessment/{assessmentId}/intake
-  - Updates last_successful_run after successful upload
+  - Full run: fetches ALL vulnerability findings (no date filter)
+  - Delta run (WIZ_VULN_DELTA_MODE=true AND vuln_state.json has
+    last_successful_run AND config hash unchanged):
+      - Applies a date filter on WIZ_VULN_DELTA_FIELD (default
+        lastDetectedAt) to only fetch findings seen since the last run
+      - The filter is probed with a 1-row query before the real run. If
+        Wiz rejects the field, we log the GraphQL error and fall back to
+        a full fetch instead of failing the whole fetcher.
+  - Streams paginated results, writes a single CSV
+  - Uploads the CSV as an artifact to POST /assessment/{id}/intake
+  - Updates last_successful_run only after a successful upload
+
+Outputs:
+  - CSV  -> $EVIDENCE_DIR/wiz_vulnerabilities.csv   (the real artifact)
+  - CSV  -> <script dir>/wiz_vulnerabilities.csv    (local working copy)
+  - JSON -> <script dir>/wiz_vulnerabilities_run.json  (run summary)
+
+The run summary is deliberately NOT written into $EVIDENCE_DIR. Steps 3
+and 4 of the orchestrator glob $EVIDENCE_DIR/*.json and push whatever
+they find to /evidence/{id}/artifacts/upload. This fetcher uploads its
+own CSV to the assessment intake endpoint, so a JSON file in that
+directory only results in the wrong artifact type being uploaded twice.
 
 Prerequisites:
-  - Paramify vulnerability assessment must already exist
-    (created in the Paramify UI)
-  - Assessment UUID set in WIZ_VULN_PARAMIFY_ASSESSMENT_ID env var
+  - Paramify vulnerability assessment must already exist (created in UI)
+  - Assessment UUID in WIZ_VULN_PARAMIFY_ASSESSMENT_ID
   - Wiz Service Account must have read:vulnerabilities scope
-
-Configuration:
-  - Loaded from .env file
-  - State (config_hash, last_run, last_successful_run)
-    persisted in vuln_state.json
+  - Because a full pull can run for 30+ minutes, set a per-fetcher
+    subprocess timeout in .env so run_fetchers.py does not kill it:
+        WIZ_VULNERABILITIES_FINDINGS_TIMEOUT=7200
 """
 import sys
 import time
 import csv
-import codecs
 import logging
 import json
 import os
+import shutil
 import hashlib
-from contextlib import closing
+import random
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -59,12 +69,29 @@ WIZ_API_ENDPOINT = os.environ['WIZ_API_ENDPOINT']
 
 PARAMIFY_API_ISSUES_BASE_URL = os.environ['PARAMIFY_API_ISSUES_BASE_URL']
 PARAMIFY_API_ISSUES_TOKEN = os.environ['PARAMIFY_API_ISSUES_TOKEN']
-# Paramify vulnerability ASSESSMENT UUID (the assessment intake destination).
 WIZ_VULN_PARAMIFY_ASSESSMENT_ID = os.environ['WIZ_VULN_PARAMIFY_ASSESSMENT_ID']
 
-# Delta mode: when False, always fetch ALL vulnerabilities (ignores saved state).
-# When True (default), use last_successful_run from state for incremental fetches.
-DELTA_MODE = os.environ.get('DELTA_MODE', 'true').lower() == 'true'
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    """Parse a boolean env var. Only 'true'/'1'/'yes' are truthy."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().strip('"').strip("'").lower() in ('true', '1', 'yes')
+
+
+# Delta mode. WIZ_VULN_DELTA_MODE is checked first so this fetcher can be
+# switched independently of the Issues fetcher; DELTA_MODE remains as a
+# fallback for existing .env files. Default is False, matching the README.
+if os.environ.get('WIZ_VULN_DELTA_MODE') is not None:
+    DELTA_MODE = _env_flag('WIZ_VULN_DELTA_MODE', False)
+    DELTA_SOURCE = 'WIZ_VULN_DELTA_MODE'
+elif os.environ.get('DELTA_MODE') is not None:
+    DELTA_MODE = _env_flag('DELTA_MODE', False)
+    DELTA_SOURCE = 'DELTA_MODE'
+else:
+    DELTA_MODE = False
+    DELTA_SOURCE = 'default (unset)'
 
 # ============================================================
 # File paths
@@ -72,23 +99,40 @@ DELTA_MODE = os.environ.get('DELTA_MODE', 'true').lower() == 'true'
 SCRIPT_DIR = Path(__file__).resolve().parent
 STATE_FILE = SCRIPT_DIR / 'vuln_state.json'
 OUTPUT_CSV = SCRIPT_DIR / 'wiz_vulnerabilities.csv'
+EVIDENCE_CSV = Path(output_dir) / 'wiz_vulnerabilities.csv'
+RUN_SUMMARY = SCRIPT_DIR / 'wiz_vulnerabilities_run.json'
 
 # ============================================================
 # Query configuration
 # ============================================================
-# Page size for GraphQL pagination (Wiz API max: 1000, default: 1)
-# 100 chosen as a balance between throughput and response size.
-PAGE_SIZE = 1000
+# Wiz allows a much larger page size on vulnerabilityFindings than the
+# 100 this fetcher used to send. At 100/page a 36k-finding tenant needs
+# ~370 round trips, which is what pushed the run past the orchestrator's
+# 300s subprocess timeout. 500 is a safe default; raise via env if your
+# tenant tolerates it.
+PAGE_SIZE = int(os.environ.get('WIZ_VULN_PAGE_SIZE', '500'))
 
+# Field used for delta filtering. `updatedAt` is confirmed working against
+# the WIN gov tenant (a delta run on 2026-08-12 returned 314 rows and a
+# valid artifact id), so it stays the default. If another tenant rejects
+# it, the probe below catches that and falls back to a full fetch rather
+# than killing the run. Alternatives worth trying: lastDetectedAt,
+# detectedAt, firstDetectedAt.
+DELTA_FIELD = os.environ.get('WIZ_VULN_DELTA_FIELD', 'updatedAt')
 
-# Add filters here if needed (e.g., severity, status).
+# Empty filter = fetch ALL findings.
 FILTER_CONFIG = {'status': ['OPEN', 'RESOLVED']}
 
 # ============================================================
 # Internal Configuration
 # ============================================================
-MAX_RETRIES_FOR_QUERY = 5
-RETRY_TIME_FOR_QUERY = 2
+MAX_RETRIES_FOR_QUERY = 6
+RETRY_BASE_SECONDS = 2
+# Wiz access tokens are short lived relative to a full pull, so refresh
+# proactively rather than waiting for a mid-pagination 401.
+TOKEN_REFRESH_AFTER_SECONDS = int(
+    os.environ.get('WIZ_TOKEN_REFRESH_SECONDS', '2400')
+)
 
 COGNITO_URLS = [
     'https://auth.app.wiz.io/oauth/token',
@@ -97,16 +141,16 @@ COGNITO_URLS = [
 ]
 
 global_token = ''
+token_issued_at = 0.0
 
 # ============================================================
 # GraphQL query
 # ============================================================
-# Fetches a focused subset of vulnerability fields - enough for compliance
-# evidence without bloating the CSV. Pagination uses 'first' + 'after'.
 VULNERABILITIES_QUERY = """
 query VulnerabilityFindingsPage($filterBy: VulnerabilityFindingFilters,
                                   $first: Int, $after: String) {
   vulnerabilityFindings(filterBy: $filterBy, first: $first, after: $after) {
+    totalCount
     nodes {
       id
       name
@@ -168,8 +212,18 @@ query VulnerabilityFindingsPage($filterBy: VulnerabilityFindingFilters,
 }
 """
 
-# CSV columns - flat list matching the GraphQL fields above. Nested fields
-# are flattened (e.g., asset.name -> Asset Name).
+# Minimal query used to validate the delta filter before committing to a
+# long paginated run.
+FILTER_PROBE_QUERY = """
+query VulnerabilityFindingsProbe($filterBy: VulnerabilityFindingFilters,
+                                   $first: Int) {
+  vulnerabilityFindings(filterBy: $filterBy, first: $first) {
+    totalCount
+    pageInfo { hasNextPage }
+  }
+}
+"""
+
 CSV_COLUMNS = [
     'ID', 'Name', 'CVE Description', 'CVSS Severity', 'Score',
     'Severity', 'NVD Severity', 'Status',
@@ -189,6 +243,11 @@ CSV_COLUMNS = [
     'Asset Operating System', 'Asset IP Addresses',
 ]
 
+
+class WizFilterRejected(Exception):
+    """Raised when Wiz rejects the filterBy argument (bad field name)."""
+
+
 # ============================================================
 # Config hashing
 # ============================================================
@@ -196,6 +255,7 @@ def compute_config_hash(config: dict) -> str:
     """Compute a stable hash of the query config to detect changes."""
     serialized = json.dumps(config, sort_keys=True)
     return hashlib.sha256(serialized.encode('utf-8')).hexdigest()[:16]
+
 
 # ============================================================
 # State management
@@ -214,6 +274,7 @@ def load_state():
     logging.info('No previous state found - this is the first run')
     return None
 
+
 def save_state(config_hash: str, last_successful_run: str = None) -> None:
     """Save current state to vuln_state.json."""
     existing = load_state() or {}
@@ -230,11 +291,13 @@ def save_state(config_hash: str, last_successful_run: str = None) -> None:
         json.dump(state, f, indent=2)
     logging.info('Saved state to %s', STATE_FILE)
 
+
 # ============================================================
 # Wiz authentication and queries
 # ============================================================
 def get_token():
-    global global_token
+    global global_token, token_issued_at
+    logging.info('>>> RUNNING FILE: %s <<<', __file__)
     logging.info('Getting Wiz token')
     if WIZ_AUTH_URL not in COGNITO_URLS:
         raise Exception('Invalid Wiz auth URL')
@@ -257,67 +320,154 @@ def get_token():
     if not token:
         raise Exception('No access_token in Wiz auth response')
     global_token = token
+    token_issued_at = time.monotonic()
     logging.info('Got Wiz token')
 
-def query_wiz(graphql_query: str, variables: dict) -> dict:
-    """Send GraphQL query to Wiz with retries."""
+
+def _maybe_refresh_token():
+    """Re-authenticate if the current token is old enough to be risky."""
     if not global_token:
-        raise Exception('Wiz token not initialized')
+        get_token()
+        return
+    if time.monotonic() - token_issued_at > TOKEN_REFRESH_AFTER_SECONDS:
+        logging.info('Wiz token is stale - refreshing mid-run')
+        get_token()
+
+
+def _retry_delay(retries: int, response=None) -> float:
+    """Exponential backoff with jitter, honouring Retry-After when present."""
+    if response is not None:
+        retry_after = response.headers.get('Retry-After')
+        if retry_after:
+            try:
+                return min(float(retry_after), 120.0)
+            except ValueError:
+                pass
+    return min(RETRY_BASE_SECONDS * (2 ** retries), 60.0) + random.uniform(0, 1)
+
+
+def query_wiz(graphql_query: str, variables: dict) -> dict:
+    """Send a GraphQL query to Wiz with token refresh and backoff."""
+    _maybe_refresh_token()
     retries = 0
+    reauthed = False
     while True:
         response = requests.post(
             WIZ_API_ENDPOINT,
             headers={
                 'Content-Type': 'application/json',
                 'Authorization': f'Bearer {global_token}',
-                'User-Agent': 'Paramify-WizIntegration-0.1',
+                'User-Agent': 'Paramify-WizIntegration-0.2',
             },
             json={'query': graphql_query, 'variables': variables},
-            timeout=120,
+            timeout=(10, 120),
         )
         code = response.status_code
+
+        # A 401 partway through a long pull is almost always an expired
+        # token, not bad credentials. Re-auth once before giving up.
+        if code == 401 and not reauthed:
+            logging.warning('Wiz returned 401 - re-authenticating once')
+            reauthed = True
+            get_token()
+            continue
         if code in (401, 403):
             raise Exception(f'Wiz auth error [{code}] - {response.text}')
         if code == 404:
             raise Exception(
                 f'Wiz endpoint not found [{code}] - check WIZ_API_ENDPOINT'
             )
+
         if code == 200:
-            data = response.json().get('data')
-            if not data:
-                errors = response.json().get('errors')
-                raise Exception(f'Wiz returned no data: {errors}')
+            payload = response.json()
+            errors = payload.get('errors')
+            data = payload.get('data')
+
+            # Surface GraphQL errors instead of swallowing them. A bad
+            # filter field shows up here, not as an HTTP status.
+            if errors:
+                messages = '; '.join(
+                    str(e.get('message', e)) for e in errors
+                )
+                if not data or data.get('vulnerabilityFindings') is None:
+                    if 'filterBy' in messages or 'Filters' in messages:
+                        raise WizFilterRejected(messages)
+                    raise Exception(f'Wiz GraphQL error: {messages}')
+                logging.warning('Wiz returned partial errors: %s', messages)
+
+            if not data or data.get('vulnerabilityFindings') is None:
+                raise Exception(
+                    f'Wiz returned no vulnerabilityFindings. '
+                    f'errors={errors} data={data}'
+                )
             return data
+
         if retries >= MAX_RETRIES_FOR_QUERY:
             raise Exception(
                 f'Max retries exceeded. Last error [{code}] - {response.text}'
             )
-        logging.info('Wiz query failed [%d], retrying in %ds',
-                     code, RETRY_TIME_FOR_QUERY)
-        time.sleep(RETRY_TIME_FOR_QUERY)
+        delay = _retry_delay(retries, response)
+        logging.info('Wiz query failed [%d], retrying in %.1fs (attempt %d/%d)',
+                     code, delay, retries + 1, MAX_RETRIES_FOR_QUERY)
+        time.sleep(delay)
         retries += 1
+
+
+# ============================================================
+# Delta filter validation
+# ============================================================
+def build_delta_filter(last_successful_run: str) -> dict:
+    filter_by = dict(FILTER_CONFIG)
+    filter_by[DELTA_FIELD] = {'after': last_successful_run}
+    return filter_by
+
+
+def probe_filter(filter_by: dict) -> bool:
+    """Return True if Wiz accepts this filter, False if it rejects it."""
+    try:
+        data = query_wiz(FILTER_PROBE_QUERY,
+                         {'filterBy': filter_by, 'first': 1})
+    except WizFilterRejected as e:
+        logging.warning('Wiz rejected the delta filter field "%s": %s',
+                        DELTA_FIELD, e)
+        return False
+    total = (data.get('vulnerabilityFindings') or {}).get('totalCount')
+    logging.info('Delta filter accepted (totalCount=%s)', total)
+    return True
+
 
 # ============================================================
 # Vulnerability fetching with pagination
 # ============================================================
-def fetch_vulnerabilities(last_successful_run: str = None) -> int:
+def fetch_vulnerabilities(last_successful_run: str = None) -> tuple:
     """
-    Fetch all vulnerabilities via GraphQL pagination, write to CSV.
-    If last_successful_run is provided, only fetch vulnerabilities
-    updated after that timestamp (delta mode).
-    Returns total number of rows written.
+    Fetch findings via GraphQL pagination and write them to CSV.
+    Returns (row_count, mode_label).
     """
+    mode_label = 'full'
     filter_by = dict(FILTER_CONFIG)
+
     if last_successful_run:
-        filter_by['updatedAt'] = {'after': last_successful_run}
-        logging.info('Delta mode: fetching vulnerabilities updated after %s',
-                     last_successful_run)
+        candidate = build_delta_filter(last_successful_run)
+        if probe_filter(candidate):
+            filter_by = candidate
+            mode_label = 'delta'
+            logging.info('Delta mode: %s after %s',
+                         DELTA_FIELD, last_successful_run)
+        else:
+            logging.warning(
+                'Falling back to a FULL fetch because the delta filter was '
+                'rejected. Set WIZ_VULN_DELTA_FIELD to a field your tenant '
+                'supports, or leave delta mode off.'
+            )
     else:
-        logging.info('Full mode: fetching ALL vulnerabilities')
+        logging.info('Full mode: fetching ALL vulnerability findings')
 
     after_cursor = None
     page_num = 0
     total_rows = 0
+    total_count = None
+    started = time.monotonic()
 
     with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
@@ -325,33 +475,30 @@ def fetch_vulnerabilities(last_successful_run: str = None) -> int:
 
         while True:
             page_num += 1
-            variables = {
-                'filterBy': filter_by,
-                'first': PAGE_SIZE,
-            }
+            variables = {'filterBy': filter_by, 'first': PAGE_SIZE}
             if after_cursor:
                 variables['after'] = after_cursor
 
-            logging.info('Fetching page %d (after=%s)', page_num,
-                         after_cursor[:20] + '...' if after_cursor else 'None')
             response = query_wiz(VULNERABILITIES_QUERY, variables)
+            findings = response['vulnerabilityFindings']
 
-            findings = response.get('vulnerabilityFindings')
-            if not findings:
-                raise Exception(
-                    'No vulnerabilityFindings in response: %s' % response
-                )
+            if total_count is None:
+                total_count = findings.get('totalCount')
+                logging.info('Wiz reports totalCount=%s at page size %d',
+                             total_count, PAGE_SIZE)
 
             nodes = findings.get('nodes') or []
             page_info = findings.get('pageInfo') or {}
 
             for node in nodes:
-                row = flatten_vulnerability(node)
-                writer.writerow(row)
+                writer.writerow(flatten_vulnerability(node))
                 total_rows += 1
 
-            logging.info('Page %d: %d findings (total so far: %d)',
-                         page_num, len(nodes), total_rows)
+            elapsed = time.monotonic() - started
+            logging.info('Page %d: %d rows (total %d%s) [%.0fs elapsed]',
+                         page_num, len(nodes), total_rows,
+                         f' of {total_count}' if total_count else '',
+                         elapsed)
 
             if not page_info.get('hasNextPage'):
                 logging.info('No more pages - pagination complete')
@@ -362,9 +509,18 @@ def fetch_vulnerabilities(last_successful_run: str = None) -> int:
                 break
 
     size_mb = OUTPUT_CSV.stat().st_size / 1024 / 1024
-    logging.info('Wrote %s (%d rows, %.2f MB) across %d pages',
-                 OUTPUT_CSV, total_rows, size_mb, page_num)
-    return total_rows
+    logging.info('Wrote %s (%d rows, %.2f MB) across %d pages in %.0fs',
+                 OUTPUT_CSV, total_rows, size_mb, page_num,
+                 time.monotonic() - started)
+
+    if total_count is not None and total_rows < total_count:
+        logging.warning(
+            'Row count (%d) is below Wiz totalCount (%d). Pagination may '
+            'have been cut short.', total_rows, total_count
+        )
+
+    return total_rows, mode_label
+
 
 def flatten_vulnerability(node: dict) -> dict:
     """Flatten a vulnerabilityFinding node into a flat CSV row dict."""
@@ -373,71 +529,69 @@ def flatten_vulnerability(node: dict) -> dict:
     ip_addresses = asset.get('ipAddresses') or []
     tags = asset.get('tags') or {}
 
+    def num(value):
+        return value if value is not None else ''
+
     return {
         'ID': node.get('id', ''),
         'Name': node.get('name', ''),
-        'CVE Description': node.get('CVEDescription', '') or '',
-        'CVSS Severity': node.get('CVSSSeverity', '') or '',
-        'Score': node.get('score', '') if node.get('score') is not None else '',
-        'Severity': node.get('severity', '') or '',
-        'NVD Severity': node.get('nvdSeverity', '') or '',
-        'Status': node.get('status', '') or '',
+        'CVE Description': node.get('CVEDescription') or '',
+        'CVSS Severity': node.get('CVSSSeverity') or '',
+        'Score': num(node.get('score')),
+        'Severity': node.get('severity') or '',
+        'NVD Severity': node.get('nvdSeverity') or '',
+        'Status': node.get('status') or '',
         'Has Exploit': node.get('hasExploit', ''),
         'Has Fix': node.get('hasFix', ''),
         'Has CISA KEV Exploit': node.get('hasCisaKevExploit', ''),
-        'First Detected At': node.get('firstDetectedAt', '') or '',
-        'Last Detected At': node.get('lastDetectedAt', '') or '',
-        'Resolved At': node.get('resolvedAt', '') or '',
-        'Description': node.get('description', '') or '',
-        'Remediation': node.get('remediation', '') or '',
-        'Detailed Name': node.get('detailedName', '') or '',
-        'Version': node.get('version', '') or '',
-        'Fixed Version': node.get('fixedVersion', '') or '',
-        'Detection Method': node.get('detectionMethod', '') or '',
-        'Link': node.get('link', '') or '',
-        'Portal URL': node.get('portalUrl', '') or '',
-        'EPSS Severity': node.get('epssSeverity', '') or '',
-        'EPSS Percentile': node.get('epssPercentile', '')
-                          if node.get('epssPercentile') is not None else '',
-        'EPSS Probability': node.get('epssProbability', '')
-                            if node.get('epssProbability') is not None else '',
-        'Related Issue Count': analytics.get('issueCount', '')
-                               if analytics.get('issueCount') is not None else '',
-        'Related Critical Issues': analytics.get('criticalSeverityCount', '')
-                                   if analytics.get('criticalSeverityCount') is not None else '',
-        'Related High Issues': analytics.get('highSeverityCount', '')
-                               if analytics.get('highSeverityCount') is not None else '',
-        'Related Medium Issues': analytics.get('mediumSeverityCount', '')
-                                 if analytics.get('mediumSeverityCount') is not None else '',
-        'Related Low Issues': analytics.get('lowSeverityCount', '')
-                              if analytics.get('lowSeverityCount') is not None else '',
-        'Asset ID': asset.get('id', '') or '',
-        'Asset Type': asset.get('type', '') or '',
-        'Asset Name': asset.get('name', '') or '',
-        'Asset Region': asset.get('region', '') or '',
-        'Asset Provider ID': asset.get('providerUniqueId', '') or '',
-        'Asset Cloud Platform': asset.get('cloudPlatform', '') or '',
-        'Asset Status': asset.get('status', '') or '',
-        'Asset Subscription Name': asset.get('subscriptionName', '') or '',
-        'Asset Subscription External ID': asset.get('subscriptionExternalId', '') or '',
+        'First Detected At': node.get('firstDetectedAt') or '',
+        'Last Detected At': node.get('lastDetectedAt') or '',
+        'Resolved At': node.get('resolvedAt') or '',
+        'Description': node.get('description') or '',
+        'Remediation': node.get('remediation') or '',
+        'Detailed Name': node.get('detailedName') or '',
+        'Version': node.get('version') or '',
+        'Fixed Version': node.get('fixedVersion') or '',
+        'Detection Method': node.get('detectionMethod') or '',
+        'Link': node.get('link') or '',
+        'Portal URL': node.get('portalUrl') or '',
+        'EPSS Severity': node.get('epssSeverity') or '',
+        'EPSS Percentile': num(node.get('epssPercentile')),
+        'EPSS Probability': num(node.get('epssProbability')),
+        'Related Issue Count': num(analytics.get('issueCount')),
+        'Related Critical Issues': num(analytics.get('criticalSeverityCount')),
+        'Related High Issues': num(analytics.get('highSeverityCount')),
+        'Related Medium Issues': num(analytics.get('mediumSeverityCount')),
+        'Related Low Issues': num(analytics.get('lowSeverityCount')),
+        'Asset ID': asset.get('id') or '',
+        'Asset Type': asset.get('type') or '',
+        'Asset Name': asset.get('name') or '',
+        'Asset Region': asset.get('region') or '',
+        'Asset Provider ID': asset.get('providerUniqueId') or '',
+        'Asset Cloud Platform': asset.get('cloudPlatform') or '',
+        'Asset Status': asset.get('status') or '',
+        'Asset Subscription Name': asset.get('subscriptionName') or '',
+        'Asset Subscription External ID': asset.get('subscriptionExternalId') or '',
         'Asset Tags': json.dumps(tags) if tags else '',
         'Asset Has Wide Internet Exposure': asset.get('hasWideInternetExposure', ''),
-        'Asset Operating System': asset.get('operatingSystem', '') or '',
+        'Asset Operating System': asset.get('operatingSystem') or '',
         'Asset IP Addresses': ', '.join(ip_addresses) if ip_addresses else '',
     }
+
 
 # ============================================================
 # Paramify upload
 # ============================================================
 def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
-    """Upload CSV as an artifact to a Paramify vulnerability assessment intake."""
+    """Upload the CSV as an artifact to a Paramify assessment intake."""
     today = datetime.now(timezone.utc)
     logging.info('Uploading %s to Paramify (%s mode)', csv_path, mode_label)
     logging.info('  API:        %s', PARAMIFY_API_ISSUES_BASE_URL)
     logging.info('  Assessment: %s', WIZ_VULN_PARAMIFY_ASSESSMENT_ID)
     with open(csv_path, 'rb') as f:
         response = requests.post(
-            f"{PARAMIFY_API_ISSUES_BASE_URL}/assessment/{WIZ_VULN_PARAMIFY_ASSESSMENT_ID}/intake",
+            f"{PARAMIFY_API_ISSUES_BASE_URL}/assessment/"
+            f"{WIZ_VULN_PARAMIFY_ASSESSMENT_ID}/intake",
             headers={
                 "Authorization": f"Bearer {PARAMIFY_API_ISSUES_TOKEN}",
                 "Accept": "application/json",
@@ -448,20 +602,28 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
             data={
                 "artifact": json.dumps({
                     "title": f"Wiz Vulnerabilities {today:%Y-%m-%d %H:%M} ({mode_label})",
-                    "note": f"Automated upload via wiz-vulnerabilities-fetcher (mode={mode_label})",
+                    "note": (
+                        "Automated upload via wiz-vulnerabilities-fetcher "
+                        f"(mode={mode_label})"
+                    ),
                     "effectiveDate": today.isoformat(),
                 }),
             },
-            timeout=600,
+            timeout=900,
         )
+    if response.status_code >= 400:
+        # The intake endpoint returns a structured error body; log it
+        # before raising so failures are diagnosable from the run log.
+        logging.error('Paramify intake failed [%d]: %s',
+                      response.status_code, response.text[:2000])
     response.raise_for_status()
-    # Assessment intake endpoint returns an array of artifacts.
     artifact = response.json()['artifacts'][0]
     logging.info('Uploaded artifact:')
     logging.info('  ID:    %s', artifact['id'])
     logging.info('  Title: %s', artifact['title'])
     logging.info('  File:  %s', artifact['originalFileName'])
     return artifact
+
 
 # ============================================================
 # Main
@@ -470,78 +632,95 @@ def main():
     logging.basicConfig(
         format='%(asctime)s - [%(levelname)s] - %(message)s',
         level=logging.INFO,
+        stream=sys.stdout,
     )
     logging.info('=' * 60)
     logging.info('Wiz Vulnerabilities to Paramify Fetcher')
-    logging.info('  DELTA_MODE: %s', DELTA_MODE)
+    logging.info('  DELTA_MODE:  %s (from %s)', DELTA_MODE, DELTA_SOURCE)
+    logging.info('  DELTA_FIELD: %s', DELTA_FIELD)
+    logging.info('  PAGE_SIZE:   %d', PAGE_SIZE)
+    logging.info('  EVIDENCE_DIR:%s', output_dir)
     logging.info('=' * 60)
 
-    # Step 1: Authenticate to Wiz
     get_token()
 
-    # Step 2: Compute current config hash
     current_hash = compute_config_hash({
         'filter': FILTER_CONFIG,
         'page_size': PAGE_SIZE,
+        'delta_field': DELTA_FIELD,
     })
     logging.info('Current config hash: %s', current_hash)
 
-    # Step 3: Load state to decide full vs delta
     state = load_state()
     last_successful_run = None
-    if DELTA_MODE and state:
-        saved_hash = state.get('config_hash')
-        if saved_hash != current_hash:
-            logging.info('Config changed (was %s, now %s) - falling back to full fetch',
-                         saved_hash, current_hash)
+    if DELTA_MODE:
+        if not state:
+            logging.info('Delta mode on but no state yet - full fetch')
+        elif state.get('config_hash') != current_hash:
+            logging.info('Config changed (was %s, now %s) - full fetch',
+                         state.get('config_hash'), current_hash)
         else:
             last_successful_run = state.get('last_successful_run')
-    elif not DELTA_MODE:
-        logging.info('DELTA_MODE=false - forcing full fetch (ignoring saved state)')
+            if not last_successful_run:
+                logging.info('No last_successful_run in state - full fetch')
+    else:
+        logging.info('Delta mode off - forcing full fetch, ignoring state')
 
-    mode_label = 'delta' if last_successful_run else 'full'
+    row_count, mode_label = fetch_vulnerabilities(
+        last_successful_run=last_successful_run
+    )
 
-    # Step 4: Fetch vulnerabilities (paginated)
-    row_count = fetch_vulnerabilities(last_successful_run=last_successful_run)
+    new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
     if row_count == 0:
-        logging.info('No vulnerabilities to upload (0 rows)')
-        # Still update last_successful_run so next run picks up new changes
-        new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-        save_state(current_hash, last_successful_run=new_successful_run)
-        logging.info('Updated last_successful_run: %s', new_successful_run)
-        logging.info('=' * 60)
-        logging.info('All done (nothing to upload)')
-        logging.info('=' * 60)
-        return
+        # A zero-change cycle is itself evidence: "we queried Wiz and nothing
+        # changed". Skipping the upload leaves an unexplained gap in the
+        # continuous-monitoring record, and makes "nothing changed"
+        # indistinguishable from "the fetcher silently failed". Upload the
+        # header-only CSV so the cycle is on the record either way.
+        logging.info('0 rows - uploading header-only CSV as a no-change record')
+        mode_label = '%s, no changes' % mode_label
 
-    # Step 5: Upload to Paramify
     artifact = upload_to_paramify(OUTPUT_CSV, mode_label)
 
-    # Step 6: Update last_successful_run after successful upload.
-    # UTC ISO 8601 with 'Z' suffix matches Wiz's updatedAt format,
-    # so the delta filter in the next run compares correctly.
-    new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    save_state(current_hash, last_successful_run=new_successful_run)
-    logging.info('Updated last_successful_run: %s', new_successful_run)
+    # Keep the CSV alongside the run so the artifact that was uploaded is
+    # reproducible from the evidence directory.
+    try:
+        shutil.copy2(OUTPUT_CSV, EVIDENCE_CSV)
+        logging.info('Copied CSV to %s', EVIDENCE_CSV)
+    except Exception as e:
+        logging.warning('Could not copy CSV to evidence dir: %s', e)
 
-    # Step 7: Write summary JSON for TUI review screen
-    summary_path = Path(output_dir) / 'wiz_vulnerabilities.json'
+    # Only advance the delta watermark when delta mode is actually on.
+    # Advancing it during full runs means the first delta run after
+    # flipping the flag silently starts from "now" and returns nothing.
+    if DELTA_MODE:
+        save_state(current_hash, last_successful_run=new_successful_run)
+        logging.info('Updated last_successful_run: %s', new_successful_run)
+    else:
+        save_state(current_hash)
+        logging.info('Delta mode off - last_successful_run left unchanged')
+
     summary = {
         'fetcher': 'wiz_vulnerabilities_findings',
         'mode': mode_label,
+        'delta_mode_setting': DELTA_MODE,
+        'delta_field': DELTA_FIELD,
+        'page_size': PAGE_SIZE,
         'artifact_id': artifact.get('id'),
         'artifact_title': artifact.get('title'),
+        'csv_path': str(EVIDENCE_CSV),
         'row_count': row_count,
         'timestamp': new_successful_run,
     }
-    with open(summary_path, 'w') as f:
+    with open(RUN_SUMMARY, 'w') as f:
         json.dump(summary, f, indent=2)
-    logging.info('Wrote summary to %s', summary_path)
+    logging.info('Wrote run summary to %s', RUN_SUMMARY)
 
     logging.info('=' * 60)
-    logging.info('All done!')
+    logging.info('All done! %d rows uploaded as %s', row_count, mode_label)
     logging.info('=' * 60)
+
 
 if __name__ == '__main__':
     main()
