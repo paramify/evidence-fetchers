@@ -78,7 +78,7 @@ OUTPUT_CSV = SCRIPT_DIR / 'wiz_vulnerabilities.csv'
 # ============================================================
 # Page size for GraphQL pagination (Wiz API max: 1000, default: 1)
 # 100 chosen as a balance between throughput and response size.
-PAGE_SIZE = 100
+PAGE_SIZE = 1000
 
 # Filter configuration: empty filter = fetch ALL vulnerabilities.
 # Add filters here if needed (e.g., severity, status).
