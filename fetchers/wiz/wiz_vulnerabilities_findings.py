@@ -273,7 +273,7 @@ def query_wiz(graphql_query: str, variables: dict) -> dict:
                 'User-Agent': 'Paramify-WizIntegration-0.1',
             },
             json={'query': graphql_query, 'variables': variables},
-            timeout=30,
+            timeout=120,
         )
         code = response.status_code
         if code in (401, 403):
