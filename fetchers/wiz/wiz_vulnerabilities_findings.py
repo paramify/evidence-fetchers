@@ -54,6 +54,7 @@ from pathlib import Path
 import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common.env_loader import init_fetcher_env
+from common import paramify_state
 
 csv.field_size_limit(sys.maxsize)
 
@@ -260,8 +261,23 @@ def compute_config_hash(config: dict) -> str:
 # ============================================================
 # State management
 # ============================================================
+STATE_ARTIFACT_NAME = 'wiz_vulnerabilities_state.json'
+STATE_EVIDENCE_ID = paramify_state.evidence_id('WIZ_VULN_STATE_EVIDENCE_ID')
+
+
 def load_state():
-    """Load saved state from vuln_state.json."""
+    """Return the previous run's state, or None if there is not one.
+
+    With WIZ_STATE_BACKEND=paramify the state lives in a Paramify evidence set
+    rather than on this machine, so the delta watermark belongs to the tenant
+    instead of to whichever laptop or CI runner happened to run last. Any
+    failure to read it returns None, which the caller treats as a first run and
+    therefore a full fetch - slower, but it cannot lose findings the way a
+    guessed watermark would.
+    """
+    if paramify_state.enabled(STATE_EVIDENCE_ID):
+        return paramify_state.load(STATE_EVIDENCE_ID, STATE_ARTIFACT_NAME)
+
     if STATE_FILE.exists():
         with open(STATE_FILE) as f:
             state = json.load(f)
@@ -276,7 +292,7 @@ def load_state():
 
 
 def save_state(config_hash: str, last_successful_run: str = None) -> None:
-    """Save current state to vuln_state.json."""
+    """Persist state to whichever backend is configured."""
     existing = load_state() or {}
     state = {
         'config_hash': config_hash,
@@ -287,6 +303,24 @@ def save_state(config_hash: str, last_successful_run: str = None) -> None:
             else existing.get('last_successful_run')
         ),
     }
+
+    if paramify_state.enabled(STATE_EVIDENCE_ID):
+        # The local file is still written, but only as a breadcrumb for
+        # debugging. It is never read back while the Paramify backend is on,
+        # so the two cannot drift into disagreeing about the watermark.
+        ok = paramify_state.save(STATE_EVIDENCE_ID, STATE_ARTIFACT_NAME, state,
+                                 label='Wiz Vulnerabilities')
+        try:
+            with open(STATE_FILE, 'w') as f:
+                json.dump({**state, '_authoritative': False,
+                           '_backend': 'paramify'}, f, indent=2)
+        except OSError as exc:
+            logging.warning('Could not write the local state breadcrumb: %s', exc)
+        if not ok:
+            logging.warning('State was not persisted to Paramify. The next run '
+                            'will do a full fetch.')
+        return
+
     with open(STATE_FILE, 'w') as f:
         json.dump(state, f, indent=2)
     logging.info('Saved state to %s', STATE_FILE)
@@ -297,7 +331,6 @@ def save_state(config_hash: str, last_successful_run: str = None) -> None:
 # ============================================================
 def get_token():
     global global_token, token_issued_at
-    logging.info('>>> RUNNING FILE: %s <<<', __file__)
     logging.info('Getting Wiz token')
     if WIZ_AUTH_URL not in COGNITO_URLS:
         raise Exception('Invalid Wiz auth URL')
