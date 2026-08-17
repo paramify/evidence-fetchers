@@ -5,6 +5,9 @@
 state.json
 vuln_state.json
 
+# Per-run summary written by the vulnerability fetcher
+wiz_vulnerabilities_run.json
+
 # Output files (contains vulnerability data)
 wiz_issues.csv
 wiz_issues_delta.csv
