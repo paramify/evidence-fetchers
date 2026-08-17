@@ -40,6 +40,7 @@ from pathlib import Path
 import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common.env_loader import init_fetcher_env
+from common import paramify_state
 
 csv.field_size_limit(sys.maxsize)
 
@@ -84,8 +85,15 @@ REPORT_CONFIG = {
 
 COLUMNS_TO_DROP = ['Resource original JSON']
 
-# Column used for Delta filtering
-DELTA_FILTER_COLUMN = 'Status Changed At'
+# Column used for Delta filtering.
+#
+# 'Status Changed At' only moves when an Issue transitions between OPEN /
+# IN_PROGRESS / RESOLVED. An Issue whose note, ticket link, assignee or
+# severity changed without a status transition keeps its old timestamp and is
+# therefore dropped from every delta, permanently. 'Updated At' moves on any
+# change, which is what "give me what changed" is supposed to mean.
+# Override with WIZ_ISSUES_DELTA_COLUMN if a tenant's export differs.
+DELTA_FILTER_COLUMN = os.environ.get('WIZ_ISSUES_DELTA_COLUMN', 'Updated At')
 
 # ============================================================
 # Internal Configuration
@@ -95,6 +103,12 @@ RETRY_TIME_FOR_QUERY = 2
 MAX_RETRIES_FOR_DOWNLOAD = 5
 RETRY_TIME_FOR_DOWNLOAD = 60
 CHECK_INTERVAL_FOR_DOWNLOAD = 20
+# Hard ceiling on report generation. Keep this comfortably below the
+# orchestrator's WIZ_ISSUES_REPORT_TIMEOUT so we fail with our own
+# message rather than being killed mid-poll.
+MAX_WAIT_FOR_DOWNLOAD_SECONDS = int(
+    os.environ.get('WIZ_ISSUES_REPORT_WAIT_SECONDS', '1200')
+)
 
 COGNITO_URLS = [
     'https://auth.app.wiz.io/oauth/token',
@@ -159,8 +173,25 @@ def compute_config_hash(config: dict) -> str:
 # ============================================================
 # State management
 # ============================================================
+STATE_ARTIFACT_NAME = 'wiz_issues_state.json'
+STATE_EVIDENCE_ID = paramify_state.evidence_id('WIZ_ISSUES_STATE_EVIDENCE_ID')
+
+
 def load_state():
-    """Load saved state from state.json."""
+    """Return the previous run's state, or None if there is not one.
+
+    With WIZ_STATE_BACKEND=paramify the state lives in a Paramify evidence set
+    instead of on this machine. That matters more here than for the
+    vulnerability fetcher: this state carries `report_id`, and losing it does
+    not merely cost a full fetch - it makes the next run create a *second*
+    report inside Wiz and leave the first one orphaned.
+
+    Any failure to read returns None, which the caller treats as "no previous
+    report".
+    """
+    if paramify_state.enabled(STATE_EVIDENCE_ID):
+        return paramify_state.load(STATE_EVIDENCE_ID, STATE_ARTIFACT_NAME)
+
     if STATE_FILE.exists():
         with open(STATE_FILE) as f:
             state = json.load(f)
@@ -172,10 +203,19 @@ def load_state():
     logging.info('No previous state found')
     return None
 
+
 def save_state(report_id: str, config_hash: str,
-               last_successful_run: str = None) -> None:
-    """Save current state to state.json."""
-    existing = load_state() or {}
+               last_successful_run: str = None,
+               previous: dict = None) -> None:
+    """Persist state to whichever backend is configured.
+
+    `previous` is the state the caller already loaded. It is passed in rather
+    than re-read here because main() saves twice per run (once before the
+    report is polled so a crash cannot orphan the report_id, once after a
+    successful upload), and with a remote backend each implicit re-read would
+    be another HTTP round trip.
+    """
+    existing = previous if previous is not None else (load_state() or {})
     state = {
         'report_id': report_id,
         'config_hash': config_hash,
@@ -183,9 +223,28 @@ def save_state(report_id: str, config_hash: str,
         'last_successful_run': (
             last_successful_run
             if last_successful_run is not None
-            else existing.get('last_successful_run')
+            else (existing or {}).get('last_successful_run')
         ),
     }
+
+    if paramify_state.enabled(STATE_EVIDENCE_ID):
+        ok = paramify_state.save(STATE_EVIDENCE_ID, STATE_ARTIFACT_NAME, state,
+                                 label='Wiz Issues')
+        # The local file is still written, but only as a breadcrumb. It is
+        # never read back while the Paramify backend is on, so the two cannot
+        # drift into disagreeing about the watermark or the report id.
+        try:
+            with open(STATE_FILE, 'w') as f:
+                json.dump({**state, '_authoritative': False,
+                           '_backend': 'paramify'}, f, indent=2)
+        except OSError as exc:
+            logging.warning('Could not write the local state breadcrumb: %s', exc)
+        if not ok:
+            logging.warning('State was not persisted to Paramify. The next run '
+                            'will create a new Wiz report instead of reusing '
+                            'report_id %s.', report_id)
+        return
+
     with open(STATE_FILE, 'w') as f:
         json.dump(state, f, indent=2)
     logging.info('Saved state to %s', STATE_FILE)
@@ -289,23 +348,48 @@ def rerun_report(report_id: str) -> str:
     return same_id
 
 def get_report_download_url(report_id: str) -> str:
-    """Poll Wiz until report is ready, then return presigned download URL."""
-    retries = 0
-    while retries < MAX_RETRIES_FOR_DOWNLOAD:
-        logging.info('Waiting %ds for report to complete', CHECK_INTERVAL_FOR_DOWNLOAD)
+    """Poll Wiz until the report is ready, then return its presigned URL.
+
+    The loop is bounded by wall clock as well as by failure count. Counting
+    only FAILED/EXPIRED reruns meant a report stuck in RUNNING polled forever,
+    with the orchestrator's subprocess timeout as the only way out - which
+    kills the run without a usable error. MAX_WAIT_FOR_DOWNLOAD_SECONDS gives
+    us a diagnosable failure instead.
+    """
+    reruns = 0
+    started = time.monotonic()
+    last_status = None
+    while True:
+        waited = time.monotonic() - started
+        if waited > MAX_WAIT_FOR_DOWNLOAD_SECONDS:
+            raise Exception(
+                f'Report {report_id} was still "{last_status}" after '
+                f'{waited:.0f}s (limit {MAX_WAIT_FOR_DOWNLOAD_SECONDS}s). '
+                f'Raise WIZ_ISSUES_REPORT_WAIT_SECONDS if this tenant is '
+                f'simply slow, or check the Wiz console for a stuck report.'
+            )
+        logging.info('Waiting %ds for report to complete (%.0fs elapsed)',
+                     CHECK_INTERVAL_FOR_DOWNLOAD, waited)
         time.sleep(CHECK_INTERVAL_FOR_DOWNLOAD)
         response = query_wiz(DOWNLOAD_REPORT_QUERY, {'reportId': report_id})
-        status = response['report']['lastRun']['status']
-        if status == 'COMPLETED':
-            url = response['report']['lastRun']['url']
-            logging.info('Report ready: %s', url[:80] + '...')
+        last_run = response['report']['lastRun'] or {}
+        last_status = last_run.get('status')
+        if last_status == 'COMPLETED':
+            url = last_run.get('url')
+            if not url:
+                raise Exception('Report reported COMPLETED but returned no '
+                                'download URL')
+            logging.info('Report ready after %.0fs', time.monotonic() - started)
             return url
-        if status in ('FAILED', 'EXPIRED'):
-            logging.warning('Report status %s - rerunning', status)
+        if last_status in ('FAILED', 'EXPIRED'):
+            reruns += 1
+            if reruns > MAX_RETRIES_FOR_DOWNLOAD:
+                raise Exception(f'Report {report_id} failed {reruns} times '
+                                f'({last_status}) - giving up')
+            logging.warning('Report status %s - rerunning (%d/%d)',
+                            last_status, reruns, MAX_RETRIES_FOR_DOWNLOAD)
             rerun_report(report_id)
             time.sleep(RETRY_TIME_FOR_DOWNLOAD)
-            retries += 1
-    raise Exception('Report download failed after max retries')
 
 def download_csv(download_url: str) -> Path:
     """Stream Wiz CSV to disk, dropping unwanted columns. Returns path."""
@@ -408,6 +492,46 @@ def upload_to_paramify(csv_path: Path, mode_label: str = 'full') -> dict:
     return artifact
 
 # ============================================================
+# Report lifecycle
+# ============================================================
+def _reuse_or_create_report(state: dict, current_hash: str) -> str:
+    """Reuse the saved Wiz report if it still exists, otherwise make a new one.
+
+    Wiz retains reports for 7 days and then deletes them permanently ("Reports
+    are automatically expired after 7 days" in the Saved Reports UI). Any run
+    cadence looser than weekly - and this fetcher is documented for monthly
+    cron - therefore finds its saved report_id already gone. That is normal
+    ageing, not an error, so a failed rerun must not take the run down with it:
+    we log it and create a replacement.
+
+    Without this, a stale report_id crashed the fetcher at Step 3 before it
+    could record anything, which is how ten orphaned "Paramify-Wiz-Fetcher"
+    reports accumulated in the tenant.
+    """
+    if not state or not state.get('report_id'):
+        logging.info('No previous report - creating new')
+        return create_report()
+
+    report_id = state['report_id']
+    saved_hash = state.get('config_hash')
+    try:
+        if saved_hash != current_hash:
+            logging.info('Config changed (was %s, now %s) - updating',
+                         saved_hash, current_hash)
+            update_report(report_id)
+        else:
+            logging.info('Config unchanged - rerunning existing report')
+        rerun_report(report_id)
+        return report_id
+    except Exception as exc:
+        logging.warning('Saved report %s could not be reused (%s: %s). Wiz '
+                        'expires reports after 7 days, so this is expected '
+                        'when runs are further apart than that - creating a '
+                        'replacement.', report_id, type(exc).__name__, exc)
+        return create_report()
+
+
+# ============================================================
 # Main
 # ============================================================
 def main():
@@ -429,23 +553,14 @@ def main():
 
     # Step 3: Decide create / update / rerun
     state = load_state()
-    if not state or not state.get('report_id'):
-        logging.info('No previous report - creating new')
-        report_id = create_report()
-    else:
-        report_id = state['report_id']
-        saved_hash = state.get('config_hash')
-        if saved_hash != current_hash:
-            logging.info('Config changed (was %s, now %s) - updating',
-                         saved_hash, current_hash)
-            update_report(report_id)
-            rerun_report(report_id)
-        else:
-            logging.info('Config unchanged - rerunning existing report')
-            rerun_report(report_id)
+    report_id = _reuse_or_create_report(state, current_hash)
 
-    # Step 4: Save state (without updating last_successful_run yet)
-    save_state(report_id, current_hash)
+    # Step 4: Save state now, before the long poll. If the process dies while
+    # the report is generating, report_id is already recorded and the next run
+    # reuses it instead of leaving an orphan behind in Wiz.
+    # last_successful_run is deliberately not touched yet - nothing has been
+    # uploaded, so the watermark has not moved.
+    save_state(report_id, current_hash, previous=state)
 
     # Step 5: Wait for report and download CSV
     download_url = get_report_download_url(report_id)
@@ -473,7 +588,8 @@ def main():
     # UTC ISO 8601 with 'Z' suffix matches Wiz's "Status Changed At" format,
     # so string comparison in filter_csv_by_delta() works correctly.
     new_successful_run = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    save_state(report_id, current_hash, last_successful_run=new_successful_run)
+    save_state(report_id, current_hash,
+               last_successful_run=new_successful_run, previous=state)
     logging.info('Updated last_successful_run: %s', new_successful_run)
 
     # Step 9: Write summary JSON for TUI review screen
