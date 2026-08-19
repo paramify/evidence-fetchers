@@ -180,6 +180,37 @@ def load_evidence_sets():
     return evidence_sets
 
 
+def write_fetcher_log(evidence_dir, label: str, stdout, stderr):
+    """Persist a fetcher's captured output to <evidence_dir>/logs/<label>.log.
+
+    subprocess.run(capture_output=True) swallows everything a fetcher logs, so a
+    successful run left no record at all and a failed one left only stderr. That
+    is the difference between "the Wiz report was reused" and "a second report
+    was created in Wiz" - both exit 0 and both looked identical from here.
+
+    Set FETCHER_VERBOSE=true to also stream the output to the console.
+    """
+    try:
+        log_dir = Path(evidence_dir) / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_path = log_dir / ("%s.log" % label)
+        with open(log_path, "w", encoding="utf-8") as fh:
+            if stdout:
+                fh.write(stdout)
+            if stderr:
+                fh.write("\n--- stderr ---\n")
+                fh.write(stderr)
+        if os.environ.get("FETCHER_VERBOSE", "").strip().lower() in ("true", "1", "yes"):
+            for stream in (stdout, stderr):
+                for line in (stream or "").splitlines():
+                    print("      | %s" % line)
+        return log_path
+    except Exception as exc:
+        # A logging failure must never decide whether a fetcher passed.
+        print("    (could not write log for %s: %s)" % (label, exc))
+        return None
+
+
 def resolve_fetcher_timeout(script_name: str, base_timeout: int) -> int:
     """Subprocess timeout for a fetcher (may exceed global FETCHER_TIMEOUT for slow APIs)."""
     env_key = f"{script_name.upper()}_TIMEOUT"
@@ -520,7 +551,8 @@ def run_fetcher_instance(
         
         # Run the script
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
-        
+        log_path = write_fetcher_log(evidence_dir, instance_name, result.stdout, result.stderr)
+
         if result.returncode == 0:
             # For AWS instances, validate the evidence metadata to catch \"unknown\" identities
             if provider == "aws" and not validate_aws_evidence(script_name, evidence_dir):
@@ -533,15 +565,22 @@ def run_fetcher_instance(
                 return False
 
             print(f"  ✓ {instance_name} completed successfully")
+            if log_path:
+                print(f"    Log: {log_path}")
             return True
         else:
             print(f"  ✗ {instance_name} failed with return code {result.returncode}")
             if result.stderr:
                 print(f"    Error: {result.stderr}")
+            if log_path:
+                print(f"    Log: {log_path}")
             return False
     
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
         print(f"  ✗ {instance_name} timed out after {timeout} seconds")
+        log_path = write_fetcher_log(evidence_dir, instance_name, exc.stdout, exc.stderr)
+        if log_path:
+            print(f"    Partial log: {log_path}")
         return False
     except Exception as e:
         print(f"  ✗ {instance_name} failed with error: {e}")
@@ -655,7 +694,8 @@ def run_fetcher_script(
 
         # Run the script
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
-        
+        log_path = write_fetcher_log(evidence_dir, script_name, result.stdout, result.stderr)
+
         if result.returncode == 0:
             # For AWS-based fetchers, validate the evidence metadata to catch \"unknown\" identities
             if service == "aws" and not validate_aws_evidence(script_name, evidence_dir):
@@ -668,15 +708,22 @@ def run_fetcher_script(
                 return False
 
             print(f"  ✓ {script_name} completed successfully")
+            if log_path:
+                print(f"    Log: {log_path}")
             return True
         else:
             print(f"  ✗ {script_name} failed with return code {result.returncode}")
             if result.stderr:
                 print(f"    Error: {result.stderr}")
+            if log_path:
+                print(f"    Log: {log_path}")
             return False
     
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
         print(f"  ✗ {script_name} timed out after {timeout} seconds")
+        log_path = write_fetcher_log(evidence_dir, script_name, exc.stdout, exc.stderr)
+        if log_path:
+            print(f"    Partial log: {log_path}")
         return False
     except Exception as e:
         print(f"  ✗ {script_name} failed with error: {e}")

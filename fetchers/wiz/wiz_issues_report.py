@@ -59,8 +59,27 @@ PARAMIFY_API_ISSUES_BASE_URL = os.environ['PARAMIFY_API_ISSUES_BASE_URL']
 PARAMIFY_API_ISSUES_TOKEN = os.environ['PARAMIFY_API_ISSUES_TOKEN']
 WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID = os.environ['WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID']
 
-# Delta mode: when True, filter CSV to only changed issues
-DELTA_MODE = os.environ.get('DELTA_MODE', 'false').lower() == 'true'
+def _env_flag(name: str, default: bool = False) -> bool:
+    """Parse a boolean env var. Only 'true'/'1'/'yes' are truthy."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().strip('"').strip("'").lower() in ('true', '1', 'yes')
+
+
+# Delta mode: when True, filter the CSV to only changed issues.
+# WIZ_ISSUES_DELTA_MODE is checked first so this fetcher can be switched
+# independently of the vulnerability fetcher; DELTA_MODE remains as a fallback
+# for existing .env files. Default is False, matching the README.
+if os.environ.get('WIZ_ISSUES_DELTA_MODE') is not None:
+    DELTA_MODE = _env_flag('WIZ_ISSUES_DELTA_MODE', False)
+    DELTA_SOURCE = 'WIZ_ISSUES_DELTA_MODE'
+elif os.environ.get('DELTA_MODE') is not None:
+    DELTA_MODE = _env_flag('DELTA_MODE', False)
+    DELTA_SOURCE = 'DELTA_MODE'
+else:
+    DELTA_MODE = False
+    DELTA_SOURCE = 'default (unset)'
 
 # ============================================================
 # Report and file paths
@@ -541,7 +560,7 @@ def main():
     )
     logging.info('=' * 60)
     logging.info('Wiz to Paramify Fetcher (Delta Updates support)')
-    logging.info('  DELTA_MODE: %s', DELTA_MODE)
+    logging.info('  DELTA_MODE: %s (from %s)', DELTA_MODE, DELTA_SOURCE)
     logging.info('=' * 60)
 
     # Step 1: Authenticate to Wiz
