@@ -26,9 +26,16 @@ Environment variables required (live API mode):
   KNOWBE4_BASE_URL      KnowBe4 API base, e.g. https://us.api.knowbe4.com
 
 Optional:
-  RIPPLING_BASE_URL     Defaults to https://api.rippling.com
-  RIPPLING_PAGE_SIZE    Defaults to 100
+  RIPPLING_BASE_URL              Defaults to https://rest.ripplingapis.com
+  RIPPLING_EVERYONE_GROUP        Defaults to "Everyone"
   KNOWBE4_CAMPAIGN_ID   If set, only checks enrollment in this specific campaign ID
+
+Rippling source endpoint (live API mode):
+  GET /supergroups/?filter=group_type+eq+'Group'  (find "Everyone" group)
+  GET /supergroups/{everyone_id}/members/         (member roster)
+
+Note: Uses the supergroups endpoint rather than /platform/api/employees because
+the Rippling API token typically has supergroups.read scope but not employees.read.
 
 Usage:
     # Live API mode (requires Rippling API token + KnowBe4 API key)
@@ -48,8 +55,15 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
+from urllib.parse import urlparse
 
 import requests
+from requests.adapters import HTTPAdapter
+
+try:
+    from urllib3.util.retry import Retry
+except ImportError:  # pragma: no cover - very old urllib3 fallback
+    from requests.packages.urllib3.util.retry import Retry
 
 try:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -115,11 +129,55 @@ def load_kb4_from_evidence_file(path: str) -> tuple:
     return users, enrollments, summary
 
 # ---------------------------------------------------------------------------
-# Rippling helpers (same pattern as rippling_current_employees.py)
+# Rippling helpers (same pattern as rippling_vs_okta_users.py)
 # ---------------------------------------------------------------------------
 
-RIPPLING_BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://api.rippling.com").rstrip("/")
-PAGE_SIZE = int(os.getenv("RIPPLING_PAGE_SIZE", "100"))
+RIPPLING_BASE_URL = os.getenv("RIPPLING_BASE_URL", "https://rest.ripplingapis.com").rstrip("/")
+EVERYONE_GROUP_NAME = os.getenv("RIPPLING_EVERYONE_GROUP", "Everyone")
+
+RIPPLING_HOST_ALLOWLIST = (
+    "rest.ripplingapis.com",
+    "api.rippling.com",
+)
+
+# Network resilience: configurable read timeout plus automatic retry/backoff so a
+# single slow or transient Rippling response no longer fails the whole fetcher run.
+RIPPLING_TIMEOUT = float(os.getenv("RIPPLING_TIMEOUT", "60"))
+RIPPLING_MAX_RETRIES = int(os.getenv("RIPPLING_MAX_RETRIES", "4"))
+RIPPLING_BACKOFF = float(os.getenv("RIPPLING_BACKOFF", "1.5"))
+
+
+def _build_rippling_session() -> requests.Session:
+    """Session with retry/backoff for connect, read, and 429/5xx responses."""
+    retry = Retry(
+        total=RIPPLING_MAX_RETRIES,
+        connect=RIPPLING_MAX_RETRIES,
+        read=RIPPLING_MAX_RETRIES,
+        status=RIPPLING_MAX_RETRIES,
+        backoff_factor=RIPPLING_BACKOFF,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+        respect_retry_after_header=True,
+        # Never auto-follow redirects: a leaked bearer token must not be re-sent.
+        redirect=False,
+        raise_on_redirect=False,
+        raise_on_status=False,
+    )
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    return session
+
+
+_RIPPLING_SESSION = _build_rippling_session()
+
+
+def _enforce_rippling_host(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        raise RuntimeError(f"Refusing non-HTTPS Rippling URL: {url}")
+    host = (parsed.hostname or "").lower()
+    if host not in RIPPLING_HOST_ALLOWLIST:
+        raise RuntimeError(f"Refusing Rippling URL with disallowed host: {host}")
 
 
 def get_rippling_token() -> str:
@@ -129,46 +187,68 @@ def get_rippling_token() -> str:
     return token
 
 
-def rippling_get(path: str, params: Optional[Dict[str, Any]] = None) -> Any:
-    url = f"{RIPPLING_BASE_URL}{path}"
-    resp = requests.get(
+def rippling_get(url: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    _enforce_rippling_host(url)
+    resp = _RIPPLING_SESSION.get(
         url,
         headers={"Accept": "application/json", "Authorization": f"Bearer {get_rippling_token()}"},
         params=params,
-        timeout=30,
+        timeout=RIPPLING_TIMEOUT,
+        allow_redirects=False,
     )
+    if resp.status_code in (301, 302, 303, 307, 308):
+        raise RuntimeError(
+            f"Rippling returned redirect {resp.status_code} to {resp.headers.get('Location')!r}; "
+            f"refusing to follow (token would leak)."
+        )
     resp.raise_for_status()
     return resp.json()
 
 
-def extract_records(payload: Any) -> List[Dict]:
-    if isinstance(payload, list):
-        return [r for r in payload if isinstance(r, dict)]
-    if isinstance(payload, dict):
-        for key in ("results", "data", "employees", "items"):
-            value = payload.get(key)
-            if isinstance(value, list):
-                return [r for r in value if isinstance(r, dict)]
-    return []
-
-
-def fetch_rippling_employees() -> List[Dict]:
-    results: List[Dict] = []
-    offset = 0
-    print("Fetching active Rippling employees...")
-    while True:
-        payload = rippling_get("/platform/api/employees", params={"limit": PAGE_SIZE, "offset": offset})
-        page = extract_records(payload)
-        results.extend(page)
-        print(f"  offset={offset}: {len(page)} records (total: {len(results)})")
-        if len(page) < PAGE_SIZE:
-            break
-        offset += PAGE_SIZE
+def rippling_paginate(initial_url: str, initial_params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    results: List[Dict[str, Any]] = []
+    next_url: Optional[str] = initial_url
+    next_params = initial_params
+    while next_url:
+        payload = rippling_get(next_url, params=next_params)
+        results.extend(payload.get("results", []))
+        next_url = payload.get("next_link")
+        next_params = None
     return results
 
 
+def find_everyone_group() -> Dict[str, Any]:
+    print(f"Searching Rippling for '{EVERYONE_GROUP_NAME}' supergroup ...")
+    groups = rippling_paginate(
+        f"{RIPPLING_BASE_URL}/supergroups/",
+        {"filter": "group_type eq 'Group'"},
+    )
+    for g in groups:
+        if (g.get("display_name") or g.get("name") or "") == EVERYONE_GROUP_NAME:
+            print(f"  Found '{EVERYONE_GROUP_NAME}' group id={g.get('id')}")
+            return g
+    raise RuntimeError(
+        f"Could not find supergroup '{EVERYONE_GROUP_NAME}'. "
+        f"Available (first 10): {[g.get('display_name') or g.get('name') for g in groups[:10]]}"
+    )
+
+
+def fetch_rippling_employees() -> List[Dict]:
+    everyone = find_everyone_group()
+    everyone_id = everyone["id"]
+    print(f"Fetching members of {everyone_id} ...")
+    members = rippling_paginate(f"{RIPPLING_BASE_URL}/supergroups/{everyone_id}/members/", None)
+    print(f"  Got {len(members)} members")
+    return members
+
+
 def rippling_email(emp: Dict) -> Optional[str]:
-    email = emp.get("workEmail") or emp.get("work_email") or emp.get("email") or ""
+    email = (
+        emp.get("work_email")
+        or emp.get("workEmail")
+        or emp.get("email")
+        or ""
+    )
     return email.strip().lower() or None
 
 
@@ -377,7 +457,7 @@ def main() -> None:
         with rippling_path.open("w", encoding="utf-8") as f:
             json.dump({
                 "source": "rippling",
-                "endpoint": "/platform/api/employees",
+                "endpoint": "/supergroups/<everyone-id>/members/",
                 "mode": "current_active",
                 "count": len(rippling_employees),
                 "results": rippling_employees,

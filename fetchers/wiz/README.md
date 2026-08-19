@@ -118,6 +118,10 @@ All configuration is done via the `.env` file:
 | `PARAMIFY_API_ISSUES_TOKEN` | Yes | Paramify API token (view/write issues permissions) |
 | `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID` | Yes | Target Vulnerability Assessment UUID |
 | `DELTA_MODE` | No | `true` for Delta filtering, `false` for full upload (default: `false`) |
+| `WIZ_READ_TIMEOUT` | No | Seconds to wait for a Wiz API response (default: `120`) |
+| `WIZ_CONNECT_TIMEOUT` | No | Seconds to wait for the TCP connection (default: `10`) |
+| `WIZ_MAX_RETRIES` | No | Retries per Wiz call on timeouts, connection errors, and 429/5xx (default: `5`) |
+| `WIZ_RETRY_SECONDS` | No | Base delay for exponential backoff between retries, capped at 60s (default: `2`) |
 
 ## Field Mapping
 
@@ -230,6 +234,16 @@ Typical reduction: **99%+** payload size after first run.
 
 - Check `WIZ_API_ENDPOINT` matches your tenant
 - Format: `https://api.{TENANT}.app.wiz.io/graphql`
+
+### `Read timed out` / `Connection reset by peer`
+
+Wiz calls are retried automatically with exponential backoff, so occasional
+timeouts are logged as warnings and recovered from. If a run still fails after
+exhausting its retries, the tenant is responding unusually slowly:
+
+- Raise `WIZ_READ_TIMEOUT` (for example to `300`) and/or `WIZ_MAX_RETRIES`
+- For the vulnerabilities fetcher, lowering `PAGE_SIZE` in the script makes each
+  page cheaper for Wiz to assemble
 
 ### `Paramify upload failed [403]`
 

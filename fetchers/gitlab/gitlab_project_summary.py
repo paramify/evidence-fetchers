@@ -15,6 +15,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+
+try:
+    from urllib3.util.retry import Retry
+except ImportError:  # pragma: no cover - very old urllib3 fallback
+    from requests.packages.urllib3.util.retry import Retry
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common.env_loader import parse_fetcher_args
@@ -36,8 +42,38 @@ def url_encode(segment: str) -> str:
     return quote(segment, safe="")
 
 
+# Network resilience: configurable timeout + automatic retry/backoff so a single
+# slow or transient GitLab response no longer fails the whole fetcher run.
+GITLAB_TIMEOUT = float(os.getenv("GITLAB_TIMEOUT", "60"))
+GITLAB_MAX_RETRIES = int(os.getenv("GITLAB_MAX_RETRIES", "4"))
+GITLAB_BACKOFF = float(os.getenv("GITLAB_BACKOFF", "1.5"))
+
+
+def _build_gitlab_session() -> requests.Session:
+    """Session with retry/backoff for connect, read, and 429/5xx responses."""
+    retry = Retry(
+        total=GITLAB_MAX_RETRIES,
+        connect=GITLAB_MAX_RETRIES,
+        read=GITLAB_MAX_RETRIES,
+        status=GITLAB_MAX_RETRIES,
+        backoff_factor=GITLAB_BACKOFF,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+        respect_retry_after_header=True,
+        raise_on_status=False,
+    )
+    session = requests.Session()
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+
+_GITLAB_SESSION = _build_gitlab_session()
+
+
 def http_get(url: str, headers: Dict[str, str], params: Optional[Dict[str, Any]] = None) -> requests.Response:
-    return requests.get(url, headers=headers, params=params, timeout=30)
+    return _GITLAB_SESSION.get(url, headers=headers, params=params, timeout=GITLAB_TIMEOUT)
 
 
 def get_project_file_summary(project_id: str, file_patterns: Optional[List[str]] = None) -> Dict[str, Any]:
