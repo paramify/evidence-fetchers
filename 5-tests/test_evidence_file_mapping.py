@@ -170,6 +170,78 @@ def test_find_evidence_file_missing():
     return True
 
 
+def test_find_evidence_file_cross_reference_gap():
+    """Test that cross-reference fetchers match *_gap.json or script-named files."""
+    print("Testing _find_evidence_file_for_instance (cross-reference gap files)...")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        evidence_dir = Path(tmpdir)
+
+        # Legacy naming: primary evidence was written as *_gap.json
+        (evidence_dir / "rippling_vs_okta_gap.json").write_text("{}")
+        (evidence_dir / "rippling_vs_knowbe4_gap.json").write_text("{}")
+        json_files = {f.stem: f for f in evidence_dir.glob("*.json")}
+
+        okta_result = _find_evidence_file_for_instance("rippling_vs_okta_users", None, json_files)
+        assert okta_result is not None and Path(okta_result).name == "rippling_vs_okta_gap.json", (
+            f"Expected rippling_vs_okta_gap.json, got {okta_result}"
+        )
+
+        kb4_result = _find_evidence_file_for_instance("rippling_vs_knowbe4_training", None, json_files)
+        assert kb4_result is not None and Path(kb4_result).name == "rippling_vs_knowbe4_gap.json", (
+            f"Expected rippling_vs_knowbe4_gap.json, got {kb4_result}"
+        )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        evidence_dir = Path(tmpdir)
+
+        # Current naming: primary evidence matches the script/check name
+        (evidence_dir / "rippling_vs_okta_users.json").write_text("{}")
+        (evidence_dir / "rippling_vs_knowbe4_training.json").write_text("{}")
+        json_files = {f.stem: f for f in evidence_dir.glob("*.json")}
+
+        okta_result = _find_evidence_file_for_instance("rippling_vs_okta_users", None, json_files)
+        assert okta_result is not None and Path(okta_result).name == "rippling_vs_okta_users.json"
+
+        kb4_result = _find_evidence_file_for_instance("rippling_vs_knowbe4_training", None, json_files)
+        assert kb4_result is not None and Path(kb4_result).name == "rippling_vs_knowbe4_training.json"
+
+    print("  Cross-reference gap file matching passed")
+    return True
+
+
+def test_find_evidence_file_shortened_descriptor():
+    """Test fetchers whose filenames omit a trailing descriptor (e.g. Wiz)."""
+    print("Testing _find_evidence_file_for_instance (shortened descriptor)...")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        evidence_dir = Path(tmpdir)
+        (evidence_dir / "wiz_issues.json").write_text("{}")
+        (evidence_dir / "wiz_vulnerabilities.json").write_text("{}")
+        json_files = {f.stem: f for f in evidence_dir.glob("*.json")}
+
+        issues = _find_evidence_file_for_instance("wiz_issues_report", None, json_files)
+        assert issues is not None and Path(issues).name == "wiz_issues.json", f"Got: {issues}"
+
+        vulns = _find_evidence_file_for_instance("wiz_vulnerabilities_findings", None, json_files)
+        assert vulns is not None and Path(vulns).name == "wiz_vulnerabilities.json", f"Got: {vulns}"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        evidence_dir = Path(tmpdir)
+        (evidence_dir / "wiz_issues_report.json").write_text("{}")
+        (evidence_dir / "wiz_vulnerabilities_findings.json").write_text("{}")
+        json_files = {f.stem: f for f in evidence_dir.glob("*.json")}
+
+        issues = _find_evidence_file_for_instance("wiz_issues_report", None, json_files)
+        assert issues is not None and Path(issues).name == "wiz_issues_report.json"
+
+        vulns = _find_evidence_file_for_instance("wiz_vulnerabilities_findings", None, json_files)
+        assert vulns is not None and Path(vulns).name == "wiz_vulnerabilities_findings.json"
+
+    print("  Shortened descriptor matching passed")
+    return True
+
+
 def test_extract_resource():
     """Test resource extraction from instance config."""
     print("Testing _extract_resource...")
@@ -239,6 +311,8 @@ def main():
         test_find_evidence_file_for_instance_multi_instance,
         test_find_evidence_file_standard_fetcher,
         test_find_evidence_file_missing,
+        test_find_evidence_file_cross_reference_gap,
+        test_find_evidence_file_shortened_descriptor,
         test_extract_resource,
         test_build_artifact_title,
     ]

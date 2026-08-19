@@ -766,6 +766,24 @@ def _find_evidence_file_for_instance(
         matching_files.sort(key=lambda x: x[1])
         return str(matching_files[0][0])
 
+    # Cross-reference fetchers historically wrote {prefix}_gap.json while the
+    # check name kept a trailing descriptor, e.g.:
+    #   rippling_vs_okta_users     -> rippling_vs_okta_gap.json
+    #   rippling_vs_knowbe4_training -> rippling_vs_knowbe4_gap.json
+    if "_vs_" in base_name:
+        prefix, _tail = base_name.rsplit("_", 1)
+        gap_stem = f"{prefix}_gap"
+        if gap_stem in json_files:
+            return str(json_files[gap_stem])
+
+    # Some fetchers omit a trailing descriptor from the filename, e.g.:
+    #   wiz_issues_report            -> wiz_issues.json
+    #   wiz_vulnerabilities_findings -> wiz_vulnerabilities.json
+    if "_" in base_name:
+        shortened = base_name.rsplit("_", 1)[0]
+        if shortened in json_files:
+            return str(json_files[shortened])
+
     return None
 
 

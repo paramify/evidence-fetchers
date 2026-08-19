@@ -11,7 +11,7 @@ Compares active Rippling employees against KnowBe4 training enrollments to surfa
 Outputs 3 files (Isaac's 3-file pattern):
   - rippling_current_employees.json      (Rippling source of truth - reused if exists)
   - knowbe4_training_enrollments.json    (KnowBe4 source of truth)
-  - rippling_vs_knowbe4_gap.json         (the diff - what validators run on)
+  - rippling_vs_knowbe4_training.json    (the diff - primary evidence for summary/Paramify)
 
 Matching key: email address
   Rippling -> workEmail
@@ -47,7 +47,7 @@ Usage:
 Output:
     rippling_current_employees.json     Rippling active employees
     knowbe4_training_enrollments.json   KnowBe4 user + enrollment data
-    rippling_vs_knowbe4_gap.json        Gap analysis between the two
+    rippling_vs_knowbe4_training.json   Gap analysis (uploaded to Paramify)
 """
 
 import json
@@ -493,7 +493,8 @@ def main() -> None:
 
     # --- File 3: Gap analysis (validators run on this) ---
     gap = build_gap(rippling_employees, kb4_users, kb4_enrollments, campaign_id)
-    gap_path = evidence_dir / "rippling_vs_knowbe4_gap.json"
+    # Named after this script so create_summary_file / Paramify upload find it
+    gap_path = evidence_dir / "rippling_vs_knowbe4_training.json"
     with gap_path.open("w", encoding="utf-8") as f:
         json.dump(gap, f, indent=2)
 

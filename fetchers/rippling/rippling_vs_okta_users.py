@@ -28,7 +28,7 @@ removed since the _display strings are what reviewers actually read):
 Outputs 3 files (Isaac's 3-file pattern):
   - rippling_current_employees.json  (Rippling source of truth)
   - okta_all_users.json              (Okta source of truth)
-  - rippling_vs_okta_gap.json        (the diff - what validators run on)
+  - rippling_vs_okta_users.json      (the diff - primary evidence for summary/Paramify)
 
 Matching key: email address (lowercased)
   Rippling -> work_email (from supergroups members API)
@@ -69,7 +69,7 @@ Usage:
 Output:
     rippling_current_employees.json  Rippling active employees
     okta_all_users.json              All active Okta users
-    rippling_vs_okta_gap.json        Gap analysis (summary at bottom)
+    rippling_vs_okta_users.json      Gap analysis (summary at bottom; uploaded to Paramify)
 """
 
 import json
@@ -617,7 +617,8 @@ def main() -> None:
     summary = gap.pop("summary")
     gap["summary"] = summary
 
-    gap_path = evidence_dir / "rippling_vs_okta_gap.json"
+    # Named after this script so create_summary_file / Paramify upload find it
+    gap_path = evidence_dir / "rippling_vs_okta_users.json"
     with gap_path.open("w", encoding="utf-8") as f:
         json.dump(gap, f, indent=2)
 

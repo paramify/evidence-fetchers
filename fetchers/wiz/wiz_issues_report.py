@@ -514,7 +514,8 @@ def main():
     save_state(report_id, current_hash, last_successful_run=new_successful_run)
     logging.info('Updated last_successful_run: %s', new_successful_run)
 
-    # Step 9: Write summary JSON for TUI review screen
+    # Step 9: Write summary JSON for TUI / create_summary_file
+    # Filename is shortened vs check name; run_fetchers maps wiz_issues_report -> wiz_issues.json
     summary_path = Path(output_dir) / 'wiz_issues.json'
     summary = {
         'fetcher': 'wiz_issues_report',
