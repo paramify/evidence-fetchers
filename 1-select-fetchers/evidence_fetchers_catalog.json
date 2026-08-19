@@ -1998,7 +1998,7 @@
       },
       "wiz": {
         "name": "Wiz",
-        "description": "Wiz cloud security platform evidence collection — security issues and CVE vulnerability findings for compliance automation",
+        "description": "Wiz cloud security platform evidence collection \u2014 security issues and CVE vulnerability findings for compliance automation",
         "access_method": "Wiz API via Service Account credentials",
         "access_method_description": "The Wiz fetcher scripts authenticate via OAuth client credentials flow using WIZ_CLIENT_ID and WIZ_CLIENT_SECRET. Set WIZ_AUTH_URL to your tenant auth endpoint and WIZ_API_ENDPOINT to your GraphQL endpoint. Each fetcher uploads directly to a Paramify Vulnerability Assessment using PARAMIFY_API_ISSUES_TOKEN.",
         "logo": "fetchers/logos/wiz.jpeg",
@@ -2046,6 +2046,81 @@
             "validation_rules": [],
             "solution_capabilities": [],
             "controls": []
+          }
+        }
+      },
+      "paramify": {
+        "name": "Paramify",
+        "description": "FedRAMP 20x machine-readable evidence generated from Paramify data",
+        "access_method": "Paramify API via Bearer Token",
+        "access_method_description": "Scripts call the Paramify REST API (Authorization: Bearer <PARAMIFY_API_TOKEN>) with read scope. Base URL defaults to https://app.paramify.com/api/v0 and can be overridden with PARAMIFY_API_BASE_URL. Reports are scoped per project via PARAMIFY_PROJECT_ID.",
+        "logo": "fetchers/logos/paramify.svg",
+        "scripts": {
+          "paramify_accepted_vulnerabilities": {
+            "script_file": "fetchers/paramify/paramify_accepted_vulnerabilities.py",
+            "name": "Paramify Accepted Vulnerability Info (VER-RPT-AVI)",
+            "description": "Generates the FedRAMP 20x Accepted Vulnerability Info JSON from Paramify issues with an accepted deviation (OPERATIONAL_REQUIREMENT, VENDOR_DEPENDENCY, RISK_ADJUSTMENT). Validates output against the published FedRAMP schema.",
+            "id": "EVD-PARAMIFY-VER-RPT-AVI",
+            "instructions": "Script: paramify_accepted_vulnerabilities.py. Commands executed: python Paramify API GET /issues per accepted deviation type; output validated against fedramp-accepted-vulnerability-info-schema-2026-06-24.json; writes paramify_accepted_vulnerabilities.json",
+            "validationRules": [],
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "paramify",
+              "fedramp-20x",
+              "vulnerability",
+              "ver-rpt-avi"
+            ],
+            "solution_capabilities": [],
+            "controls": [
+              "KSI-MLA-06",
+              "KSI-MLA-03"
+            ]
+          },
+          "paramify_vulnerability_detail_report": {
+            "script_file": "fetchers/paramify/paramify_vulnerability_detail_report.py",
+            "name": "Paramify Vulnerability Detail Report (VER-RPT-VDT)",
+            "description": "Generates the FedRAMP 20x Vulnerability Detail Report JSON covering all non-accepted vulnerabilities (exact partition with VER-RPT-AVI via a shared accepted definition). Derives overdue status and final disposition, and validates output against the published FedRAMP schema.",
+            "id": "EVD-PARAMIFY-VER-RPT-VDT",
+            "instructions": "Script: paramify_vulnerability_detail_report.py. Commands executed: python Paramify API GET /issues for the project plus GET /issues/{id}/milestones per open non-accepted issue; output validated against fedramp-vulnerability-detail-report-schema-2026-06-24.json; writes paramify_vulnerability_detail_report.json",
+            "validationRules": [],
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "paramify",
+              "fedramp-20x",
+              "vulnerability",
+              "ver-rpt-vdt"
+            ],
+            "solution_capabilities": [],
+            "controls": [
+              "KSI-MLA-06",
+              "KSI-MLA-03"
+            ]
+          },
+          "paramify_historical_ver_activity": {
+            "script_file": "fetchers/paramify/paramify_historical_ver_activity.py",
+            "name": "Paramify Historical VER Activity (VER-TFR-MRH)",
+            "description": "Generates the FedRAMP 20x Historical Vulnerability Evaluation and Reporting Activity JSON: a point-in-time snapshot containing all active (non-accepted) and all accepted vulnerabilities in one document. Reuses the AVI/VDT shared accepted definition from a single issue fetch so the two arrays are consistent by construction. Per VER-TFR-MRH, Class C should refresh this at least every 14 days.",
+            "id": "EVD-PARAMIFY-VER-TFR-MRH",
+            "instructions": "Script: paramify_historical_ver_activity.py. Commands executed: python Paramify API GET /issues for the project plus GET /issues/{id}/milestones per open non-accepted issue; output validated against fedramp-historical-ver-activity-schema-2026-06-24.json; writes paramify_historical_ver_activity.json",
+            "validationRules": [],
+            "dependencies": [
+              "python3"
+            ],
+            "tags": [
+              "paramify",
+              "fedramp-20x",
+              "vulnerability",
+              "ver-tfr-mrh"
+            ],
+            "solution_capabilities": [],
+            "controls": [
+              "KSI-MLA-06",
+              "KSI-MLA-03"
+            ]
           }
         }
       }

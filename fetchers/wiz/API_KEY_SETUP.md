@@ -13,9 +13,9 @@ All Wiz fetchers in this folder require Wiz Service Account credentials plus a P
 | `PARAMIFY_API_ISSUES_TOKEN` | Yes* | Paramify API token with view/write issues permissions (preferred for Wiz) | `eyJhbGciOi...` |
 | `PARAMIFY_UPLOAD_API_TOKEN` | Yes* | Paramify API token (fallback if `PARAMIFY_API_ISSUES_TOKEN` not set) | `eyJhbGciOi...` |
 | `PARAMIFY_API_ISSUES_BASE_URL` | No | Paramify API base URL (default `https://app.paramify.com/api/v0`) | `https://app.paramify.com/api/v0` |
-| `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID` | For Issues fetcher | Paramify Vulnerability Assessment UUID where Wiz Issues are uploaded | `d0318023-55c2-41ea-...` |
+| `WIZ_ISSUES_PARAMIFY_ASSESSMENT_ID` | For Configuration Findings fetcher | Paramify Vulnerability Assessment UUID where Wiz Issues are uploaded | `d0318023-55c2-41ea-...` |
 | `WIZ_VULN_PARAMIFY_ASSESSMENT_ID` | For Vulnerabilities fetcher | Paramify Vulnerability Assessment UUID where Wiz Vulnerability Findings are uploaded | `f85e252b-2a7f-4012-...` |
-| `DELTA_MODE` | No | When `true`, Issues fetcher uploads only changed rows since last successful run (default `false`) | `true` |
+| `DELTA_MODE` | No | When `true`, Configuration Findings fetcher uploads only changed rows since last successful run (default `false`) | `true` |
 
 \* At least one of `PARAMIFY_API_ISSUES_TOKEN` or `PARAMIFY_UPLOAD_API_TOKEN` must be set. The Wiz fetchers prefer `PARAMIFY_API_ISSUES_TOKEN` because it carries the view/write issues permissions; if it isn't set, they fall back to `PARAMIFY_UPLOAD_API_TOKEN`.
 
@@ -94,7 +94,7 @@ Wiz tenants are deployed across multiple regions and the auth + API endpoints di
 
 ## Creating Paramify Destinations
 
-### For `wiz_issues_report.py` (Issues)
+### For `wiz_issues_report.py` (Configuration Findings)
 
 1. Sign in to Paramify.
 2. Navigate to the program where Wiz Issues should be tracked.
@@ -142,5 +142,5 @@ Wiz tenants are deployed across multiple regions and the auth + API endpoints di
 ## Notes
 
 - The Vulnerabilities fetcher uses cursor-based GraphQL pagination (`first` + `after` + `pageInfo.endCursor`) at `PAGE_SIZE=100`. Large tenants may produce many pages and take several minutes.
-- Both fetchers persist state to disk next to the script (`state.json` for Issues, `vuln_state.json` for Vulnerabilities). State files contain a Wiz report ID / config hash / `last_successful_run` timestamp; treat them like operational data and do not commit them to source control.
+- Both fetchers persist state to disk next to the script (`state.json` for Configuration Findings, `vuln_state.json` for Vulnerabilities). State files contain a Wiz report ID / config hash / `last_successful_run` timestamp; treat them like operational data and do not commit them to source control.
 - The Vulnerabilities fetcher uses the Wiz `VulnerabilityFindings` GraphQL endpoint, which Wiz documents as intended for **incremental** delta updates. For large initial imports, expect the first full run to be the slowest.
